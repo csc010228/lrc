@@ -1,0 +1,173 @@
+const int width = 1024
+const int height = 1024
+int image_in[1048576]
+int image_out[1048576]
+int cutout ( int cutout::val )  : 
+	LT		cutout::val , 0 --> (int)@0
+	IF_NOT_JMP		@0 --> .0
+	ASSIGN		0 --> cutout::val
+	JMP		.2
+.0 : 
+	GT		cutout::val , 255 --> (int)@1
+	IF_NOT_JMP		@1 --> .1
+	ASSIGN		255 --> cutout::val
+.1 : 
+.2 : 
+	RET		cutout::val
+
+int main (  )  : 
+	int main::i
+	int main::j
+	CALL		getarray ( image_in )  --> (int)@2
+	int main::num
+	ASSIGN		@2 --> main::num
+	CALL		_sysy_starttime ( 23 ) 
+	ASSIGN		1 --> main::j
+.3 : 
+	LT		main::j , 1023 --> (int)@3
+	IF_NOT_JMP		@3 --> .6
+	ASSIGN		1 --> main::i
+.4 : 
+	LT		main::i , 1023 --> (int)@4
+	IF_NOT_JMP		@4 --> .5
+	SUB		main::i , 1 --> (int)@5
+	MUL		@5 , width --> (int)@6
+	ADD		@6 , main::j --> (int)@7
+	SUB		@7 , 1 --> (int)@8
+	int main::while_0::while_0::im1jm1
+	ASSIGN		@8 --> main::while_0::while_0::im1jm1
+	SUB		main::i , 1 --> (int)@9
+	MUL		@9 , width --> (int)@10
+	ADD		@10 , main::j --> (int)@11
+	int main::while_0::while_0::im1j
+	ASSIGN		@11 --> main::while_0::while_0::im1j
+	SUB		main::i , 1 --> (int)@12
+	MUL		@12 , width --> (int)@13
+	ADD		@13 , main::j --> (int)@14
+	ADD		@14 , 1 --> (int)@15
+	int main::while_0::while_0::im1jp1
+	ASSIGN		@15 --> main::while_0::while_0::im1jp1
+	MUL		main::i , width --> (int)@16
+	ADD		@16 , main::j --> (int)@17
+	SUB		@17 , 1 --> (int)@18
+	int main::while_0::while_0::ijm1
+	ASSIGN		@18 --> main::while_0::while_0::ijm1
+	MUL		main::i , width --> (int)@19
+	ADD		@19 , main::j --> (int)@20
+	int main::while_0::while_0::ij
+	ASSIGN		@20 --> main::while_0::while_0::ij
+	MUL		main::i , width --> (int)@21
+	ADD		@21 , main::j --> (int)@22
+	ADD		@22 , 1 --> (int)@23
+	int main::while_0::while_0::ijp1
+	ASSIGN		@23 --> main::while_0::while_0::ijp1
+	ADD		main::i , 1 --> (int)@24
+	MUL		@24 , width --> (int)@25
+	ADD		@25 , main::j --> (int)@26
+	SUB		@26 , 1 --> (int)@27
+	int main::while_0::while_0::ip1jm1
+	ASSIGN		@27 --> main::while_0::while_0::ip1jm1
+	ADD		main::i , 1 --> (int)@28
+	MUL		@28 , width --> (int)@29
+	ADD		@29 , main::j --> (int)@30
+	int main::while_0::while_0::ip1j
+	ASSIGN		@30 --> main::while_0::while_0::ip1j
+	ADD		main::i , 1 --> (int)@31
+	MUL		@31 , width --> (int)@32
+	ADD		@32 , main::j --> (int)@33
+	ADD		@33 , 1 --> (int)@34
+	int main::while_0::while_0::ip1jp1
+	ASSIGN		@34 --> main::while_0::while_0::ip1jp1
+	MUL		main::while_0::while_0::ij , 1 --> (int)@35
+	ADD		@35 , 0 --> (int)@36
+	MUL		8 , image_in[@36] --> (int)@37
+	MUL		main::while_0::while_0::im1jm1 , 1 --> (int)@38
+	ADD		@38 , 0 --> (int)@39
+	SUB		@37 , image_in[@39] --> (int)@40
+	MUL		main::while_0::while_0::im1j , 1 --> (int)@41
+	ADD		@41 , 0 --> (int)@42
+	SUB		@40 , image_in[@42] --> (int)@43
+	MUL		main::while_0::while_0::im1jp1 , 1 --> (int)@44
+	ADD		@44 , 0 --> (int)@45
+	SUB		@43 , image_in[@45] --> (int)@46
+	MUL		main::while_0::while_0::ijm1 , 1 --> (int)@47
+	ADD		@47 , 0 --> (int)@48
+	SUB		@46 , image_in[@48] --> (int)@49
+	MUL		main::while_0::while_0::ijp1 , 1 --> (int)@50
+	ADD		@50 , 0 --> (int)@51
+	SUB		@49 , image_in[@51] --> (int)@52
+	MUL		main::while_0::while_0::ip1jm1 , 1 --> (int)@53
+	ADD		@53 , 0 --> (int)@54
+	SUB		@52 , image_in[@54] --> (int)@55
+	MUL		main::while_0::while_0::ip1j , 1 --> (int)@56
+	ADD		@56 , 0 --> (int)@57
+	SUB		@55 , image_in[@57] --> (int)@58
+	MUL		main::while_0::while_0::ip1jp1 , 1 --> (int)@59
+	ADD		@59 , 0 --> (int)@60
+	SUB		@58 , image_in[@60] --> (int)@61
+	int main::while_0::while_0::val
+	ASSIGN		@61 --> main::while_0::while_0::val
+	MUL		main::i , width --> (int)@62
+	ADD		@62 , main::j --> (int)@63
+	MUL		@63 , 1 --> (int)@64
+	ADD		@64 , 0 --> (int)@65
+	CALL		cutout ( main::while_0::while_0::val )  --> (int)@66
+	ASSIGN		@66 --> image_out[@65]
+	ADD		main::i , 1 --> (int)@67
+	ASSIGN		@67 --> main::i
+	JMP		.4
+.5 : 
+	ADD		main::j , 1 --> (int)@68
+	ASSIGN		@68 --> main::j
+	JMP		.3
+.6 : 
+	ASSIGN		0 --> main::i
+.7 : 
+	LT		main::i , height --> (int)@69
+	IF_NOT_JMP		@69 --> .8
+	MUL		main::i , width --> (int)@70
+	MUL		@70 , 1 --> (int)@71
+	ADD		@71 , 0 --> (int)@72
+	MUL		main::i , width --> (int)@73
+	MUL		@73 , 1 --> (int)@74
+	ADD		@74 , 0 --> (int)@75
+	ASSIGN		image_in[@75] --> image_out[@72]
+	MUL		main::i , width --> (int)@76
+	ADD		@76 , width --> (int)@77
+	SUB		@77 , 1 --> (int)@78
+	MUL		@78 , 1 --> (int)@79
+	ADD		@79 , 0 --> (int)@80
+	MUL		main::i , width --> (int)@81
+	ADD		@81 , width --> (int)@82
+	SUB		@82 , 1 --> (int)@83
+	MUL		@83 , 1 --> (int)@84
+	ADD		@84 , 0 --> (int)@85
+	ASSIGN		image_in[@85] --> image_out[@80]
+	ADD		main::i , 1 --> (int)@86
+	ASSIGN		@86 --> main::i
+	JMP		.7
+.8 : 
+	ASSIGN		0 --> main::j
+.9 : 
+	LT		main::j , width --> (int)@87
+	IF_NOT_JMP		@87 --> .10
+	MUL		main::j , 1 --> (int)@88
+	ADD		@88 , 0 --> (int)@89
+	MUL		main::j , 1 --> (int)@90
+	ADD		@90 , 0 --> (int)@91
+	ASSIGN		image_in[@91] --> image_out[@89]
+	ADD		1047552 , main::j --> (int)@92
+	MUL		@92 , 1 --> (int)@93
+	ADD		@93 , 0 --> (int)@94
+	ADD		1047552 , main::j --> (int)@95
+	MUL		@95 , 1 --> (int)@96
+	ADD		@96 , 0 --> (int)@97
+	ASSIGN		image_in[@97] --> image_out[@94]
+	ADD		main::j , 1 --> (int)@98
+	ASSIGN		@98 --> main::j
+	JMP		.9
+.10 : 
+	CALL		_sysy_stoptime ( 59 ) 
+	CALL		putarray ( 1048576 , image_out ) 
+	RET		main::num
+
