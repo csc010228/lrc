@@ -39,4 +39,4 @@ def complier_dir(dir_name):
 
 
 if __name__ == '__main__':
-    print(str(complier_dir('../compiler2021-master/test/function/'))+" error")
+    print(str(complier_dir('../compiler2021-master/test/'))+" error")

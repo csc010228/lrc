@@ -13,42 +13,6 @@
 	.align 1
 	.global	__aeabi_idiv
 	.global	__aeabi_idivmod
-	.global cutout
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	cutout, %function
-cutout:
-	push	{r4,r5,r6,r7,r8,r9,r10,r11,r12,lr}
-	vpush	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
-	push	{r0}
-	cmp	r0,#0
-	bge	.0
-	ldr r0,=0
-	add	r1,sp,#0
-	str	r0,[r1]
-	b	.2
-.0:
-	add	r1,sp,#0
-	ldr	r0,[r1]
-	cmp	r0,#255
-	ble	.1
-	ldr r0,=255
-	add	r1,sp,#0
-	str	r0,[r1]
-.1:
-.2:
-	add	r1,sp,#0
-	ldr	r0,[r1]
-	add	sp,sp,#4
-	vpop	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
-	pop	{r4,r5,r6,r7,r8,r9,r10,r11,r12,pc}
-	.size	cutout, .-cutout
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
 	.global main
 	.syntax unified
 	.thumb
@@ -75,7 +39,7 @@ main:
 .3:
 	add	r1,sp,#44
 	ldr	r0,[r1]
-	ldr r2,=1023
+	ldr r2,=511
 	cmp	r0,r2
 	bge	.6
 	ldr r0,=1
@@ -90,7 +54,7 @@ main:
 	add	r1,sp,#48
 	ldr	r0,[r1]
 	sub	r2,r0,#1
-	ldr r0,=1024
+	ldr r0,=512
 	mul	r1,r2,r0
 	push	{r2}
 	add	r2,sp,#48
@@ -106,7 +70,7 @@ main:
 	ldr	r0,[r1]
 	push	{r3}
 	sub	r3,r0,#1
-	ldr r0,=1024
+	ldr r0,=512
 	mul	r1,r3,r0
 	add	r2,sp,#60
 	ldr	r0,[r2]
@@ -120,7 +84,7 @@ main:
 	ldr	r0,[r2]
 	push	{r3}
 	sub	r3,r0,#1
-	ldr r0,=1024
+	ldr r0,=512
 	mul	r1,r3,r0
 	add	r2,sp,#72
 	ldr	r0,[r2]
@@ -135,7 +99,7 @@ main:
 	add	r1,sp,#88
 	ldr	r0,[r1]
 	push	{r3}
-	ldr r3,=1024
+	ldr r3,=512
 	mul	r4,r0,r3
 	add	r1,sp,#88
 	ldr	r0,[r1]
@@ -173,7 +137,7 @@ main:
 	add	r1,sp,#120
 	ldr	r0,[r1]
 	add	r3,r0,#1
-	ldr r0,=1024
+	ldr r0,=512
 	mul	r1,r3,r0
 	add	r2,sp,#116
 	ldr	r0,[r2]
@@ -189,7 +153,7 @@ main:
 	ldr	r0,[r1]
 	push	{r3}
 	add	r3,r0,#1
-	ldr r0,=1024
+	ldr r0,=512
 	mul	r1,r3,r0
 	add	r2,sp,#132
 	ldr	r0,[r2]
@@ -203,7 +167,7 @@ main:
 	ldr	r0,[r2]
 	push	{r3}
 	add	r3,r0,#1
-	ldr r0,=1024
+	ldr r0,=512
 	mul	r1,r3,r0
 	add	r2,sp,#144
 	ldr	r0,[r2]
@@ -347,7 +311,7 @@ main:
 	str	r0,[r1]
 	add	r2,sp,#268
 	ldr	r0,[r2]
-	ldr r3,=1024
+	ldr r3,=512
 	push	{r4}
 	mul	r4,r0,r3
 	add	r1,sp,#268
@@ -396,7 +360,7 @@ main:
 	bge	.8
 	add	r1,sp,#48
 	ldr	r0,[r1]
-	ldr r2,=1024
+	ldr r2,=512
 	mul	r3,r0,r2
 	ldr r0,=1
 	mul	r1,r3,r0
@@ -421,9 +385,9 @@ main:
 	mov	r4,r0
 	add	r1,sp,#72
 	ldr	r0,[r1]
-	ldr r2,=1024
+	ldr r2,=512
 	mul	r3,r0,r2
-	add	r0,r3,#1024
+	add	r0,r3,#512
 	sub	r1,r0,#1
 	push	{r0}
 	ldr r0,=1
@@ -434,10 +398,10 @@ main:
 	add	r1,sp,#84
 	ldr	r0,[r1]
 	push	{r2}
-	ldr r2,=1024
+	ldr r2,=512
 	push	{r3}
 	mul	r3,r0,r2
-	add	r0,r3,#1024
+	add	r0,r3,#512
 	sub	r1,r0,#1
 	push	{r0}
 	ldr r0,=1
@@ -475,7 +439,7 @@ main:
 .9:
 	add	r1,sp,#44
 	ldr	r0,[r1]
-	cmp	r0,#1024
+	cmp	r0,#512
 	bge	.10
 	add	r1,sp,#44
 	ldr	r0,[r1]
@@ -497,7 +461,7 @@ main:
 	mov	r4,r0
 	add	r1,sp,#60
 	ldr	r0,[r1]
-	ldr r2,=1047552
+	ldr r2,=523776
 	add	r3,r0,r2
 	ldr r0,=1
 	mul	r1,r3,r0
@@ -538,7 +502,7 @@ main:
 .10:
 	ldr r0,=59
 	bl	_sysy_stoptime
-	ldr r0,=1048576
+	ldr r0,=524288
 	movw	r1,#:lower16:image_out
 	movt	r1,#:upper16:image_out
 	bl	putarray
@@ -548,7 +512,43 @@ main:
 	vpop	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
 	pop	{r4,r5,r6,r7,r8,r9,r10,r11,r12,pc}
 	.size	main, .-main
-	.comm image_in,4194304,4
-	.comm image_out,4194304,4
+	.text
+	.align 1
+	.global	__aeabi_idiv
+	.global	__aeabi_idivmod
+	.global cutout
+	.syntax unified
+	.thumb
+	.thumb_func
+	.fpu vfp
+	.type	cutout, %function
+cutout:
+	push	{r4,r5,r6,r7,r8,r9,r10,r11,r12,lr}
+	vpush	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
+	push	{r0}
+	cmp	r0,#0
+	bge	.0
+	ldr r0,=0
+	add	r1,sp,#0
+	str	r0,[r1]
+	b	.2
+.0:
+	add	r1,sp,#0
+	ldr	r0,[r1]
+	cmp	r0,#255
+	ble	.1
+	ldr r0,=255
+	add	r1,sp,#0
+	str	r0,[r1]
+.1:
+.2:
+	add	r1,sp,#0
+	ldr	r0,[r1]
+	add	sp,sp,#4
+	vpop	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
+	pop	{r4,r5,r6,r7,r8,r9,r10,r11,r12,pc}
+	.size	cutout, .-cutout
+	.comm image_in,2097152,4
+	.comm image_out,2097152,4
 	.ident	"GCC: (Raspbian 8.3.0-6+rpi1) 8.3.0"
 	.section	.note.GNU-stack,"",%progbits

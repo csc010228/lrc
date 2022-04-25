@@ -20,9 +20,6 @@ protected:
     //有效位
     bool is_init_successful_;
 
-    //中间代码序列
-    //struct ic_flow_graph * intermediate_codes_;
-
     //最终的汇编代码文件
     list<string> asm_codes_;
 

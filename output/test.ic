@@ -1,7 +1,7 @@
-const int width = 1024
+const int width = 512
 const int height = 1024
-int image_in[1048576]
-int image_out[1048576]
+int image_in[524288]
+int image_out[524288]
 int cutout ( int cutout::val )  : 
 	LT		cutout::val , 0 --> (int)@0
 	IF_NOT_JMP		@0 --> .0
@@ -24,7 +24,7 @@ int main (  )  :
 	CALL		_sysy_starttime ( 23 ) 
 	ASSIGN		1 --> main::j
 .3 : 
-	LT		main::j , 1023 --> (int)@3
+	LT		main::j , 511 --> (int)@3
 	IF_NOT_JMP		@3 --> .6
 	ASSIGN		1 --> main::i
 .4 : 
@@ -156,10 +156,10 @@ int main (  )  :
 	MUL		main::j , 1 --> (int)@90
 	ADD		@90 , 0 --> (int)@91
 	ASSIGN		image_in[@91] --> image_out[@89]
-	ADD		1047552 , main::j --> (int)@92
+	ADD		523776 , main::j --> (int)@92
 	MUL		@92 , 1 --> (int)@93
 	ADD		@93 , 0 --> (int)@94
-	ADD		1047552 , main::j --> (int)@95
+	ADD		523776 , main::j --> (int)@95
 	MUL		@95 , 1 --> (int)@96
 	ADD		@96 , 0 --> (int)@97
 	ASSIGN		image_in[@97] --> image_out[@94]
@@ -168,6 +168,6 @@ int main (  )  :
 	JMP		.9
 .10 : 
 	CALL		_sysy_stoptime ( 59 ) 
-	CALL		putarray ( 1048576 , image_out ) 
+	CALL		putarray ( 524288 , image_out ) 
 	RET		main::num
 
