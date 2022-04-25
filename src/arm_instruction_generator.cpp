@@ -77,12 +77,12 @@ void Arm_instruction_generator::ic_to_arm_asm(struct quaternion intermediate_cod
         case ic_op::MOD:
             mod_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.arg2.second,(struct ic_data *)intermediate_code.result.second);
             break;
-        case ic_op::L_SHIFT:
-            l_shift_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.arg2.second,(struct ic_data *)intermediate_code.result.second);
-            break;
-        case ic_op::R_SHIFT:
-            r_shift_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.arg2.second,(struct ic_data *)intermediate_code.result.second);
-            break;
+        //case ic_op::L_SHIFT:
+            //l_shift_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.arg2.second,(struct ic_data *)intermediate_code.result.second);
+            //break;
+        //case ic_op::R_SHIFT:
+            //r_shift_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.arg2.second,(struct ic_data *)intermediate_code.result.second);
+            //break;
         case ic_op::NOT:
             not_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.result.second);
             break;

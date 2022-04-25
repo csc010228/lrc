@@ -28,8 +28,8 @@ enum class ic_op
     MUL,                        //乘
     DIV,                        //除
     MOD,                        //取模
-    L_SHIFT,                    //左移位
-    R_SHIFT,                    //右移位
+    //L_SHIFT,                    //左移位
+    //R_SHIFT,                    //右移位
     NOT,                        //非
     AND,                        //与
     OR,                         //或
@@ -74,16 +74,7 @@ struct quaternion
 
     quaternion(enum ic_op op,enum ic_operand arg1_type,void * arg1_data,enum ic_operand arg2_type,void * arg2_data,enum ic_operand result_type,void * result_data):op(op),arg1(make_pair(arg1_type,arg1_data)),arg2(make_pair(arg2_type,arg2_data)),result(make_pair(result_type,result_data))
     {
-        /*void * tmp;
-        if(op==ic_op::ADD || op==ic_op::MUL || op==ic_op::AND || op==ic_op::OR || op==ic_op::XOR || op==ic_op::EQ || op==ic_op::UEQ)
-        {
-            if(arg1_data>arg2_data)
-            {
-                arg1.second=tmp;
-                tmp=arg2.second;
-                arg2.second=arg1.second;
-            }
-        }*/
+        
     };
 
     //查看这条中间代码是否可用
@@ -91,118 +82,6 @@ struct quaternion
     {
         return (op==ic_op::NOP);
     }
-
-    //获取这条中间代码所kill的变量定义
-    /*inline set<struct ic_data * > get_kills() const
-    {
-        struct ic_data * res=nullptr;
-        switch(op)
-        {
-            case ic_op::ASSIGN:
-            case ic_op::ADD:
-            case ic_op::SUB:
-            case ic_op::MUL:
-            case ic_op::DIV:
-            case ic_op::MOD:
-            case ic_op::L_SHIFT:
-            case ic_op::R_SHIFT:
-            case ic_op::NOT:
-            case ic_op::AND:
-            case ic_op::OR:
-            case ic_op::XOR:
-            case ic_op::EQ:
-            case ic_op::UEQ:
-            case ic_op::GT:
-            case ic_op::LT:
-            case ic_op::GE:
-            case ic_op::LE:
-            case ic_op::CALL:
-                res=(struct ic_data *)result.second;
-                break;
-            case ic_op::VAR_DEFINE:
-                break;
-            default:
-                break;
-        }
-        return res;
-    };
-
-    //获取这条中间代码所gen的变量定义
-    inline set<struct ic_data * > get_gens() const
-    {
-        set<struct ic_data * > res;
-        struct ic_data * var;
-        switch(op)
-        {
-            case ic_op::ADD:
-            case ic_op::SUB:
-            case ic_op::MUL:
-            case ic_op::DIV:
-            case ic_op::MOD:
-            case ic_op::L_SHIFT:
-            case ic_op::R_SHIFT:
-            case ic_op::AND:
-            case ic_op::OR:
-            case ic_op::XOR:
-            case ic_op::EQ:
-            case ic_op::UEQ:
-            case ic_op::GT:
-            case ic_op::LT:
-            case ic_op::GE:
-            case ic_op::LE:
-                var=(struct ic_data *)arg1.second;
-                if(!var->is_const())
-                {
-                    res.insert(var);
-                }
-                var=(struct ic_data *)arg2.second;
-                if(!var->is_const())
-                {
-                    res.insert(var);
-                }
-                break;
-            case ic_op::NOT:
-            case ic_op::ASSIGN:
-            case ic_op::JMP:
-            case ic_op::IF_JMP:
-            case ic_op::IF_NOT_JMP:
-                var=(struct ic_data *)arg1.second;
-                if(!var->is_const())
-                {
-                    res.insert(var);
-                }
-                break;
-            case ic_op::VAR_DEFINE:
-                var=(struct ic_data *)arg1.second;
-                if(var->get_value().pointer_data!=nullptr)
-                {
-                    var=(struct ic_data *)var->get_value().pointer_data;
-                    if(!var->is_const())
-                    {
-                        res.insert(var);
-                    }
-                }
-                break;
-            case ic_op::CALL:
-                if(arg2.second)
-                {
-                    for(auto i:*((list<struct ic_data * > * )arg2.second))
-                    {
-                        res.insert(i);
-                    }
-                }
-                break;
-            case ic_op::RET:
-                if(result.second)
-                {
-                    res.insert((struct ic_data *)result.second);
-                }
-                break;
-            default:
-                break;
-        }
-        return res;
-    };*/
 
     enum ic_op op;                     //操作符
     pair<enum ic_operand,void *> arg1;                   //操作数1

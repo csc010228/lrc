@@ -41,8 +41,8 @@ map<ic_op,string> ic_op_output_map={
     {ic_op::MUL,"MUL"},                    //乘
     {ic_op::DIV,"DIV"},                    //除
     {ic_op::MOD,"MOD"},                    //取模
-    {ic_op::L_SHIFT,"L_SHIFT"},            //左移位
-    {ic_op::R_SHIFT,"R_SHIFT"},            //右移位
+    //{ic_op::L_SHIFT,"L_SHIFT"},            //左移位
+    //{ic_op::R_SHIFT,"R_SHIFT"},            //右移位
     {ic_op::NOT,"NOT"},                    //非
     {ic_op::AND,"AND"},                    //与
     {ic_op::OR,"OR"},                      //或
@@ -366,8 +366,8 @@ map<ic_op,ic_output> ic_outputs={
     {ic_op::MUL,output_two_operands_ic},                    //乘
     {ic_op::DIV,output_two_operands_ic},                    //除
     {ic_op::MOD,output_two_operands_ic},                    //取模
-    {ic_op::L_SHIFT,output_two_operands_ic},            //左移位
-    {ic_op::R_SHIFT,output_two_operands_ic},            //右移位
+    //{ic_op::L_SHIFT,output_two_operands_ic},            //左移位
+    //{ic_op::R_SHIFT,output_two_operands_ic},            //右移位
     {ic_op::NOT,output_one_operand_ic},                    //非
     {ic_op::AND,output_two_operands_ic},                    //与
     {ic_op::OR,output_two_operands_ic},                      //或

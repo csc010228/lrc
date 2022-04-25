@@ -62,8 +62,8 @@ struct quaternion_with_def_use_info
             case ic_op::MUL:
             case ic_op::DIV:
             case ic_op::MOD:
-            case ic_op::L_SHIFT:
-            case ic_op::R_SHIFT:
+            //case ic_op::L_SHIFT:
+            //case ic_op::R_SHIFT:
             case ic_op::AND:
             case ic_op::OR:
             case ic_op::XOR:
