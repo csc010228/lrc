@@ -30,7 +30,7 @@ func:要优化的arm函数
 */
 void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph * arm_func)
 {
-    Arm_asm_file_line * enter_push=nullptr,* enter_vpush=nullptr,* exit_pop=nullptr,* exit_vpop=nullptr;
+    /*Arm_asm_file_line * enter_push=nullptr,* enter_vpush=nullptr,* exit_pop=nullptr,* exit_vpop=nullptr;
     Arm_cpu_multiple_registers_load_and_store_instruction * push_or_pop;
     Arm_vfp_data_process_instruction * vpush_or_vpop;
     set<Arm_asm_file_line * > exit_pops,exit_pops;
@@ -90,7 +90,7 @@ void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph 
                 }
             }
         }
-    }
+    }*/
 }
 
 /*
