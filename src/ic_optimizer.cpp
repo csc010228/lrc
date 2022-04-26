@@ -27,6 +27,30 @@ void Ic_optimizer::init()
 }
 
 /*
+局部优化
+*/
+void Ic_optimizer::local_optimize()
+{
+
+}
+
+/*
+数据流分析
+*/
+void Ic_optimizer::data_flow_analysis()
+{
+
+}
+
+/*
+全局优化
+*/
+void Ic_optimizer::global_optimize()
+{
+
+}
+
+/*
 代码优化
 
 Parameters
@@ -42,11 +66,12 @@ struct ic_flow_graph * Ic_optimizer::optimize(list<struct quaternion> * intermed
     //建立中间代码流图
     intermediate_codes_flow_graph_=new struct ic_flow_graph(intermediate_codes);
     //进行局部优化
-    
+    local_optimize();
     //进行数据流分析
-
+    data_flow_analysis();
     //进行全局优化
-
+    global_optimize();
+    //返回优化结果
     return intermediate_codes_flow_graph_;
 }
 

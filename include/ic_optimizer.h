@@ -20,9 +20,9 @@ struct quaternion_with_def_use_info
 
     };
 
-    quaternion_with_def_use_info(struct quaternion ic):intermediate_code(ic),explicit_def(nullptr)
+    quaternion_with_def_use_info(struct quaternion ic):intermediate_code(ic)//,explicit_def(nullptr)
     {
-        struct ic_data * arg1=nullptr,* arg2=nullptr,* result=nullptr;
+        /*struct ic_data * arg1=nullptr,* arg2=nullptr,* result=nullptr;
         struct ic_func * func=nullptr;
         list<struct ic_data * > * r_params=nullptr;
         switch(ic.op)
@@ -181,17 +181,17 @@ struct quaternion_with_def_use_info
                 break;
             default:
                 break;
-        }
+        }*/
     };
 
     //中间代码
     struct quaternion intermediate_code;
-    //该中间代码明确定义的数据（一般只有一个）
+    /*//该中间代码明确定义的数据（一般只有一个）
     struct ic_data * explicit_def;
     //该中间代码模糊定义的数据（可以有多个）
     set<struct ic_data * > vague_defs;
     //该中间代码使用的数据（可以有多个）
-    set<struct ic_data * > uses;
+    set<struct ic_data * > uses;*/
 };
 
 //中间代码的基本块
@@ -215,7 +215,7 @@ struct ic_basic_block
         jump_next=next;
     };
 
-    //获取最后生成的一条中间代码
+    /*//获取最后生成的一条中间代码
     struct quaternion_with_def_use_info get_last_ic()
     {
         return ic_sequence.back();
@@ -258,20 +258,20 @@ struct ic_basic_block
             uses_pos.insert(make_pair(ic_data,empty));
         }
         uses_pos.at(ic_data).insert(pos);
-    };
+    };*/
 
     //往当前基本块中加入一条中间代码
     void add_ic(struct quaternion ic)
     {
         struct quaternion_with_def_use_info ic_with_def_use_info(ic);
-        size_t current_pos;
+        //size_t current_pos;
         ic_sequence.push_back(ic_with_def_use_info);
-        current_pos=get_last_ic_pos();
+        //current_pos=get_last_ic_pos();
         //记录该中间代码的明确定义，模糊定义和使用
         /*explicit_defs.insert(ic_with_def_use_info.explicit_def);
         set_union(vague_defs.begin(),vague_defs.end(),ic_with_def_use_info.vague_defs.begin(),ic_with_def_use_info.vague_defs.end(),inserter(vague_defs,vague_defs.begin()));
         set_union(uses.begin(),uses.end(),ic_with_def_use_info.uses.begin(),ic_with_def_use_info.uses.end(),inserter(uses,uses.begin()));*/
-        //同时记录下该中间代码的明确定义，模糊定义和使用及其位置
+        /*//同时记录下该中间代码的明确定义，模糊定义和使用及其位置
         if(ic_with_def_use_info.explicit_def)
         {
             add_to_explicit_defs_pos(ic_with_def_use_info.explicit_def,current_pos);
@@ -283,7 +283,7 @@ struct ic_basic_block
         for(auto i:ic_with_def_use_info.uses)
         {
             add_to_uses_pos(i,current_pos);
-        }
+        }*/
     };
 
     //基本块中的中间代码序列
@@ -296,7 +296,7 @@ struct ic_basic_block
     set<struct ic_data * > vague_defs;
     //该基本块使用的变量
     set<struct ic_data * > uses;*/
-    //变量的明确定义点
+    /*//变量的明确定义点
     map<struct ic_data *,set<size_t> > explicit_defs_pos;
     //变量的模糊定义点
     map<struct ic_data *,set<size_t> > vague_defs_pos;
@@ -309,7 +309,7 @@ struct ic_basic_block
     //从该基本块的入口处出发可以到达该基本块的引用
     map<struct ic_data *,set<pair<struct ic_basic_block *,size_t> > > in_uses;
     //从该基本块的出口处出发可以到达该基本块的引用
-    map<struct ic_data *,set<pair<struct ic_basic_block *,size_t> > > out_uses;
+    map<struct ic_data *,set<pair<struct ic_basic_block *,size_t> > > out_uses;*/
 };
 
 //一个中间代码的函数的流图
@@ -328,7 +328,7 @@ struct ic_func_flow_graph
         }
     };
 
-    //记录一个变量被明确定义的位置
+    /*//记录一个变量被明确定义的位置
     void add_to_explicit_defs_pos(struct ic_data * ic_data,struct ic_basic_block * basic_block,size_t pos)
     {
         set<pair<struct ic_basic_block *,size_t> > empty;
@@ -359,7 +359,7 @@ struct ic_func_flow_graph
             uses_pos.insert(make_pair(ic_data,empty));
         }
         uses_pos.at(ic_data).insert(make_pair(basic_block,pos));
-    };
+    };*/
 
     //往当前的函数流图中加入一条中间代码
     void add_ic(struct quaternion ic)
@@ -438,7 +438,7 @@ struct ic_func_flow_graph
         //将中间代码加入当前基本块中
         current_basic_block->add_ic(ic);
         
-        current_ic_with_def_use_info=current_basic_block->get_last_ic();
+        /*current_ic_with_def_use_info=current_basic_block->get_last_ic();
         current_ic_with_def_use_info_pos=current_basic_block->get_last_ic_pos();
         //获取中间代码明确定义，模糊定义以及使用的全局变量和数组形参，并获取该中间代码明确定义，模糊定义以及使用的变量和它们的位置
         if(current_ic_with_def_use_info.explicit_def)
@@ -464,7 +464,7 @@ struct ic_func_flow_graph
                 globals_and_array_f_params_use.insert(i);
             }
             add_to_uses_pos(i,current_basic_block,current_ic_with_def_use_info_pos);
-        }
+        }*/
         
         //如果该函数的流图构造完毕，那么就对各个基本块之间的跳转情况进行设置
         if(func_end)
@@ -487,7 +487,7 @@ struct ic_func_flow_graph
     struct ic_func * func;
     //函数流图中的所有基本块序列，顺序就是中间代码的书写顺序
     list<struct ic_basic_block * > basic_blocks;
-    //函数中明确定义的所有全局变量和数组形参
+    /*//函数中明确定义的所有全局变量和数组形参
     set<struct ic_data * > globals_and_array_f_params_explicit_def;
     //函数中模糊定义的所有全局变量和数组形参
     set<struct ic_data * > globals_and_array_f_params_vague_def;
@@ -498,7 +498,7 @@ struct ic_func_flow_graph
     //变量的模糊定义点
     map<struct ic_data *,set<pair<struct ic_basic_block *,size_t> > > vague_defs_pos;
     //变量的使用点
-    map<struct ic_data *,set<pair<struct ic_basic_block *,size_t> > > uses_pos;
+    map<struct ic_data *,set<pair<struct ic_basic_block *,size_t> > > uses_pos;*/
 };
 
 //中间代码的流图表示
@@ -547,6 +547,15 @@ class Ic_optimizer
 protected:
     //目前正在处理的中间代码流图
     struct ic_flow_graph * intermediate_codes_flow_graph_;
+
+    //局部优化
+    void local_optimize();
+
+    //数据流分析
+    void data_flow_analysis();
+
+    //全局优化
+    void global_optimize();
 
 public:
     //构造函数

@@ -192,27 +192,6 @@ struct ic_data
         return false;
     };
 
-    //获取和该ic_data有关的ic_data
-    //不包括常量的ic_data和该ic_data本身
-    /*set<struct ic_data * > get_related_ic_datas()
-    {
-        set<struct ic_data * > res;
-
-        if(is_array_var())
-        {
-            //对于数组，把它定义的时候的所有维度全部算进去
-            for(auto i:*dimensions_len)
-            {
-                if(!i->is_const())
-                {
-                    res.insert(i);
-                }
-            }
-        }
-
-        return res;
-    };*/
-
     //获取变量的值
     inline OAA get_value() const
     {
@@ -334,7 +313,7 @@ struct ic_data
     };
     //标识符类型（或者是数组元素类型）
     enum language_data_type data_type;
-    //这个成员只有当变量是数组的时候才有效，表示数组的各个维度的长度(如果某一个维度的长度为0，说明这个维度是不限长的),如果变量不是数组，那么这个成员就是nulptr
+    //这个成员只有当变量是数组的时候才有效，表示数组的各个维度的长度(如果某一个维度的长度为0，说明这个维度是不限长的),如果变量不是数组，那么这个成员就是nullptr
     //把地址（也就是指针）看成是一维数组
     list<struct ic_data * > * dimensions_len;
     //下面讨论这个const_or_init_value成员的具体含义：
@@ -630,18 +609,6 @@ public:
     //销毁单例类
     static void delete_instance();
 
-    //获取符号表中的某一个变量
-    struct ic_data * var_entry(string var_name) const;
-
-    //获取符号表中的某一个函数
-    struct ic_func * func_entry(string func_name) const;
-
-    //获取符号表中的某一个常量
-    struct ic_data * const_entry(enum language_data_type data_type,OAA data_value);
-
-    //获取符号表中的某一个数组取元素
-    struct ic_data * array_member_entry(struct ic_data * array_var,size_t offset_dimension_lens,struct ic_data * offset);
-
     //往符号表中添加一个用户定义的变量
     struct ic_data * new_var(string name,enum language_data_type data_type,list<struct ic_data * > * dimensions_len,OAA const_or_init_value,bool is_const);
 
@@ -665,6 +632,19 @@ public:
 
     //获取当前的作用域
     struct ic_scope * get_current_scope();
+
+    //获取符号表中的某一个变量
+    struct ic_data * var_entry(string var_name) const;
+
+    //获取符号表中的某一个函数
+    struct ic_func * func_entry(string func_name) const;
+
+    //获取符号表中的某一个常量
+    struct ic_data * const_entry(enum language_data_type data_type,OAA data_value);
+
+    //获取符号表中的某一个数组取元素
+    struct ic_data * array_member_entry(struct ic_data * array_var,size_t offset_dimension_lens,struct ic_data * offset);
+    
 };
 
 
