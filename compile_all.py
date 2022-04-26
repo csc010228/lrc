@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-  
 import os
 
+#测试文件夹
+TEST_DIR='../compiler2021-master/test/'
+
 #lrc编译器可执行文件名
 LRC_EXE_FILE='./lrc'
 
@@ -39,4 +42,4 @@ def complier_dir(dir_name):
 
 
 if __name__ == '__main__':
-    print(str(complier_dir('../compiler2021-master/test/'))+" error")
+    print(str(complier_dir(TEST_DIR))+" error")
