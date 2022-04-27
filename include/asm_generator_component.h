@@ -38,6 +38,9 @@ enum class event_type
     GET_R1_REG,
     GET_S0_REG,
     IS_CPU_REG,
+    IS_VFP_REG,
+    IS_ARGUMENT_REG,
+    IS_TEMP_REG,
     CHANGE_FLAGS_FOR_VAR,
     READY_TO_PUSH_F_PARAM_CPU_REGS,
     READY_TO_PUSH_F_PARAM_VFP_REGS,
@@ -86,6 +89,7 @@ enum class event_type
     POP_STACK,
     ALLOCATE_IDLE_CPU_REG,
     ATTACH_CONST_INT_TO_REG,
+    OPTIMIZE
 };
 
 //汇编代码生成器组件之间互相传递的事件

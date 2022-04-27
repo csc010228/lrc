@@ -1,173 +1,252 @@
-const int width = 512
-const int height = 1024
-int image_in[524288]
-int image_out[524288]
-int cutout ( int cutout::val )  : 
-	LT		cutout::val , 0 --> (int)@0
+const int maxn = 18
+const int mod = 1000000007
+int dp[maxn][maxn][maxn][maxn][maxn][7]
+int list[200]
+int equal ( int equal::a , int equal::b )  : 
+	EQ		equal::a , equal::b --> (int)@0
 	IF_NOT_JMP		@0 --> .0
-	ASSIGN		0 --> cutout::val
-	JMP		.2
+	RET		1
 .0 : 
-	GT		cutout::val , 255 --> (int)@1
-	IF_NOT_JMP		@1 --> .1
-	ASSIGN		255 --> cutout::val
-.1 : 
-.2 : 
-	RET		cutout::val
+	RET		0
 
-int main (  )  : 
-	int main::i
-	int main::j
-	CALL		getarray ( image_in )  --> (int)@2
-	int main::num
-	ASSIGN		@2 --> main::num
-	CALL		_sysy_starttime ( 23 ) 
-	ASSIGN		1 --> main::j
+int dfs ( int dfs::a , int dfs::b , int dfs::c , int dfs::d , int dfs::e , int dfs::last )  : 
+	CALL		putint ( 8 ) 
+	CALL		putch ( 10 ) 
+	MUL		dfs::last , 1 --> (int)@1
+	ADD		@1 , 0 --> (int)@2
+	MUL		dfs::e , 7 --> (int)@3
+	ADD		@3 , @2 --> (int)@4
+	MUL		dfs::d , 126 --> (int)@5
+	ADD		@5 , @4 --> (int)@6
+	MUL		dfs::c , 2268 --> (int)@7
+	ADD		@7 , @6 --> (int)@8
+	MUL		dfs::b , 40824 --> (int)@9
+	ADD		@9 , @8 --> (int)@10
+	MUL		dfs::a , 734832 --> (int)@11
+	ADD		@11 , @10 --> (int)@12
+	UEQ		dp[@12] , -1 --> (int)@13
+	IF_NOT_JMP		@13 --> .1
+	CALL		putint ( 12 ) 
+	CALL		putch ( 10 ) 
+	MUL		dfs::last , 1 --> (int)@14
+	ADD		@14 , 0 --> (int)@15
+	MUL		dfs::e , 7 --> (int)@16
+	ADD		@16 , @15 --> (int)@17
+	MUL		dfs::d , 126 --> (int)@18
+	ADD		@18 , @17 --> (int)@19
+	MUL		dfs::c , 2268 --> (int)@20
+	ADD		@20 , @19 --> (int)@21
+	MUL		dfs::b , 40824 --> (int)@22
+	ADD		@22 , @21 --> (int)@23
+	MUL		dfs::a , 734832 --> (int)@24
+	ADD		@24 , @23 --> (int)@25
+	RET		dp[@25]
+.1 : 
+	CALL		putint ( 9 ) 
+	CALL		putch ( 10 ) 
+	ADD		dfs::a , dfs::b --> (int)@26
+	ADD		@26 , dfs::c --> (int)@27
+	ADD		@27 , dfs::d --> (int)@28
+	ADD		@28 , dfs::e --> (int)@29
+	EQ		@29 , 0 --> (int)@30
+	IF_NOT_JMP		@30 --> .2
+	CALL		putint ( 13 ) 
+	CALL		putch ( 10 ) 
+	RET		1
+.2 : 
+	CALL		putint ( 102343 ) 
+	CALL		putch ( 10 ) 
+	int dfs::ans
+	ASSIGN		0 --> dfs::ans
+	IF_NOT_JMP		dfs::a --> .3
+	CALL		equal ( dfs::last , 2 )  --> (int)@31
+	SUB		dfs::a , @31 --> (int)@32
+	SUB		dfs::a , 1 --> (int)@33
+	CALL		dfs ( @33 , dfs::b , dfs::c , dfs::d , dfs::e , 1 )  --> (int)@34
+	MUL		@32 , @34 --> (int)@35
+	ADD		dfs::ans , @35 --> (int)@36
+	MOD		@36 , mod --> (int)@37
+	ASSIGN		@37 --> dfs::ans
 .3 : 
-	LT		main::j , 511 --> (int)@3
-	IF_NOT_JMP		@3 --> .6
-	ASSIGN		1 --> main::i
+	IF_NOT_JMP		dfs::b --> .4
+	CALL		equal ( dfs::last , 3 )  --> (int)@38
+	SUB		dfs::b , @38 --> (int)@39
+	ADD		dfs::a , 1 --> (int)@40
+	SUB		dfs::b , 1 --> (int)@41
+	CALL		dfs ( @40 , @41 , dfs::c , dfs::d , dfs::e , 2 )  --> (int)@42
+	MUL		@39 , @42 --> (int)@43
+	ADD		dfs::ans , @43 --> (int)@44
+	MOD		@44 , mod --> (int)@45
+	ASSIGN		@45 --> dfs::ans
 .4 : 
-	LT		main::i , 1023 --> (int)@4
-	IF_NOT_JMP		@4 --> .5
-	SUB		main::i , 1 --> (int)@5
-	MUL		@5 , width --> (int)@6
-	ADD		@6 , main::j --> (int)@7
-	SUB		@7 , 1 --> (int)@8
-	int main::while_0::while_0::im1jm1
-	ASSIGN		@8 --> main::while_0::while_0::im1jm1
-	SUB		main::i , 1 --> (int)@9
-	MUL		@9 , width --> (int)@10
-	ADD		@10 , main::j --> (int)@11
-	int main::while_0::while_0::im1j
-	ASSIGN		@11 --> main::while_0::while_0::im1j
-	SUB		main::i , 1 --> (int)@12
-	MUL		@12 , width --> (int)@13
-	ADD		@13 , main::j --> (int)@14
-	ADD		@14 , 1 --> (int)@15
-	int main::while_0::while_0::im1jp1
-	ASSIGN		@15 --> main::while_0::while_0::im1jp1
-	MUL		main::i , width --> (int)@16
-	ADD		@16 , main::j --> (int)@17
-	SUB		@17 , 1 --> (int)@18
-	int main::while_0::while_0::ijm1
-	ASSIGN		@18 --> main::while_0::while_0::ijm1
-	MUL		main::i , width --> (int)@19
-	ADD		@19 , main::j --> (int)@20
-	int main::while_0::while_0::ij
-	ASSIGN		@20 --> main::while_0::while_0::ij
-	MUL		main::i , width --> (int)@21
-	ADD		@21 , main::j --> (int)@22
-	ADD		@22 , 1 --> (int)@23
-	int main::while_0::while_0::ijp1
-	ASSIGN		@23 --> main::while_0::while_0::ijp1
-	ADD		main::i , 1 --> (int)@24
-	MUL		@24 , width --> (int)@25
-	ADD		@25 , main::j --> (int)@26
-	SUB		@26 , 1 --> (int)@27
-	int main::while_0::while_0::ip1jm1
-	ASSIGN		@27 --> main::while_0::while_0::ip1jm1
-	ADD		main::i , 1 --> (int)@28
-	MUL		@28 , width --> (int)@29
-	ADD		@29 , main::j --> (int)@30
-	int main::while_0::while_0::ip1j
-	ASSIGN		@30 --> main::while_0::while_0::ip1j
-	ADD		main::i , 1 --> (int)@31
-	MUL		@31 , width --> (int)@32
-	ADD		@32 , main::j --> (int)@33
-	ADD		@33 , 1 --> (int)@34
-	int main::while_0::while_0::ip1jp1
-	ASSIGN		@34 --> main::while_0::while_0::ip1jp1
-	MUL		main::while_0::while_0::ij , 1 --> (int)@35
-	ADD		@35 , 0 --> (int)@36
-	MUL		8 , image_in[@36] --> (int)@37
-	MUL		main::while_0::while_0::im1jm1 , 1 --> (int)@38
-	ADD		@38 , 0 --> (int)@39
-	SUB		@37 , image_in[@39] --> (int)@40
-	MUL		main::while_0::while_0::im1j , 1 --> (int)@41
-	ADD		@41 , 0 --> (int)@42
-	SUB		@40 , image_in[@42] --> (int)@43
-	MUL		main::while_0::while_0::im1jp1 , 1 --> (int)@44
-	ADD		@44 , 0 --> (int)@45
-	SUB		@43 , image_in[@45] --> (int)@46
-	MUL		main::while_0::while_0::ijm1 , 1 --> (int)@47
-	ADD		@47 , 0 --> (int)@48
-	SUB		@46 , image_in[@48] --> (int)@49
-	MUL		main::while_0::while_0::ijp1 , 1 --> (int)@50
-	ADD		@50 , 0 --> (int)@51
-	SUB		@49 , image_in[@51] --> (int)@52
-	MUL		main::while_0::while_0::ip1jm1 , 1 --> (int)@53
-	ADD		@53 , 0 --> (int)@54
-	SUB		@52 , image_in[@54] --> (int)@55
-	MUL		main::while_0::while_0::ip1j , 1 --> (int)@56
-	ADD		@56 , 0 --> (int)@57
-	SUB		@55 , image_in[@57] --> (int)@58
-	MUL		main::while_0::while_0::ip1jp1 , 1 --> (int)@59
-	ADD		@59 , 0 --> (int)@60
-	SUB		@58 , image_in[@60] --> (int)@61
-	int main::while_0::while_0::val
-	ASSIGN		@61 --> main::while_0::while_0::val
-	MUL		main::i , width --> (int)@62
-	ADD		@62 , main::j --> (int)@63
-	MUL		@63 , 1 --> (int)@64
-	ADD		@64 , 0 --> (int)@65
-	CALL		cutout ( main::while_0::while_0::val )  --> (int)@66
-	ASSIGN		@66 --> image_out[@65]
-	ADD		main::i , 1 --> (int)@67
-	ASSIGN		@67 --> main::i
-	JMP		.4
+	IF_NOT_JMP		dfs::c --> .5
+	CALL		equal ( dfs::last , 4 )  --> (int)@46
+	SUB		dfs::c , @46 --> (int)@47
+	ADD		dfs::b , 1 --> (int)@48
+	SUB		dfs::c , 1 --> (int)@49
+	CALL		dfs ( dfs::a , @48 , @49 , dfs::d , dfs::e , 3 )  --> (int)@50
+	MUL		@47 , @50 --> (int)@51
+	ADD		dfs::ans , @51 --> (int)@52
+	MOD		@52 , mod --> (int)@53
+	ASSIGN		@53 --> dfs::ans
 .5 : 
-	ADD		main::j , 1 --> (int)@68
-	ASSIGN		@68 --> main::j
-	JMP		.3
+	IF_NOT_JMP		dfs::d --> .6
+	CALL		equal ( dfs::last , 5 )  --> (int)@54
+	SUB		dfs::d , @54 --> (int)@55
+	ADD		dfs::c , 1 --> (int)@56
+	SUB		dfs::d , 1 --> (int)@57
+	CALL		dfs ( dfs::a , dfs::b , @56 , @57 , dfs::e , 4 )  --> (int)@58
+	MUL		@55 , @58 --> (int)@59
+	ADD		dfs::ans , @59 --> (int)@60
+	MOD		@60 , mod --> (int)@61
+	ASSIGN		@61 --> dfs::ans
 .6 : 
-	ASSIGN		0 --> main::i
+	IF_NOT_JMP		dfs::e --> .7
+	ADD		dfs::d , 1 --> (int)@62
+	SUB		dfs::e , 1 --> (int)@63
+	CALL		dfs ( dfs::a , dfs::b , dfs::c , @62 , @63 , 5 )  --> (int)@64
+	MUL		dfs::e , @64 --> (int)@65
+	ADD		dfs::ans , @65 --> (int)@66
+	MOD		@66 , mod --> (int)@67
+	ASSIGN		@67 --> dfs::ans
 .7 : 
-	LT		main::i , height --> (int)@69
-	IF_NOT_JMP		@69 --> .8
-	MUL		main::i , width --> (int)@70
-	MUL		@70 , 1 --> (int)@71
-	ADD		@71 , 0 --> (int)@72
-	MUL		main::i , width --> (int)@73
-	MUL		@73 , 1 --> (int)@74
-	ADD		@74 , 0 --> (int)@75
-	ASSIGN		image_in[@75] --> image_out[@72]
-	MUL		main::i , width --> (int)@76
-	ADD		@76 , width --> (int)@77
-	SUB		@77 , 1 --> (int)@78
-	MUL		@78 , 1 --> (int)@79
-	ADD		@79 , 0 --> (int)@80
-	MUL		main::i , width --> (int)@81
-	ADD		@81 , width --> (int)@82
-	SUB		@82 , 1 --> (int)@83
-	MUL		@83 , 1 --> (int)@84
-	ADD		@84 , 0 --> (int)@85
-	ASSIGN		image_in[@85] --> image_out[@80]
-	ADD		main::i , 1 --> (int)@86
-	ASSIGN		@86 --> main::i
-	JMP		.7
+	MUL		dfs::last , 1 --> (int)@68
+	ADD		@68 , 0 --> (int)@69
+	MUL		dfs::e , 7 --> (int)@70
+	ADD		@70 , @69 --> (int)@71
+	MUL		dfs::d , 126 --> (int)@72
+	ADD		@72 , @71 --> (int)@73
+	MUL		dfs::c , 2268 --> (int)@74
+	ADD		@74 , @73 --> (int)@75
+	MUL		dfs::b , 40824 --> (int)@76
+	ADD		@76 , @75 --> (int)@77
+	MUL		dfs::a , 734832 --> (int)@78
+	ADD		@78 , @77 --> (int)@79
+	MOD		dfs::ans , mod --> (int)@80
+	ASSIGN		@80 --> dp[@79]
+	CALL		putint ( 110 ) 
+	CALL		putch ( 10 ) 
+	MUL		dfs::last , 1 --> (int)@81
+	ADD		@81 , 0 --> (int)@82
+	MUL		dfs::e , 7 --> (int)@83
+	ADD		@83 , @82 --> (int)@84
+	MUL		dfs::d , 126 --> (int)@85
+	ADD		@85 , @84 --> (int)@86
+	MUL		dfs::c , 2268 --> (int)@87
+	ADD		@87 , @86 --> (int)@88
+	MUL		dfs::b , 40824 --> (int)@89
+	ADD		@89 , @88 --> (int)@90
+	MUL		dfs::a , 734832 --> (int)@91
+	ADD		@91 , @90 --> (int)@92
+	RET		dp[@92]
+
+int cns[20]
+int main (  )  : 
+	CALL		getint (  )  --> (int)@93
+	int main::n
+	ASSIGN		@93 --> main::n
+	int main::i
+	ASSIGN		0 --> main::i
+	CALL		putint ( 3 ) 
+	CALL		putch ( 10 ) 
 .8 : 
-	ASSIGN		0 --> main::j
+	LT		main::i , maxn --> (int)@94
+	IF_NOT_JMP		@94 --> .19
+	int main::while_0::j
+	ASSIGN		0 --> main::while_0::j
 .9 : 
-	LT		main::j , width --> (int)@87
-	IF_NOT_JMP		@87 --> .10
-	MUL		main::j , 1 --> (int)@88
-	ADD		@88 , 0 --> (int)@89
-	MUL		main::j , 1 --> (int)@90
-	ADD		@90 , 0 --> (int)@91
-	ASSIGN		image_in[@91] --> image_out[@89]
-	ADD		523776 , main::j --> (int)@92
-	MUL		@92 , 1 --> (int)@93
-	ADD		@93 , 0 --> (int)@94
-	ADD		523776 , main::j --> (int)@95
-	MUL		@95 , 1 --> (int)@96
-	ADD		@96 , 0 --> (int)@97
-	ASSIGN		image_in[@97] --> image_out[@94]
-	ADD		main::j , 1 --> (int)@98
-	ASSIGN		@98 --> main::j
-	JMP		.9
+	LT		main::while_0::j , maxn --> (int)@95
+	IF_NOT_JMP		@95 --> .18
+	int main::while_0::while_0::k
+	ASSIGN		0 --> main::while_0::while_0::k
 .10 : 
-	CALL		_sysy_stoptime ( 59 ) 
-	CALL		putarray ( 524288 , image_out ) 
-	RET		main::num
+	LT		main::while_0::while_0::k , maxn --> (int)@96
+	IF_NOT_JMP		@96 --> .17
+	int main::while_0::while_0::while_0::l
+	ASSIGN		0 --> main::while_0::while_0::while_0::l
+.11 : 
+	LT		main::while_0::while_0::while_0::l , maxn --> (int)@97
+	IF_NOT_JMP		@97 --> .16
+	int main::while_0::while_0::while_0::while_0::m
+	ASSIGN		0 --> main::while_0::while_0::while_0::while_0::m
+.12 : 
+	LT		main::while_0::while_0::while_0::while_0::m , maxn --> (int)@98
+	IF_NOT_JMP		@98 --> .15
+	int main::while_0::while_0::while_0::while_0::while_0::h
+	ASSIGN		0 --> main::while_0::while_0::while_0::while_0::while_0::h
+.13 : 
+	LT		main::while_0::while_0::while_0::while_0::while_0::h , 7 --> (int)@99
+	IF_NOT_JMP		@99 --> .14
+	MUL		main::while_0::while_0::while_0::while_0::while_0::h , 1 --> (int)@100
+	ADD		@100 , 0 --> (int)@101
+	MUL		main::while_0::while_0::while_0::while_0::m , 7 --> (int)@102
+	ADD		@102 , @101 --> (int)@103
+	MUL		main::while_0::while_0::while_0::l , 126 --> (int)@104
+	ADD		@104 , @103 --> (int)@105
+	MUL		main::while_0::while_0::k , 2268 --> (int)@106
+	ADD		@106 , @105 --> (int)@107
+	MUL		main::while_0::j , 40824 --> (int)@108
+	ADD		@108 , @107 --> (int)@109
+	MUL		main::i , 734832 --> (int)@110
+	ADD		@110 , @109 --> (int)@111
+	ASSIGN		-1 --> dp[@111]
+	ADD		main::while_0::while_0::while_0::while_0::while_0::h , 1 --> (int)@112
+	ASSIGN		@112 --> main::while_0::while_0::while_0::while_0::while_0::h
+	JMP		.13
+.14 : 
+	ADD		main::while_0::while_0::while_0::while_0::m , 1 --> (int)@113
+	ASSIGN		@113 --> main::while_0::while_0::while_0::while_0::m
+	JMP		.12
+.15 : 
+	ADD		main::while_0::while_0::while_0::l , 1 --> (int)@114
+	ASSIGN		@114 --> main::while_0::while_0::while_0::l
+	JMP		.11
+.16 : 
+	ADD		main::while_0::while_0::k , 1 --> (int)@115
+	ASSIGN		@115 --> main::while_0::while_0::k
+	JMP		.10
+.17 : 
+	ADD		main::while_0::j , 1 --> (int)@116
+	ASSIGN		@116 --> main::while_0::j
+	JMP		.9
+.18 : 
+	ADD		main::i , 1 --> (int)@117
+	ASSIGN		@117 --> main::i
+	JMP		.8
+.19 : 
+	CALL		putint ( 4 ) 
+	CALL		putch ( 10 ) 
+	ASSIGN		0 --> main::i
+.20 : 
+	LT		main::i , main::n --> (int)@118
+	IF_NOT_JMP		@118 --> .21
+	MUL		main::i , 1 --> (int)@119
+	ADD		@119 , 0 --> (int)@120
+	CALL		getint (  )  --> (int)@121
+	ASSIGN		@121 --> list[@120]
+	MUL		main::i , 1 --> (int)@122
+	ADD		@122 , 0 --> (int)@123
+	MUL		list[@123] , 1 --> (int)@124
+	ADD		@124 , 0 --> (int)@125
+	MUL		main::i , 1 --> (int)@126
+	ADD		@126 , 0 --> (int)@127
+	MUL		list[@127] , 1 --> (int)@128
+	ADD		@128 , 0 --> (int)@129
+	ADD		cns[@129] , 1 --> (int)@130
+	ASSIGN		@130 --> cns[@125]
+	ADD		main::i , 1 --> (int)@131
+	ASSIGN		@131 --> main::i
+	JMP		.20
+.21 : 
+	CALL		putint ( 5 ) 
+	CALL		putch ( 10 ) 
+	CALL		dfs ( cns[1] , cns[2] , cns[3] , cns[4] , cns[5] , 0 )  --> (int)@132
+	int main::ans
+	ASSIGN		@132 --> main::ans
+	CALL		putint ( 6 ) 
+	CALL		putch ( 10 ) 
+	CALL		putint ( main::ans ) 
+	CALL		putint ( 7 ) 
+	CALL		putch ( 10 ) 
+	RET		main::ans
 

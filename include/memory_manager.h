@@ -54,65 +54,44 @@ private:
 
         void push_to_f_params_passed_by_stack_as_callee(struct ic_data * var)
         {
-            //if(context_saved_cpu_regs_as_callee.empty() && f_params_passed_by_cpu_regs_as_callee.empty() && local_vars.empty() && temp_vars.empty() && f_params_passed_by_stack_as_caller.empty())
-            //{
-                f_params_passed_by_stack_as_callee.push_back(make_pair(stack_pointer,var));
-                stack_pointer+=var->get_byte_size();
-            //}
+            f_params_passed_by_stack_as_callee.push_back(make_pair(stack_pointer,var));
+            stack_pointer+=var->get_byte_size();
         };
 
         void push_to_context_saved_cpu_regs(reg_index reg,size_t reg_byte_size)
         {
-            //if(f_params_passed_by_cpu_regs_as_callee.empty() && local_vars.empty() && temp_vars.empty() && f_params_passed_by_stack_as_caller.empty())
-            //{
-                context_saved_cpu_regs_as_callee.push_back(make_pair(stack_pointer,reg));
-                stack_pointer+=reg_byte_size;
-            //}
+            context_saved_cpu_regs_as_callee.push_back(make_pair(stack_pointer,reg));
+            stack_pointer+=reg_byte_size;
         };
 
         void push_to_context_saved_vfp_regs(reg_index reg,size_t reg_byte_size)
         {
-            //if(f_params_passed_by_cpu_regs_as_callee.empty() && local_vars.empty() && temp_vars.empty() && f_params_passed_by_stack_as_caller.empty())
-            //{
-                context_saved_vfp_regs_as_callee.push_back(make_pair(stack_pointer,reg));
-                stack_pointer+=reg_byte_size;
-            //}
+            context_saved_vfp_regs_as_callee.push_back(make_pair(stack_pointer,reg));
+            stack_pointer+=reg_byte_size;
         };
 
         void push_to_f_params_passed_by_cpu_regs_as_callee(struct ic_data * var)
         {
-            //if(local_vars.empty() && temp_vars.empty() && f_params_passed_by_stack_as_caller.empty())
-            //{
-                f_params_passed_by_cpu_regs_as_callee.push_back(make_pair(stack_pointer,var));
-                stack_pointer+=var->get_byte_size();
-            //}
+            f_params_passed_by_cpu_regs_as_callee.push_back(make_pair(stack_pointer,var));
+            stack_pointer+=var->get_byte_size();
         };
 
         void push_to_f_params_passed_by_vfp_regs_as_callee(struct ic_data * var)
         {
-            //if(local_vars.empty() && temp_vars.empty() && f_params_passed_by_stack_as_caller.empty())
-            //{
-                f_params_passed_by_vfp_regs_as_callee.push_back(make_pair(stack_pointer,var));
-                stack_pointer+=var->get_byte_size();
-            //}
+            f_params_passed_by_vfp_regs_as_callee.push_back(make_pair(stack_pointer,var));
+            stack_pointer+=var->get_byte_size();
         };
 
         void push_to_local_vars(struct ic_data * var)
         {
-            //if(temp_vars.empty() && f_params_passed_by_stack_as_caller.empty())
-            //{
-                local_vars.push_back(make_pair(stack_pointer,var));
-                stack_pointer+=var->get_byte_size();
-            //}
+            local_vars.push_back(make_pair(stack_pointer,var));
+            stack_pointer+=var->get_byte_size();
         };
 
         void push_to_temp_vars(struct ic_data * var)
         {
-            //if(f_params_passed_by_stack_as_caller.empty())
-            //{
-                temp_vars.push_back(make_pair(stack_pointer,var));
-                stack_pointer+=var->get_byte_size();
-            //}
+            temp_vars.push_back(make_pair(stack_pointer,var));
+            stack_pointer+=var->get_byte_size();
         };
 
         void push_to_f_params_passed_by_stack_as_caller(struct ic_data * var)

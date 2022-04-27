@@ -7,6 +7,8 @@
  *
 */
 #include "arm_asm_generator.h"
+#include"arm_instruction_generator.h"
+#include"arm_asm_optimizer.h"
 #include<iostream>
 
 //ARM内存信息
@@ -28,6 +30,14 @@ bool Arm_asm_generator::init_instruction_generator(map<reg_index,string> regs_in
     instruction_generator_=new Arm_instruction_generator(regs_info);
     instruction_generator_->set_mediator(this);
     return instruction_generator_->is_init_successful();
+}
+
+//初始化汇编指令优化器
+bool Arm_asm_generator::init_asm_optimizer()
+{
+    asm_optimizer_=new Arm_asm_optimizer;
+    asm_optimizer_->set_mediator(this);
+    return true;
 }
 
 /*
@@ -120,6 +130,9 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
                 register_manager_->handler(event);
                 res=memory_manager_->handler(event);
                 break;
+            case event_type::OPTIMIZE:
+                asm_optimizer_->handler(event);
+                break;
             default:
                 break;
         }
@@ -184,6 +197,23 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
                 break;
             case event_type::END_FUNC:
                 register_manager_->handler(event);
+                break;
+            default:
+                break;
+        }
+    }
+    else if(sender==asm_optimizer_)
+    {
+        //cout<<"asm_optimizer_ send "<<(int)event.type<<endl;
+        switch(event.type)
+        {
+            case event_type::IS_CPU_REG:
+            case event_type::IS_VFP_REG:
+            case event_type::IS_ARGUMENT_REG:
+            case event_type::IS_TEMP_REG:
+            case event_type::GET_PC_REG:
+            case event_type::GET_LR_REG:
+                res=register_manager_->handler(event);
                 break;
             default:
                 break;

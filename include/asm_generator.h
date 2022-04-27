@@ -13,6 +13,7 @@
 #include "instruction_generator.h"
 #include "register_manager.h"
 #include "memory_manager.h"
+#include "asm_optimizer.h"
 
 //汇编代码生成器
 class Asm_generator
@@ -21,6 +22,9 @@ class Asm_generator
 protected:
     //中间代码管理器
     Intermediate_code_manager * intermediate_code_manager_;
+
+    //汇编代码优化器
+    Asm_optimizer * asm_optimizer_;
 
     //汇编指令生成器
     Instruction_generator * instruction_generator_;
@@ -39,6 +43,9 @@ protected:
 
     //初始化中间代码管理器
     virtual bool init_intermediate_code_manager();
+
+    //初始化汇编指令优化器
+    virtual bool init_asm_optimizer()=0;
 
     //初始化汇编指令生成器
     virtual bool init_instruction_generator(map<reg_index,string> regs_info)=0;

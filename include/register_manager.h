@@ -482,6 +482,9 @@ private:
     struct event handle_GET_LR_REG();
     struct event handle_GET_PC_REG();
     struct event handle_IS_CPU_REG(reg_index reg);
+    struct event handle_IS_VFP_REG(reg_index reg);
+    struct event handle_IS_ARGUMENT_REG(reg_index reg);
+    struct event handle_IS_TEMP_REG(reg_index reg);
     struct event handle_GET_REG_BYTE_SIZE(reg_index reg);
     struct event handle_READY_TO_PUSH_F_PARAM_CPU_REGS(list<struct ic_data * > * f_params);
     struct event handle_READY_TO_PUSH_F_PARAM_VFP_REGS(list<struct ic_data * > * f_params);

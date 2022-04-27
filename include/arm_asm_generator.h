@@ -10,7 +10,6 @@
 #define __ARM_ASM_GENERATOR_H
 
 #include"asm_generator.h"
-#include"arm_instruction_generator.h"
 
 using namespace std;
 
@@ -21,6 +20,9 @@ class Arm_asm_generator:public Asm_generator
 private:
     //初始化arm汇编代码生成器
     bool init_instruction_generator(map<reg_index,string> regs_info);
+
+    //初始化汇编指令优化器
+    bool init_asm_optimizer();
 
 public:
     //构造函数

@@ -73,7 +73,7 @@ bool Asm_generator::init(set<struct reg> regs,struct flag_reg flag_reg,string me
     {
         regs_info.insert(make_pair(i.index,i.name));
     }
-    return init_register_manager(regs,flag_reg) && init_memory_manager(memory_info) && init_instruction_generator(regs_info) && init_intermediate_code_manager();
+    return init_register_manager(regs,flag_reg) && init_memory_manager(memory_info) && init_instruction_generator(regs_info) && init_intermediate_code_manager() && init_asm_optimizer();
 }
 
 /*

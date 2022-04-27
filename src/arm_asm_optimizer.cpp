@@ -7,15 +7,32 @@
  *
 */
 #include "arm_asm_optimizer.h"
+#include <algorithm>
 
 /*
-局部优化
+构造函数
 
 Parameters
 ----------
-arm_flow_graph:要优化的arm汇编代码流图
+arm_instruction_generatorz:该优化器所属的汇编代码生成器
 */
-void Arm_asm_optimizer::local_optimize(struct arm_flow_graph & arm_flow_graph)
+Arm_asm_optimizer::Arm_asm_optimizer()
+{
+
+}
+
+/*
+析构函数
+*/
+Arm_asm_optimizer::~Arm_asm_optimizer()
+{
+
+}
+
+/*
+局部优化
+*/
+void Arm_asm_optimizer::local_optimize()
 {
 
 }
@@ -30,82 +47,198 @@ func:要优化的arm函数
 */
 void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph * arm_func)
 {
-    /*Arm_asm_file_line * enter_push=nullptr,* enter_vpush=nullptr,* exit_pop=nullptr,* exit_vpop=nullptr;
-    Arm_cpu_multiple_registers_load_and_store_instruction * push_or_pop;
-    Arm_vfp_data_process_instruction * vpush_or_vpop;
-    set<Arm_asm_file_line * > exit_pops,exit_pops;
+    Arm_cpu_multiple_registers_load_and_store_instruction * enter_push=nullptr,* exit_pop=nullptr;
+    Arm_vfp_multiple_registers_load_and_store_instruction * enter_vpush=nullptr,* exit_vpop=nullptr;
+    set<Arm_cpu_multiple_registers_load_and_store_instruction * > exit_pops;
+    set<Arm_vfp_multiple_registers_load_and_store_instruction * > exit_vpops;
+    Arm_cpu_data_process_instruction * cpu_data_process_instruction;
+    Arm_cpu_single_register_load_and_store_instruction * cpu_single_register_load_and_store_instruction;
+    Arm_vfp_single_register_load_and_store_instruction * vfp_single_register_load_and_store_instruction;
     Arm_instruction * instruction;
     Arm_pseudo_instruction * pseudo_instruction;
-    set<reg_index> arm_func_regs_used;
-    bool tag=false;
-    for(auto i:arm_func->basic_blocks)
+    set<reg_index> used_regs;
+    list<reg_index> used_cpu_temp_regs,used_vfp_temp_regs;
+    list<reg_index> enter_push_regs,exit_pop_regs;
+    reg_index pc=(reg_index)notify(event(event_type::GET_PC_REG,nullptr)).int_data,lr=(reg_index)notify(event(event_type::GET_LR_REG,nullptr)).int_data;
+    //统计整个函数中用到的所有的寄存器
+    for(auto basic_block:arm_func->basic_blocks)
     {
-        for(auto j:i->arm_sequence)
+        for(auto arm_asm:basic_block->arm_sequence)
         {
-            if(j->type_==arm_asm_file_line_type::INSTRUCTION)
+            if(arm_asm->is_instruction())
             {
-                instruction=(Arm_instruction *)j;
-                for(auto k:instruction->destination_registers_.registers_)
-                {
-                    arm_func_regs_used.insert(k);
-                }
-                for(auto k:instruction->source_registers_.registers_)
-                {
-                    arm_func_regs_used.insert(k);
-                }
-                switch(instruction->op_)
+                instruction=dynamic_cast<Arm_instruction *>(arm_asm);
+                switch(instruction->get_op())
                 {
                     case arm_op::PUSH:
                         if(enter_push==nullptr)
                         {
-                            push_or_pop=(Arm_cpu_multiple_registers_load_and_store_instruction *)j;
-                            tag=true;
+                            enter_push=dynamic_cast<Arm_cpu_multiple_registers_load_and_store_instruction *>(instruction);
+                            goto next;
                         }
                         break;
                     case arm_op::POP:
-                        exit_pop=j;
-                        push_or_pop=(Arm_cpu_multiple_registers_load_and_store_instruction *)j;
-                        
+                        exit_pop=dynamic_cast<Arm_cpu_multiple_registers_load_and_store_instruction *>(instruction);
+                        if(find(exit_pop->get_destination_registers().registers_.begin(), exit_pop->get_destination_registers().registers_.end(),pc)!=exit_pop->get_destination_registers().registers_.end())
+                        {
+                            exit_pops.insert(exit_pop);
+                            exit_vpops.insert(exit_vpop);
+                            goto next;
+                        }
+                        else
+                        {
+                            for(auto reg:exit_vpop->get_destination_registers().registers_)
+                            {
+                                used_regs.insert(reg);
+                            }
+                        }
                         break;
                     case arm_op::VPUSH:
-                        if(enter_push==nullptr && tag=true)
+                        if(enter_vpush==nullptr)
                         {
-                            vpush_or_vpop=(Arm_vfp_multiple_registers_load_and_store_instruction *)j;
-                            tag=false;
+                            enter_vpush=dynamic_cast<Arm_vfp_multiple_registers_load_and_store_instruction *>(instruction);
+                            goto next;
                         }
                         break;
                     case arm_op::VPOP:
-                        exit_vpop=j;
+                        exit_vpop=dynamic_cast<Arm_vfp_multiple_registers_load_and_store_instruction *>(instruction);
+                        goto next;
+                        break;
+                    case arm_op::ADD:
+                    case arm_op::SUB:
+                    case arm_op::RSB:
+                    case arm_op::ADC:
+                    case arm_op::SBC:
+                    case arm_op::RSC:
+                    case arm_op::AND:
+                    case arm_op::ORR:
+                    case arm_op::EOR:
+                    case arm_op::BIC:
+                    case arm_op::CMP:
+                    case arm_op::CMN:
+                    case arm_op::TST:
+                    case arm_op::TEQ:
+                    case arm_op::MOV:
+                    case arm_op::MVN:
+                        cpu_data_process_instruction=dynamic_cast<Arm_cpu_data_process_instruction *>(instruction);
+                        if(cpu_data_process_instruction->get_operand2().type==operand2_type::RM_SHIFT)
+                        {
+                            used_regs.insert(cpu_data_process_instruction->get_operand2().Rm_shift.Rm);
+                            if(cpu_data_process_instruction->get_operand2().Rm_shift.shift_op==operand2_shift_op::ASR_RS || cpu_data_process_instruction->get_operand2().Rm_shift.shift_op==operand2_shift_op::LSL_RS || cpu_data_process_instruction->get_operand2().Rm_shift.shift_op==operand2_shift_op::LSR_RS || cpu_data_process_instruction->get_operand2().Rm_shift.shift_op==operand2_shift_op::ROR_RS)
+                            {
+                                used_regs.insert(cpu_data_process_instruction->get_operand2().Rm_shift.Rs);
+                            }
+                        }
+                        break;
+                    case arm_op::LDR:
+                    case arm_op::STR:
+                        cpu_single_register_load_and_store_instruction=dynamic_cast<Arm_cpu_single_register_load_and_store_instruction *>(instruction);
+                        if(cpu_single_register_load_and_store_instruction->get_flexoffset().type==flexoffset_type::RM_SHIFT)
+                        {
+                            used_regs.insert(cpu_single_register_load_and_store_instruction->get_flexoffset().Rm_shift.Rm);
+                        }
+                        break;
+                    case arm_op::VLDR:
+                    case arm_op::VSTR:
+                        vfp_single_register_load_and_store_instruction=dynamic_cast<Arm_vfp_single_register_load_and_store_instruction *>(instruction);
+                        if(vfp_single_register_load_and_store_instruction->get_flexoffset().type==flexoffset_type::RM_SHIFT)
+                        {
+                            used_regs.insert(vfp_single_register_load_and_store_instruction->get_flexoffset().Rm_shift.Rm);
+                        }
                         break;
                     default:
                         break;
                 }
-            }
-            else if(j->type_==arm_asm_file_line_type::PSEUDO_INSTRUCTION)
-            {
-                pseudo_instruction=(Arm_pseudo_instruction *)j;
-                if(pseudo_instruction->op_==arm_pseudo_op::ADR || pseudo_instruction->op_==arm_pseudo_op::ADRL || pseudo_instruction->op_==arm_pseudo_op::LDR || pseudo_instruction->op_==arm_pseudo_op::VLDR)
+                for(auto reg:instruction->get_destination_registers().registers_)
                 {
-                    arm_func_regs_used.insert(pseudo_instruction->reg_);
+                    used_regs.insert(reg);
+                }
+                for(auto reg:instruction->get_source_registers().registers_)
+                {
+                    used_regs.insert(reg);
+                }
+next:
+                ;
+            }
+            else if(arm_asm->is_pseudo_instruction())
+            {
+                pseudo_instruction=dynamic_cast<Arm_pseudo_instruction *>(arm_asm);
+                if(pseudo_instruction->get_op()==arm_pseudo_op::ADR || pseudo_instruction->get_op()==arm_pseudo_op::ADRL || pseudo_instruction->get_op()==arm_pseudo_op::LDR || pseudo_instruction->get_op()==arm_pseudo_op::VLDR)
+                {
+                    used_regs.insert(pseudo_instruction->get_reg());
                 }
             }
         }
-    }*/
+    }
+    //在函数的出入口处简化保存上下文的代码
+    for(auto reg:used_regs)
+    {
+        if(notify(event(event_type::IS_CPU_REG,(int)reg)).bool_data && notify(event(event_type::IS_TEMP_REG,(int)reg)).bool_data)
+        {
+            used_cpu_temp_regs.push_back(reg);
+        }
+        else if(notify(event(event_type::IS_VFP_REG,(int)reg)).bool_data && notify(event(event_type::IS_TEMP_REG,(int)reg)).bool_data)
+        {
+            used_vfp_temp_regs.push_back(reg);
+        }
+    }
+    enter_push_regs=used_cpu_temp_regs;
+    enter_push_regs.push_back(lr);
+    exit_pop_regs=used_cpu_temp_regs;
+    exit_pop_regs.push_back(pc);
+    for(auto basic_block:arm_func->basic_blocks)
+    {
+        for(list<Arm_asm_file_line * >::iterator arm_asm=basic_block->arm_sequence.begin();arm_asm!=basic_block->arm_sequence.end();arm_asm++)
+        {
+            if(enter_push==*arm_asm)
+            {
+                delete *arm_asm;
+                *arm_asm=new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::PUSH,arm_condition::NONE,arm_registers(enter_push_regs));
+            }
+            else if(enter_vpush==*arm_asm)
+            {
+                delete *arm_asm;
+                if(used_vfp_temp_regs.size()!=0)
+                {
+                    *arm_asm=new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPUSH,arm_condition::NONE,arm_registers(used_vfp_temp_regs));
+                }
+                else
+                {
+                    *arm_asm=new Arm_pseudo_instruction();
+                }
+            }
+            else if(exit_pops.find((Arm_cpu_multiple_registers_load_and_store_instruction *)*arm_asm)!=exit_pops.end())
+            {
+                exit_pops.erase((Arm_cpu_multiple_registers_load_and_store_instruction *)*arm_asm);
+                delete *arm_asm;
+                *arm_asm=new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::POP,arm_condition::NONE,arm_registers(exit_pop_regs));
+            }
+            else if(exit_vpops.find((Arm_vfp_multiple_registers_load_and_store_instruction *)*arm_asm)!=exit_vpops.end())
+            {
+                exit_vpops.erase((Arm_vfp_multiple_registers_load_and_store_instruction *)*arm_asm);
+                delete *arm_asm;
+                if(used_vfp_temp_regs.size()!=0)
+                {
+                    *arm_asm=new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPOP,arm_condition::NONE,arm_registers(used_vfp_temp_regs));
+                }
+                else
+                {
+                    *arm_asm=new Arm_pseudo_instruction();
+                }
+            }
+        }
+    }
 }
 
 /*
 全局优化
-
-Parameters
-----------
-arm_flow_graph:要优化的arm汇编代码流图
 */
-void Arm_asm_optimizer::global_optimize(struct arm_flow_graph & arm_flow_graph)
+void Arm_asm_optimizer::global_optimize()
 {
-    for(auto i:arm_flow_graph.func_flow_graphs)
+    for(auto func:arm_flow_graph_->func_flow_graphs)
     {
         //优化函数出入口代码
-        optimize_func_enter_and_exit(i);
+        optimize_func_enter_and_exit(func);
     }
 }
 
@@ -116,10 +249,36 @@ Parameters
 ----------
 arm_flow_graph:要优化的arm汇编代码流图
 */
-void Arm_asm_optimizer::optimize(struct arm_flow_graph & arm_flow_graph)
+void Arm_asm_optimizer::handle_OPTIMIZE(struct arm_flow_graph * arm_flow_graph)
 {
+    arm_flow_graph_=arm_flow_graph;
     //局部优化
-    local_optimize(arm_flow_graph);
+    local_optimize();
     //全局优化
-    global_optimize(arm_flow_graph);
+    global_optimize();
+}
+
+/*
+事件处理函数(由中介者进行调用)
+
+Parameters
+----------
+event:要处理的事件信息
+
+Return
+------
+处理完事件之后返回响应信息
+*/
+struct event Arm_asm_optimizer::handler(struct event event)
+{
+    struct event res;
+    switch(event.type)
+    {
+        case event_type::OPTIMIZE:
+            handle_OPTIMIZE((struct arm_flow_graph *)event.pointer_data);
+            break;
+        default:
+            break;
+    }
+    return res;
 }

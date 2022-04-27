@@ -11,7 +11,7 @@
 
 #include<stdarg.h>
 #include "instruction_generator.h"
-#include "arm_asm_optimizer.h"
+#include "arm_asm.h"
 
 //arm汇编代码生成器
 class Arm_instruction_generator:public Instruction_generator
@@ -20,9 +20,6 @@ class Arm_instruction_generator:public Instruction_generator
 protected:
     //arm汇编
     list<Arm_asm_file_line * > arm_asm_codes_;
-
-    //汇编代码优化器
-    Arm_asm_optimizer asm_optimizer_;
 
     //arm汇编的流图
     struct arm_flow_graph arm_flow_graph_;

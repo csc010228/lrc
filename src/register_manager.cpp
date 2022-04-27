@@ -1283,6 +1283,21 @@ struct event Register_manager::handle_IS_CPU_REG(reg_index reg)
     return event(event_type::RESPONSE_BOOL,regs_.reg_indexs.at(reg).processor==reg_processor::CPU);
 }
 
+struct event Register_manager::handle_IS_VFP_REG(reg_index reg)
+{
+    return event(event_type::RESPONSE_BOOL,regs_.reg_indexs.at(reg).processor==reg_processor::VFP);
+}
+
+struct event Register_manager::handle_IS_ARGUMENT_REG(reg_index reg)
+{
+    return event(event_type::RESPONSE_BOOL,regs_.reg_indexs.at(reg).attr==reg_attr::ARGUMENT);
+}
+
+struct event Register_manager::handle_IS_TEMP_REG(reg_index reg)
+{
+    return event(event_type::RESPONSE_BOOL,regs_.reg_indexs.at(reg).attr==reg_attr::TEMP);
+}
+
 struct event Register_manager::handle_GET_REG_BYTE_SIZE(reg_index reg)
 {
     return event(event_type::RESPONSE_INT,(int)(regs_.reg_indexs.at(reg).size/8));
@@ -1644,6 +1659,15 @@ struct event Register_manager::handler(struct event event)
             break;
         case event_type::IS_CPU_REG:
             response=handle_IS_CPU_REG((reg_index)event.int_data);
+            break;
+        case event_type::IS_VFP_REG:
+            response=handle_IS_VFP_REG((reg_index)event.int_data);
+            break;
+        case event_type::IS_ARGUMENT_REG:
+            response=handle_IS_ARGUMENT_REG((reg_index)event.int_data);
+            break;
+        case event_type::IS_TEMP_REG:
+            response=handle_IS_TEMP_REG((reg_index)event.int_data);
             break;
         case event_type::GET_REG_BYTE_SIZE:
             response=handle_GET_REG_BYTE_SIZE(event.int_data);
