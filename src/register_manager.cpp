@@ -1088,9 +1088,24 @@ struct event Register_manager::handle_GET_ADDR_REG(struct ic_data * var_data)
     return event(event_type::RESPONSE_INT,(int)get_reg_for_var_addr(var_data));
 }
 
-struct event Register_manager::handle_READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS(struct ic_func * func)
+struct event Register_manager::handle_READY_TO_PUSH_LR_AND_FP_REGS(struct ic_func * func)
 {
-    struct event res;
+    struct event res(event_type::RESPONSE_POINTER,nullptr);
+    reg_index lr=regs_.reg_names.at("lr"),fp=regs_.reg_names.at("fp");
+    list<reg_index> * regs=new list<reg_index>;
+    regs->push_back(fp);
+    current_func_regs_info_.context_saved_regs.push_back(fp);
+    regs->push_back(lr);
+    current_func_regs_info_.context_saved_regs.push_back(lr);
+    res.pointer_data=(void *)regs;
+    notify(event(event_type::READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS,(void *)regs));
+    return res;
+}
+
+struct event Register_manager::handle_READY_TO_PUSH_CONTEXT_SAVED_TEMP_CPU_REGS(struct ic_func * func)
+{
+    struct event res(event_type::RESPONSE_POINTER,nullptr);
+    //reg_index lr=regs_.reg_names.at("lr"),fp=regs_.reg_names.at("fp");
     list<reg_index> * regs=new list<reg_index>;
     //目前是把所有的整型临时寄存器和lr寄存器全部进栈
     for(auto i:regs_.reg_indexs)
@@ -1101,15 +1116,16 @@ struct event Register_manager::handle_READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS(struc
             current_func_regs_info_.context_saved_regs.push_back(i.first);
         }
     }
-    regs->push_back(regs_.reg_names.at("lr"));
-    current_func_regs_info_.context_saved_regs.push_back(regs_.reg_names.at("lr"));
-    res.type=event_type::RESPONSE_POINTER;
+    /*regs->push_back(lr);
+    current_func_regs_info_.context_saved_regs.push_back(lr);
+    regs->push_back(fp);
+    current_func_regs_info_.context_saved_regs.push_back(fp);*/
     res.pointer_data=(void *)regs;
     notify(event(event_type::READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS,(void *)regs));
     return res;
 }
 
-struct event Register_manager::handle_READY_TO_PUSH_CONTEXT_SAVED_VFP_REGS(struct ic_func * func)
+struct event Register_manager::handle_READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS(struct ic_func * func)
 {
     struct event res;
     list<reg_index> * regs=new list<reg_index>;
@@ -1266,6 +1282,11 @@ void Register_manager::handle_CLEAR_FLAG()
 struct event Register_manager::handle_GET_SP_REG()
 {
     return event(event_type::RESPONSE_INT,(int)regs_.reg_names.at("sp"));
+}
+
+struct event Register_manager::handle_GET_FP_REG()
+{
+    return event(event_type::RESPONSE_INT,(int)regs_.reg_names.at("fp"));
 }
 
 struct event Register_manager::handle_GET_LR_REG()
@@ -1642,14 +1663,20 @@ struct event Register_manager::handler(struct event event)
         case event_type::END_FUNC:
             handle_END_FUNC();
             break;
-        case event_type::READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS:
-            response=handle_READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS((struct ic_func *)event.pointer_data);
+        case event_type::READY_TO_PUSH_LR_AND_FP_REGS:
+            response=handle_READY_TO_PUSH_LR_AND_FP_REGS((struct ic_func *)event.pointer_data);
             break;
-        case event_type::READY_TO_PUSH_CONTEXT_SAVED_VFP_REGS:
-            response=handle_READY_TO_PUSH_CONTEXT_SAVED_VFP_REGS((struct ic_func *)event.pointer_data);
+        case event_type::READY_TO_PUSH_CONTEXT_SAVED_TEMP_CPU_REGS:
+            response=handle_READY_TO_PUSH_CONTEXT_SAVED_TEMP_CPU_REGS((struct ic_func *)event.pointer_data);
+            break;
+        case event_type::READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS:
+            response=handle_READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS((struct ic_func *)event.pointer_data);
             break;
         case event_type::GET_SP_REG:
             response=handle_GET_SP_REG();
+            break;
+        case event_type::GET_FP_REG:
+            response=handle_GET_FP_REG();
             break;
         case event_type::GET_LR_REG:
             response=handle_GET_LR_REG();

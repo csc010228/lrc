@@ -352,6 +352,21 @@ struct event Memory_manager::handle_GET_VAR_STACK_POS_FROM_SP(struct ic_data * v
     return res;
 }
 
+struct event Memory_manager::handle_GET_VAR_STACK_POS_FROM_FP(struct ic_data * var)
+{
+    //要求var必须是通过栈传递的参数
+    struct event res(event_type::RESPONSE_INT,0);
+    for(auto i:current_func_stack_space_.f_params_passed_by_stack_as_callee)
+    {
+        if(var==i.second)
+        {
+            res.int_data=current_func_stack_space_.frame_pointer-i.first-var->get_byte_size();
+            break;
+        }
+    }
+    return res;
+}
+
 void Memory_manager::handle_PUSH_VAR_TO_STACK(struct ic_data * var)
 {
     if(var->is_tmp_var())
@@ -421,6 +436,18 @@ void Memory_manager::handle_END_BASIC_BLOCK_WITHOUT_FLAG()
     }
 }
 
+struct event Memory_manager::handle_IS_F_PARAM_PASSED_BY_STACK(struct ic_data * var)
+{
+    for(auto i:current_func_stack_space_.f_params_passed_by_stack_as_callee)
+    {
+        if(var==i.second)
+        {
+            return event(event_type::RESPONSE_BOOL,true);
+        }
+    }
+    return event(event_type::RESPONSE_BOOL,false);
+}
+
 /*
 事件处理函数(由中介者进行调用)
 
@@ -476,6 +503,9 @@ struct event Memory_manager::handler(struct event event)
         case event_type::GET_VAR_STACK_POS_FROM_SP:
             response=handle_GET_VAR_STACK_POS_FROM_SP((struct ic_data *)event.pointer_data);
             break;
+        case event_type::GET_VAR_STACK_POS_FROM_FP:
+            response=handle_GET_VAR_STACK_POS_FROM_FP((struct ic_data *)event.pointer_data);
+            break;
         case event_type::PUSH_VAR_TO_STACK:
             handle_PUSH_VAR_TO_STACK((struct ic_data *)event.pointer_data);
             break;
@@ -493,6 +523,9 @@ struct event Memory_manager::handler(struct event event)
             break;
         case event_type::END_BASIC_BLOCK_WITHOUT_FLAG:
             handle_END_BASIC_BLOCK_WITHOUT_FLAG();
+            break;
+        case event_type::IS_F_PARAM_PASSED_BY_STACK:
+            response=handle_IS_F_PARAM_PASSED_BY_STACK((struct ic_data *)event.pointer_data);
             break;
         default:
             break;

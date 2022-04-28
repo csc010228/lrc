@@ -57,9 +57,9 @@ void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph 
     Arm_instruction * instruction;
     Arm_pseudo_instruction * pseudo_instruction;
     set<reg_index> used_regs;
-    list<reg_index> used_cpu_temp_regs,used_vfp_temp_regs;
-    list<reg_index> enter_push_regs,exit_pop_regs;
-    reg_index pc=(reg_index)notify(event(event_type::GET_PC_REG,nullptr)).int_data,lr=(reg_index)notify(event(event_type::GET_LR_REG,nullptr)).int_data;
+    list<reg_index> used_cpu_temp_regs,used_vfp_temp_regs,exit_pop_regs;
+    reg_index pc=(reg_index)notify(event(event_type::GET_PC_REG,nullptr)).int_data,lr=(reg_index)notify(event(event_type::GET_LR_REG,nullptr)).int_data,fp=(reg_index)notify(event(event_type::GET_FP_REG,nullptr)).int_data;
+    bool tag=false;
     //统计整个函数中用到的所有的寄存器
     for(auto basic_block:arm_func->basic_blocks)
     {
@@ -73,7 +73,14 @@ void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph 
                     case arm_op::PUSH:
                         if(enter_push==nullptr)
                         {
-                            enter_push=dynamic_cast<Arm_cpu_multiple_registers_load_and_store_instruction *>(instruction);
+                            if(!tag)
+                            {
+                                tag=true;
+                            }
+                            else
+                            {
+                                enter_push=dynamic_cast<Arm_cpu_multiple_registers_load_and_store_instruction *>(instruction);
+                            }
                             goto next;
                         }
                         break;
@@ -182,9 +189,8 @@ next:
             used_vfp_temp_regs.push_back(reg);
         }
     }
-    enter_push_regs=used_cpu_temp_regs;
-    enter_push_regs.push_back(lr);
     exit_pop_regs=used_cpu_temp_regs;
+    exit_pop_regs.push_back(fp);
     exit_pop_regs.push_back(pc);
     for(auto basic_block:arm_func->basic_blocks)
     {
@@ -193,37 +199,51 @@ next:
             if(enter_push==*arm_asm)
             {
                 delete *arm_asm;
-                *arm_asm=new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::PUSH,arm_condition::NONE,arm_registers(enter_push_regs));
+                if(used_cpu_temp_regs.empty())
+                {
+                    *arm_asm=new Arm_pseudo_instruction();
+                }
+                else
+                {
+                    *arm_asm=new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::PUSH,arm_condition::NONE,arm_registers(used_cpu_temp_regs));
+                }
             }
             else if(enter_vpush==*arm_asm)
             {
                 delete *arm_asm;
-                if(used_vfp_temp_regs.size()!=0)
+                if(used_vfp_temp_regs.empty())
                 {
-                    *arm_asm=new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPUSH,arm_condition::NONE,arm_registers(used_vfp_temp_regs));
+                    *arm_asm=new Arm_pseudo_instruction();
                 }
                 else
                 {
-                    *arm_asm=new Arm_pseudo_instruction();
+                    *arm_asm=new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPUSH,arm_condition::NONE,arm_registers(used_vfp_temp_regs));
                 }
             }
             else if(exit_pops.find((Arm_cpu_multiple_registers_load_and_store_instruction *)*arm_asm)!=exit_pops.end())
             {
                 exit_pops.erase((Arm_cpu_multiple_registers_load_and_store_instruction *)*arm_asm);
                 delete *arm_asm;
-                *arm_asm=new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::POP,arm_condition::NONE,arm_registers(exit_pop_regs));
+                if(exit_pop_regs.empty())
+                {
+                    *arm_asm=new Arm_pseudo_instruction();
+                }
+                else
+                {
+                    *arm_asm=new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::POP,arm_condition::NONE,arm_registers(exit_pop_regs));
+                }
             }
             else if(exit_vpops.find((Arm_vfp_multiple_registers_load_and_store_instruction *)*arm_asm)!=exit_vpops.end())
             {
                 exit_vpops.erase((Arm_vfp_multiple_registers_load_and_store_instruction *)*arm_asm);
                 delete *arm_asm;
-                if(used_vfp_temp_regs.size()!=0)
+                if(used_vfp_temp_regs.empty())
                 {
-                    *arm_asm=new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPOP,arm_condition::NONE,arm_registers(used_vfp_temp_regs));
+                    *arm_asm=new Arm_pseudo_instruction();
                 }
                 else
                 {
-                    *arm_asm=new Arm_pseudo_instruction();
+                    *arm_asm=new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPOP,arm_condition::NONE,arm_registers(used_vfp_temp_regs));
                 }
             }
         }

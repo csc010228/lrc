@@ -70,12 +70,13 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::GET_REG_FOR_READING_VAR:
             case event_type::GET_REG_FOR_WRITING_VAR:
             case event_type::GET_SP_REG:
+            case event_type::GET_FP_REG:
             case event_type::GET_R0_REG:
             case event_type::GET_R1_REG:
             case event_type::GET_S0_REG:
-            case event_type::IS_CPU_REG:
-            case event_type::READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS:
-            case event_type::READY_TO_PUSH_CONTEXT_SAVED_VFP_REGS:
+            case event_type::READY_TO_PUSH_LR_AND_FP_REGS:
+            case event_type::READY_TO_PUSH_CONTEXT_SAVED_TEMP_CPU_REGS:
+            case event_type::READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS:
             case event_type::CLEAR_FLAG:
             case event_type::RETURN_VAR:
             case event_type::GET_ADDR_REG:
@@ -93,6 +94,8 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::GET_CONST_INT_S_VALUE_REG:
             case event_type::ALLOCATE_IDLE_CPU_REG:
             case event_type::ATTACH_CONST_INT_TO_REG:
+            case event_type::IS_CPU_REG:
+            case event_type::IS_VFP_REG:
                 res=register_manager_->handler(event);
                 break;
             case event_type::FUNC_DEFINE:
@@ -106,10 +109,12 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::READY_TO_POP_CONTEXT_RECOVERED_CPU_REGS:
             case event_type::READY_TO_POP_CONTEXT_RECOVERED_VFP_REGS:
             case event_type::GET_VAR_STACK_POS_FROM_SP:
+            case event_type::GET_VAR_STACK_POS_FROM_FP:
             case event_type::PUSH_VAR_TO_STACK:
             case event_type::READY_TO_POP_TEMP_VARS:
             case event_type::PUSH_ARGUMENT_TO_STACK_WHEN_CALLING_FUNC:
             case event_type::CHECK_TEMP_VAR_IN_STACK:
+            case event_type::IS_F_PARAM_PASSED_BY_STACK:
                 res=memory_manager_->handler(event);
                 break;
             case event_type::READY_TO_PUSH_F_PARAM_CPU_REGS:
@@ -119,9 +124,10 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
                 break;
             case event_type::CALL_FUNC:
             case event_type::CALL_ABI_FUNC:
-            // case event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK:
             case event_type::MOVE_DATA_BETWEEN_CPU_REGS:
             case event_type::ASSIGN_VAR:
+            case event_type::WRITE_CONST_INT_TO_REG:
+            case event_type::WRITE_CONST_FLOAT_TO_REG:
                 instruction_generator_->handler(event);
                 break;
             case event_type::RET_FROM_CALLED_FUNC:
@@ -213,6 +219,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::IS_TEMP_REG:
             case event_type::GET_PC_REG:
             case event_type::GET_LR_REG:
+            case event_type::GET_FP_REG:
                 res=register_manager_->handler(event);
                 break;
             default:
@@ -244,8 +251,8 @@ bool Arm_asm_generator::init()
         reg("r8",8,reg_attr::TEMP,true,reg_state::NOT_USED,32,reg_processor::CPU),
         reg("r9",9,reg_attr::TEMP,true,reg_state::NOT_USED,32,reg_processor::CPU),
         reg("r10",10,reg_attr::TEMP,true,reg_state::NOT_USED,32,reg_processor::CPU),
-        reg("r11",11,reg_attr::TEMP,true,reg_state::NOT_USED,32,reg_processor::CPU),
-        reg("r12",12,reg_attr::TEMP,true,reg_state::NOT_USED,32,reg_processor::CPU),
+        reg("fp",11,reg_attr::FRAME_POINTER,true,reg_state::NOT_USED,32,reg_processor::CPU),
+        reg("ip",12,reg_attr::INTRA_PROCEDURE,true,reg_state::NOT_USED,32,reg_processor::CPU),
         reg("sp",13,reg_attr::STACK_POINTER,false,reg_state::NOT_USED,32,reg_processor::CPU),
         reg("lr",14,reg_attr::RETURN_ADDR,true,reg_state::NOT_USED,32,reg_processor::CPU),
         reg("pc",15,reg_attr::PC,false,reg_state::NOT_USED,32,reg_processor::CPU),

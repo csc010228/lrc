@@ -248,7 +248,7 @@ enum class immed_16r_var_addr_type
 //16位立即数
 struct immed_16r
 {
-    immed_16r(int immed_data):type(immed_16r_type::IMMED),immed_data(immed_data)
+    immed_16r(unsigned int immed_data):type(immed_16r_type::IMMED),immed_data(immed_data)
     {
 
     };
@@ -265,7 +265,7 @@ struct immed_16r
     enum immed_16r_type type;
     union
     {
-        int immed_data;                         //立即数
+        unsigned int immed_data;                         //立即数
         struct                                  //变量的地址
         {
             struct ic_data * var;               //取地址的变量

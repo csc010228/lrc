@@ -27,11 +27,15 @@ enum class event_type
     GET_REG_FOR_WRITING_VAR,                //为写某一个变量获取一个寄存器
     STORE_VAR_TO_MEM,                       //把一个存储在寄存器中的变量写入内存
     LOAD_VAR_TO_REG,                        //把一个存储在内存中的变量写入寄存器中
+    READY_TO_PUSH_LR_AND_FP_REGS,
+    READY_TO_PUSH_CONTEXT_SAVED_TEMP_CPU_REGS,
     READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS,   //获取保存上下文的时候需要保存的CPU寄存器
+    READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS,
     READY_TO_PUSH_CONTEXT_SAVED_VFP_REGS,   
     READY_TO_POP_CONTEXT_RECOVERED_CPU_REGS,    //获取恢复上下文的时候需要恢复的寄存器
     READY_TO_POP_CONTEXT_RECOVERED_VFP_REGS,
     GET_SP_REG,                             //获取sp寄存器的编号
+    GET_FP_REG,
     GET_LR_REG,
     GET_PC_REG,
     GET_R0_REG,
@@ -41,6 +45,7 @@ enum class event_type
     IS_VFP_REG,
     IS_ARGUMENT_REG,
     IS_TEMP_REG,
+    IS_F_PARAM_PASSED_BY_STACK,
     CHANGE_FLAGS_FOR_VAR,
     READY_TO_PUSH_F_PARAM_CPU_REGS,
     READY_TO_PUSH_F_PARAM_VFP_REGS,
@@ -59,6 +64,7 @@ enum class event_type
     END_INSTRUCTION,
     GET_ADDR_REG,
     GET_VAR_STACK_POS_FROM_SP,
+    GET_VAR_STACK_POS_FROM_FP,
     RETURN_VAR,
     WRITE_ADDR_TO_REG,
     FUNC_DEFINE,

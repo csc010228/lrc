@@ -37,11 +37,12 @@ private:
         list<pair<stack_pos,struct ic_data * > > local_vars;
         list<pair<stack_pos,struct ic_data * > > temp_vars;
         list<pair<stack_pos,struct ic_data * > > f_params_passed_by_stack_as_caller;
-        stack_pos stack_pointer;
+        stack_pos stack_pointer,frame_pointer;
 
         void clear()
         {
             stack_pointer=0;
+            frame_pointer=0;
             f_params_passed_by_cpu_regs_as_callee.clear();
             context_saved_cpu_regs_as_callee.clear();
             context_saved_vfp_regs_as_callee.clear();
@@ -55,6 +56,7 @@ private:
         void push_to_f_params_passed_by_stack_as_callee(struct ic_data * var)
         {
             f_params_passed_by_stack_as_callee.push_back(make_pair(stack_pointer,var));
+            frame_pointer+=var->get_byte_size();
             stack_pointer+=var->get_byte_size();
         };
 
@@ -115,12 +117,14 @@ private:
     struct event handle_READY_TO_POP_F_PARAM_CPU_REGS();
     struct event handle_READY_TO_POP_F_PARAM_VFP_REGS();
     struct event handle_GET_VAR_STACK_POS_FROM_SP(struct ic_data * var);
+    struct event handle_GET_VAR_STACK_POS_FROM_FP(struct ic_data * var);
     void handle_PUSH_VAR_TO_STACK(struct ic_data * var);
     void handle_PUSH_ARGUMENT_TO_STACK_WHEN_CALLING_FUNC(struct ic_data * argument);
     struct event handle_RET_FROM_CALLED_FUNC();
     struct event handle_CHECK_TEMP_VAR_IN_STACK(struct ic_data * var);
     void handle_END_BASIC_BLOCK();
     void handle_END_BASIC_BLOCK_WITHOUT_FLAG();
+    struct event handle_IS_F_PARAM_PASSED_BY_STACK(struct ic_data * var);
 
 public:
     //构造函数

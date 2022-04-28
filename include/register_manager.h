@@ -25,6 +25,7 @@ enum class reg_attr
     FRAME_POINTER,      //帧指针寄存器
     GLOBAL_POINTER,     //全局指针寄存器
     THREAD_POINTER,     //线程指针寄存器
+    INTRA_PROCEDURE,    //内部调用临时寄存器
     TEMP,               //临时变量寄存器（在函数调用的时候这些寄存器的值可能会变）
     SAVE,               //保留变量寄存器（在函数调用的时候保证这些寄存器的值不变）
     ARGUMENT,           //参数传递寄存器（在函数调用的时候传递参数,在函数调用的过程中会被释放,也就是在函数调用的时候值可能会改变）
@@ -476,9 +477,11 @@ private:
     //事件处理
     void handle_FUNC_DEFINE(struct ic_func * func);
     void handle_END_FUNC();
-    struct event handle_READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS(struct ic_func * func);
-    struct event handle_READY_TO_PUSH_CONTEXT_SAVED_VFP_REGS(struct ic_func * func);
+    struct event handle_READY_TO_PUSH_LR_AND_FP_REGS(struct ic_func * func);
+    struct event handle_READY_TO_PUSH_CONTEXT_SAVED_TEMP_CPU_REGS(struct ic_func * func);
+    struct event handle_READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS(struct ic_func * func);
     struct event handle_GET_SP_REG();
+    struct event handle_GET_FP_REG();
     struct event handle_GET_LR_REG();
     struct event handle_GET_PC_REG();
     struct event handle_IS_CPU_REG(reg_index reg);
