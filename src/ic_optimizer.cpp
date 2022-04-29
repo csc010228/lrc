@@ -63,13 +63,13 @@ void Ic_optimizer::copy_progagation(struct ic_basic_block * basic_block)
 }
 
 /*
-公共子表达式删除
+局部公共子表达式删除
 
 Parameters
 ----------
 basic_block:要优化的基本块
 */
-void Ic_optimizer::elimination_of_common_subexpression(struct ic_basic_block * basic_block)
+void Ic_optimizer::local_elimination_of_common_subexpression(struct ic_basic_block * basic_block)
 {
 
 }
@@ -101,12 +101,48 @@ void Ic_optimizer::local_optimize()
             constant_folding(basic_block);
             //复制传播
             copy_progagation(basic_block);
-            //公共子表达式删除
-            elimination_of_common_subexpression(basic_block);
-            //删除无用临时变量
-            dead_code_elimination(basic_block);
+            //局部公共子表达式删除
+            local_elimination_of_common_subexpression(basic_block);
+            //局部死代码消除
+            local_dead_code_elimination(basic_block);
         }
     }
+}
+
+/*
+到达-定义分析
+
+Parameters
+----------
+func:要分析的函数流图
+*/
+void Ic_optimizer::use_define_analysis(struct ic_func_flow_graph * func)
+{
+
+}
+
+/*
+活跃变量分析
+
+Parameters
+----------
+func:要分析的函数流图
+*/
+void Ic_optimizer::live_variable_analysis(struct ic_func_flow_graph * func)
+{
+
+}
+
+/*
+可用表达式分析
+
+Parameters
+----------
+func:要分析的函数流图
+*/
+void Ic_optimizer::available_expression_analysis(struct ic_func_flow_graph * func)
+{
+
 }
 
 /*
@@ -116,8 +152,73 @@ void Ic_optimizer::data_flow_analysis()
 {
     for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
     {
-        
+        //到达-定义分析
+        use_define_analysis(func);
+        //活跃变量分析
+        live_variable_analysis(func);
+        //可用表达式分析
+        available_expression_analysis(func);
     }
+}
+
+/*
+全局公共子表达式删除
+
+Parameters
+----------
+func:要优化的函数流图
+*/
+void Ic_optimizer::global_elimination_of_common_subexpression(struct ic_func_flow_graph * func)
+{
+
+}
+
+/*
+全局死代码消除
+
+Parameters
+----------
+func:要优化的函数流图
+*/
+void Ic_optimizer::global_dead_code_elimination(struct ic_func_flow_graph * func)
+{
+
+}
+
+/*
+循环不变量外提
+
+Parameters
+----------
+func:要优化的函数流图
+*/
+void Ic_optimizer::loop_invariant_computation_motion(struct ic_func_flow_graph * func)
+{
+
+}
+
+/*
+归纳变量删除
+
+Parameters
+----------
+func:要优化的函数流图
+*/
+void Ic_optimizer::induction_variable_elimination(struct ic_func_flow_graph * func)
+{
+
+}
+
+/*
+函数内联
+
+Parameters
+----------
+func:要优化的函数流图
+*/
+void Ic_optimizer::function_inline(struct ic_func_flow_graph * func)
+{
+
 }
 
 /*
@@ -127,7 +228,19 @@ void Ic_optimizer::global_optimize()
 {
     for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
     {
-        
+        //全局公共子表达式删除
+        global_elimination_of_common_subexpression(func);
+        //全局死代码消除
+        global_dead_code_elimination(func);
+        //循环不变量外提
+        loop_invariant_computation_motion(func);
+        //归纳变量删除
+        induction_variable_elimination(func);
+    }
+    for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
+    {
+        //函数内联
+        function_inline(func);
     }
 }
 

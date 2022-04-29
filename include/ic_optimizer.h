@@ -550,24 +550,38 @@ protected:
 
     //强度削弱
     void reduction_in_strength(struct ic_basic_block * basic_block);
-
-    //局部优化
-    void local_optimize();
-
     //常量合并
     void constant_folding(struct ic_basic_block * basic_block);
-
     //复制传播
     void copy_progagation(struct ic_basic_block * basic_block);
-
     //公共子表达式删除
-    void elimination_of_common_subexpression(struct ic_basic_block * basic_block);
-
+    void local_elimination_of_common_subexpression(struct ic_basic_block * basic_block);
     //局部死代码消除
     void local_dead_code_elimination(struct ic_basic_block * basic_block);
 
+    //局部优化
+    void local_optimize();
+    
+    //到达-定义分析
+    void use_define_analysis(struct ic_func_flow_graph * func);
+    //活跃变量分析
+    void live_variable_analysis(struct ic_func_flow_graph * func);
+    //可用表达式分析
+    void available_expression_analysis(struct ic_func_flow_graph * func);
+    
     //数据流分析
     void data_flow_analysis();
+
+    //全局公共子表达式删除
+    void global_elimination_of_common_subexpression(struct ic_func_flow_graph * func);
+    //全局死代码消除
+    void global_dead_code_elimination(struct ic_func_flow_graph * func);
+    //循环不变量外提
+    void loop_invariant_computation_motion(struct ic_func_flow_graph * func);
+    //归纳变量删除
+    void induction_variable_elimination(struct ic_func_flow_graph * func);
+    //函数内联
+    void function_inline(struct ic_func_flow_graph * func);
 
     //全局优化
     void global_optimize();
