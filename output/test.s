@@ -13,6 +13,83 @@
 	.align 1
 	.global	__aeabi_idiv
 	.global	__aeabi_idivmod
+	.global getMaxNum
+	.syntax unified
+	.thumb
+	.thumb_func
+	.fpu vfp
+	.type	getMaxNum, %function
+getMaxNum:
+	push	{fp,lr}
+	add	fp,sp,#8
+	push	{r4,r5,r6}
+	nop
+	push	{r0,r1}
+	sub	sp,sp,#8
+	movw	r0,#0
+	add	r1,sp,#4
+	str	r0,[r1]
+	movw	r0,#0
+	add	r1,sp,#0
+	str	r0,[r1]
+.0:
+	add	r1,sp,#0
+	ldr	r0,[r1]
+	add	r3,sp,#8
+	ldr	r2,[r3]
+	cmp	r0,r2
+	bge	.2
+	add	r1,sp,#0
+	ldr	r0,[r1]
+	movw	r2,#1
+	mul	r3,r0,r2
+	add	r0,r3,#0
+	push	{r0}
+	add	r2,sp,#16
+	ldr	r1,[r2]
+	push	{r3}
+	add	r4,sp,#4
+	ldr	r3,[r4]
+	ldr	r0,[r1,r3,lsl 2]
+	add	r6,sp,#12
+	ldr	r5,[r6]
+	cmp	r0,r5
+	add	sp,sp,#8
+	ble	.1
+	add	r1,sp,#0
+	ldr	r0,[r1]
+	movw	r2,#1
+	mul	r3,r0,r2
+	add	r0,r3,#0
+	push	{r0}
+	add	r2,sp,#16
+	ldr	r1,[r2]
+	push	{r3}
+	add	r4,sp,#4
+	ldr	r3,[r4]
+	ldr	r0,[r1,r3,lsl 2]
+	mov	r5,r0
+	add	r0,sp,#12
+	str	r5,[r0]
+	add	sp,sp,#8
+.1:
+	add	r1,sp,#0
+	ldr	r0,[r1]
+	add	r2,r0,#1
+	mov	r0,r2
+	str	r0,[r1]
+	b	.0
+.2:
+	add	r1,sp,#4
+	ldr	r0,[r1]
+	add	sp,sp,#16
+	nop
+	pop	{r4,r5,r6,fp,pc}
+	.size	getMaxNum, .-getMaxNum
+	.text
+	.align 1
+	.global	__aeabi_idiv
+	.global	__aeabi_idivmod
 	.global main
 	.syntax unified
 	.thumb
@@ -712,83 +789,6 @@ radixSort:
 	nop
 	pop	{r4,r5,r6,r7,r8,r9,r10,fp,pc}
 	.size	radixSort, .-radixSort
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
-	.global getMaxNum
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	getMaxNum, %function
-getMaxNum:
-	push	{fp,lr}
-	add	fp,sp,#8
-	push	{r4,r5,r6}
-	nop
-	push	{r0,r1}
-	sub	sp,sp,#8
-	movw	r0,#0
-	add	r1,sp,#4
-	str	r0,[r1]
-	movw	r0,#0
-	add	r1,sp,#0
-	str	r0,[r1]
-.0:
-	add	r1,sp,#0
-	ldr	r0,[r1]
-	add	r3,sp,#8
-	ldr	r2,[r3]
-	cmp	r0,r2
-	bge	.2
-	add	r1,sp,#0
-	ldr	r0,[r1]
-	movw	r2,#1
-	mul	r3,r0,r2
-	add	r0,r3,#0
-	push	{r0}
-	add	r2,sp,#16
-	ldr	r1,[r2]
-	push	{r3}
-	add	r4,sp,#4
-	ldr	r3,[r4]
-	ldr	r0,[r1,r3,lsl 2]
-	add	r6,sp,#12
-	ldr	r5,[r6]
-	cmp	r0,r5
-	add	sp,sp,#8
-	ble	.1
-	add	r1,sp,#0
-	ldr	r0,[r1]
-	movw	r2,#1
-	mul	r3,r0,r2
-	add	r0,r3,#0
-	push	{r0}
-	add	r2,sp,#16
-	ldr	r1,[r2]
-	push	{r3}
-	add	r4,sp,#4
-	ldr	r3,[r4]
-	ldr	r0,[r1,r3,lsl 2]
-	mov	r5,r0
-	add	r0,sp,#12
-	str	r5,[r0]
-	add	sp,sp,#8
-.1:
-	add	r1,sp,#0
-	ldr	r0,[r1]
-	add	r2,r0,#1
-	mov	r0,r2
-	str	r0,[r1]
-	b	.0
-.2:
-	add	r1,sp,#4
-	ldr	r0,[r1]
-	add	sp,sp,#16
-	nop
-	pop	{r4,r5,r6,fp,pc}
-	.size	getMaxNum, .-getMaxNum
 	.comm a,120000040,4
 	.comm ans,4,4
 	.ident	"GCC: (Raspbian 8.3.0-6+rpi1) 8.3.0"

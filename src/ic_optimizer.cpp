@@ -27,11 +27,86 @@ void Ic_optimizer::init()
 }
 
 /*
+强度削弱
+
+Parameters
+----------
+basic_block:要优化的基本块
+*/
+void Ic_optimizer::reduction_in_strength(struct ic_basic_block * basic_block)
+{
+
+}
+
+/*
+常量合并
+
+Parameters
+----------
+basic_block:要优化的基本块
+*/
+void Ic_optimizer::constant_folding(struct ic_basic_block * basic_block)
+{
+
+}
+
+/*
+复制传播
+
+Parameters
+----------
+basic_block:要优化的基本块
+*/
+void Ic_optimizer::copy_progagation(struct ic_basic_block * basic_block)
+{
+
+}
+
+/*
+公共子表达式删除
+
+Parameters
+----------
+basic_block:要优化的基本块
+*/
+void Ic_optimizer::elimination_of_common_subexpression(struct ic_basic_block * basic_block)
+{
+
+}
+
+/*
+局部死代码消除
+
+Parameters
+----------
+basic_block:要优化的基本块
+*/
+void Ic_optimizer::local_dead_code_elimination(struct ic_basic_block * basic_block)
+{
+
+}
+
+/*
 局部优化
 */
 void Ic_optimizer::local_optimize()
 {
-
+    for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
+    {
+        for(auto basic_block:func->basic_blocks)
+        {
+            //强度削弱
+            reduction_in_strength(basic_block);
+            //常量合并
+            constant_folding(basic_block);
+            //复制传播
+            copy_progagation(basic_block);
+            //公共子表达式删除
+            elimination_of_common_subexpression(basic_block);
+            //删除无用临时变量
+            dead_code_elimination(basic_block);
+        }
+    }
 }
 
 /*
@@ -39,7 +114,10 @@ void Ic_optimizer::local_optimize()
 */
 void Ic_optimizer::data_flow_analysis()
 {
-
+    for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
+    {
+        
+    }
 }
 
 /*
@@ -47,7 +125,10 @@ void Ic_optimizer::data_flow_analysis()
 */
 void Ic_optimizer::global_optimize()
 {
-
+    for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
+    {
+        
+    }
 }
 
 /*
