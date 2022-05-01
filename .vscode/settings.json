@@ -18,6 +18,8 @@
         "unordered_map": "cpp",
         "vector": "cpp",
         "new": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "__config": "cpp",
+        "__nullptr": "cpp"
     }
 }

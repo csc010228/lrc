@@ -35,7 +35,85 @@ basic_block:要优化的基本块
 */
 void Ic_optimizer::reduction_in_strength(struct ic_basic_block * basic_block)
 {
-
+    struct quaternion ic;
+    struct ic_data * arg1,* arg2;
+    for(vector<struct quaternion_with_def_use_info>::iterator ic_with_info=basic_block->ic_sequence.begin();ic_with_info!=basic_block->ic_sequence.end();ic_with_info++)
+    {
+        ic=(*ic_with_info).intermediate_code;
+        arg1=(ic_data *)ic.arg1.second;
+        arg2=(ic_data *)ic.arg2.second;
+        switch(ic.op)
+        {
+            case ic_op::ADD:
+                if(arg1->is_const() && ((arg1->get_data_type()==language_data_type::INT && arg1->get_value().int_data==0) || (arg1->get_data_type()==language_data_type::FLOAT && arg1->get_value().float_data==0.0f)))
+                {
+                    (*ic_with_info)=quaternion_with_def_use_info(quaternion(ic_op::ASSIGN,ic_operand::DATA,arg2,ic_operand::NONE,nullptr,ic_operand::DATA,ic.result.second));
+                }
+                else if(arg2->is_const() && ((arg2->get_data_type()==language_data_type::INT && arg2->get_value().int_data==0) || (arg2->get_data_type()==language_data_type::FLOAT && arg2->get_value().float_data==0.0f)))
+                {
+                    (*ic_with_info)=quaternion_with_def_use_info(quaternion(ic_op::ASSIGN,ic_operand::DATA,arg1,ic_operand::NONE,nullptr,ic_operand::DATA,ic.result.second));
+                }
+                break;
+            case ic_op::SUB:
+                if(arg2->is_const() && ((arg2->get_data_type()==language_data_type::INT && arg2->get_value().int_data==0) || (arg2->get_data_type()==language_data_type::FLOAT && arg2->get_value().float_data==0.0f)))
+                {
+                    (*ic_with_info)=quaternion_with_def_use_info(quaternion(ic_op::ASSIGN,ic_operand::DATA,arg1,ic_operand::NONE,nullptr,ic_operand::DATA,ic.result.second));
+                }
+                break;
+            case ic_op::MUL:
+                if(arg1->is_const() && ((arg1->get_data_type()==language_data_type::INT && arg1->get_value().int_data==1) || (arg1->get_data_type()==language_data_type::FLOAT && arg1->get_value().float_data==1.0f)))
+                {
+                    (*ic_with_info)=quaternion_with_def_use_info(quaternion(ic_op::ASSIGN,ic_operand::DATA,arg2,ic_operand::NONE,nullptr,ic_operand::DATA,ic.result.second));
+                }
+                else if(arg2->is_const() && ((arg2->get_data_type()==language_data_type::INT && arg2->get_value().int_data==1) || (arg2->get_data_type()==language_data_type::FLOAT && arg2->get_value().float_data==1.0f)))
+                {
+                    (*ic_with_info)=quaternion_with_def_use_info(quaternion(ic_op::ASSIGN,ic_operand::DATA,arg1,ic_operand::NONE,nullptr,ic_operand::DATA,ic.result.second));
+                }
+                break;
+            case ic_op::DIV:
+                if(arg2->is_const() && ((arg2->get_data_type()==language_data_type::INT && arg2->get_value().int_data==1) || (arg2->get_data_type()==language_data_type::FLOAT && arg2->get_value().float_data==1.0f)))
+                {
+                    (*ic_with_info)=quaternion_with_def_use_info(quaternion(ic_op::ASSIGN,ic_operand::DATA,arg1,ic_operand::NONE,nullptr,ic_operand::DATA,ic.result.second));
+                }
+                break;
+            case ic_op::MOD:
+                if(arg2->is_const() && arg2->get_data_type()==language_data_type::INT && arg2->get_value().int_data==1)
+                {
+                    (*ic_with_info)=quaternion_with_def_use_info(quaternion(ic_op::ASSIGN,ic_operand::DATA,arg1,ic_operand::NONE,nullptr,ic_operand::DATA,ic.result.second));
+                }
+                break;
+            case ic_op::IF_JMP:
+                if(arg1->is_const() && arg1->get_data_type()==language_data_type::INT)
+                {
+                    if(arg1->get_value().int_data==0)
+                    {
+                        (*ic_with_info)=quaternion_with_def_use_info(quaternion(ic_op::NOP,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr));
+                    }
+                    else
+                    {
+                        (*ic_with_info)=quaternion_with_def_use_info(quaternion(ic_op::JMP,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::LABEL,ic.result.second));
+                        basic_block->set_sequential_next(nullptr);
+                    }
+                }
+                break;
+            case ic_op::IF_NOT_JMP:
+                if(arg1->is_const() && arg1->get_data_type()==language_data_type::INT)
+                {
+                    if(arg1->get_value().int_data!=0)
+                    {
+                        (*ic_with_info)=quaternion_with_def_use_info(quaternion(ic_op::NOP,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr));
+                    }
+                    else
+                    {
+                        (*ic_with_info)=quaternion_with_def_use_info(quaternion(ic_op::JMP,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::LABEL,ic.result.second));
+                        basic_block->set_sequential_next(nullptr);
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 /*
@@ -47,7 +125,12 @@ basic_block:要优化的基本块
 */
 void Ic_optimizer::constant_folding(struct ic_basic_block * basic_block)
 {
+    /*struct quaternion ic;
+    struct ic_data * arg1,* arg2;
+    for(vector<struct quaternion_with_def_use_info>::iterator ic_with_info=basic_block->ic_sequence.begin();ic_with_info!=basic_block->ic_sequence.end();ic_with_info++)
+    {
 
+    }*/
 }
 
 /*

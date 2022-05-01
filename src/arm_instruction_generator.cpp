@@ -88,15 +88,15 @@ void Arm_instruction_generator::ic_to_arm_asm(struct quaternion intermediate_cod
         case ic_op::NOT:
             not_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.result.second);
             break;
-        case ic_op::AND:
-            and_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.arg2.second,(struct ic_data *)intermediate_code.result.second);
-            break;
-        case ic_op::OR:
-            or_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.arg2.second,(struct ic_data *)intermediate_code.result.second);
-            break;
-        case ic_op::XOR:
-            xor_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.arg2.second,(struct ic_data *)intermediate_code.result.second);
-            break;
+        // case ic_op::AND:
+        //     and_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.arg2.second,(struct ic_data *)intermediate_code.result.second);
+        //     break;
+        // case ic_op::OR:
+        //     or_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.arg2.second,(struct ic_data *)intermediate_code.result.second);
+        //     break;
+        // case ic_op::XOR:
+        //     xor_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.arg2.second,(struct ic_data *)intermediate_code.result.second);
+        //     break;
         case ic_op::EQ:
             eq_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.arg2.second,(struct ic_data *)intermediate_code.result.second);
             break;
@@ -593,29 +593,29 @@ void Arm_instruction_generator::not_ic_to_arm_asm(struct ic_data * arg1,struct i
     }
 }
 
-/*
-根据一条AND中间代码生成最终的arm汇编代码
-*/
-void Arm_instruction_generator::and_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result)
-{
+// /*
+// 根据一条AND中间代码生成最终的arm汇编代码
+// */
+// void Arm_instruction_generator::and_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result)
+// {
 
-}
+// }
 
-/*
-根据一条OR中间代码生成最终的arm汇编代码
-*/
-void Arm_instruction_generator::or_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result)
-{
+// /*
+// 根据一条OR中间代码生成最终的arm汇编代码
+// */
+// void Arm_instruction_generator::or_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result)
+// {
 
-}
+// }
 
-/*
-根据一条XOR中间代码生成最终的arm汇编代码
-*/
-void Arm_instruction_generator::xor_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result)
-{
+// /*
+// 根据一条XOR中间代码生成最终的arm汇编代码
+// */
+// void Arm_instruction_generator::xor_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result)
+// {
 
-}
+// }
 
 /*
 根据一条EQ中间代码生成最终的arm汇编代码
