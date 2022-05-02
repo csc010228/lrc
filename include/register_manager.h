@@ -477,8 +477,7 @@ private:
     //事件处理
     void handle_FUNC_DEFINE(struct ic_func * func);
     void handle_END_FUNC();
-    struct event handle_READY_TO_PUSH_LR_AND_FP_REGS(struct ic_func * func);
-    struct event handle_READY_TO_PUSH_CONTEXT_SAVED_TEMP_CPU_REGS(struct ic_func * func);
+    struct event handle_READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS(struct ic_func * func);
     struct event handle_READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS(struct ic_func * func);
     struct event handle_GET_SP_REG();
     struct event handle_GET_FP_REG();

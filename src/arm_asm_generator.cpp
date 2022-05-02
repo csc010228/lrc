@@ -74,8 +74,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::GET_R0_REG:
             case event_type::GET_R1_REG:
             case event_type::GET_S0_REG:
-            case event_type::READY_TO_PUSH_LR_AND_FP_REGS:
-            case event_type::READY_TO_PUSH_CONTEXT_SAVED_TEMP_CPU_REGS:
+            case event_type::READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS:
             case event_type::READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS:
             case event_type::CLEAR_FLAG:
             case event_type::RETURN_VAR:
@@ -115,6 +114,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::PUSH_ARGUMENT_TO_STACK_WHEN_CALLING_FUNC:
             case event_type::CHECK_TEMP_VAR_IN_STACK:
             case event_type::IS_F_PARAM_PASSED_BY_STACK:
+            case event_type::GET_CURRENT_FUNC_STACK_SIZE:
                 res=memory_manager_->handler(event);
                 break;
             case event_type::READY_TO_PUSH_F_PARAM_CPU_REGS:
@@ -220,6 +220,8 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::GET_PC_REG:
             case event_type::GET_LR_REG:
             case event_type::GET_FP_REG:
+            case event_type::GET_SP_REG:
+            case event_type::GET_REG_BYTE_SIZE:
                 res=register_manager_->handler(event);
                 break;
             default:

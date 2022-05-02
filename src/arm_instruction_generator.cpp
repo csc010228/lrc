@@ -1212,33 +1212,26 @@ void Arm_instruction_generator::func_define_ic_to_arm_asm(struct ic_func * resul
 {
     reg_index sp=(reg_index)notify(event(event_type::GET_SP_REG,nullptr)).int_data,fp=(reg_index)notify(event(event_type::GET_FP_REG,nullptr)).int_data;
     size_t local_vars_total_byte_size=0;
-    list<reg_index> * context_saved_regs,* f_param_regs,* lr_and_fp;
+    list<reg_index> * context_saved_regs,* f_param_regs;
     //首先通知内存管理器和寄存器管理器，新的函数定义开始了
     notify(event(event_type::FUNC_DEFINE,(void *)result));
     //然后保护现场，把那些在函数的调用者看来不会改变的寄存器入栈保存
-    //先把lr寄存器和fp寄存器进栈保存
-    lr_and_fp=(list<reg_index> *)notify(event(event_type::READY_TO_PUSH_LR_AND_FP_REGS,(void *)result)).pointer_data;
-    if(!lr_and_fp->empty())
-    {
-        push_instruction(new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::PUSH,arm_condition::NONE,arm_registers(*lr_and_fp)));
-    }
-    delete lr_and_fp;
-    //再计算fp寄存器的值
-    push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,fp,sp,get_operand2((int)8)));
-    //再保存CPU中的寄存器
-    context_saved_regs=(list<reg_index> *)notify(event(event_type::READY_TO_PUSH_CONTEXT_SAVED_TEMP_CPU_REGS,(void *)result)).pointer_data;
+    //先保存CPU中的寄存器,包括CPU中的所有临时寄存器，fp，lr
+    context_saved_regs=(list<reg_index> *)notify(event(event_type::READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS,(void *)result)).pointer_data;
     if(!context_saved_regs->empty())
     {
         push_instruction(new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::PUSH,arm_condition::NONE,arm_registers(*context_saved_regs)));
     }
     delete context_saved_regs;
-    //再保存VFP中的寄存器
+    //再保存VFP中的所有临时寄存器
     context_saved_regs=(list<reg_index> *)notify(event(event_type::READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS,(void *)result)).pointer_data;
     if(!context_saved_regs->empty())
     {
         push_instruction(new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPUSH,arm_condition::NONE,arm_registers(*context_saved_regs)));
     }
     delete context_saved_regs;
+    //再计算fp寄存器的值
+    push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,fp,sp,get_operand2(notify(event(event_type::GET_CURRENT_FUNC_STACK_SIZE,nullptr)).int_data)));
     //接着把存放在r0-r3中的前4*32bits的整型函数参数入栈保存，入栈的顺序是从r3到r0（此时函数的后面的参数如果有的话已经由函数的调用者将其入栈了）
     f_param_regs=(list<reg_index> *)notify(event(event_type::READY_TO_PUSH_F_PARAM_CPU_REGS,(void *)result)).pointer_data;
     if(!f_param_regs->empty())

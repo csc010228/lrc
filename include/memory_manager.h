@@ -108,6 +108,7 @@ private:
     struct event handle_READY_TO_PUSH_LOCAL_VARS(struct ic_func * func);
     void handle_READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS(list<reg_index> * regs);
     void handle_READY_TO_PUSH_CONTEXT_SAVED_VFP_REGS(list<reg_index> * regs);
+    struct event handle_GET_CURRENT_FUNC_STACK_SIZE();
     void handle_READY_TO_PUSH_F_PARAM_CPU_REGS(list<struct ic_data * > * f_params);
     void handle_READY_TO_PUSH_F_PARAM_VFP_REGS(list<struct ic_data * > * f_params);
     struct event handle_READY_TO_POP_CONTEXT_RECOVERED_CPU_REGS();

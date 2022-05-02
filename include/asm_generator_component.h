@@ -27,8 +27,7 @@ enum class event_type
     GET_REG_FOR_WRITING_VAR,                //为写某一个变量获取一个寄存器
     STORE_VAR_TO_MEM,                       //把一个存储在寄存器中的变量写入内存
     LOAD_VAR_TO_REG,                        //把一个存储在内存中的变量写入寄存器中
-    READY_TO_PUSH_LR_AND_FP_REGS,
-    READY_TO_PUSH_CONTEXT_SAVED_TEMP_CPU_REGS,
+    GET_CURRENT_FUNC_STACK_SIZE,            //获取当前函数的栈空间大小（sp-fp）
     READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS,   //获取保存上下文的时候需要保存的CPU寄存器
     READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS,
     READY_TO_PUSH_CONTEXT_SAVED_VFP_REGS,   

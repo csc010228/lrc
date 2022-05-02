@@ -20,10 +20,9 @@
 	.fpu vfp
 	.type	insertsort, %function
 insertsort:
-	push	{fp,lr}
-	add	fp,sp,#8
-	push	{r4,r5,r6}
+	push	{r4,r5,r6,fp,lr}
 	nop
+	add	fp,sp,#20
 	push	{r0}
 	sub	sp,sp,#12
 	movw	r0,#1
@@ -154,17 +153,16 @@ insertsort:
 	.fpu vfp
 	.type	main, %function
 main:
-	push	{fp,lr}
-	add	fp,sp,#8
-	push	{r4}
+	push	{r4,fp,lr}
 	nop
+	add	fp,sp,#12
 	sub	sp,sp,#48
 	movw	r0,#10
 	movw	r1,#:lower16:n
 	movt	r1,#:upper16:n
 	str	r0,[r1]
 	movw	r0,#4
-	add	r1,sp,#4
+	add	r1,sp,#8
 	str	r0,[r1,#0]
 	movw	r0,#3
 	str	r0,[r1,#4]
@@ -202,18 +200,18 @@ main:
 	mov	r2,r0
 	mov	r0,r2
 	push	{r0}
-	add	r1,sp,#8
+	add	r1,sp,#12
 	push	{r2}
 	add	r3,sp,#4
 	ldr	r2,[r3]
 	ldr	r0,[r1,r2,lsl 2]
 	mov	r4,r0
-	add	r0,sp,#52
+	add	r0,sp,#12
 	str	r4,[r0]
 	mov	r0,r4
 	bl	putint
 	movw	r4,#10
-	add	r0,sp,#52
+	add	r0,sp,#12
 	str	r4,[r0]
 	mov	r0,r4
 	bl	putch

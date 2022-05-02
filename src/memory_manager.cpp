@@ -95,6 +95,12 @@ void Memory_manager::handle_READY_TO_PUSH_CONTEXT_SAVED_VFP_REGS(list<reg_index>
     }
 }
 
+struct event Memory_manager::handle_GET_CURRENT_FUNC_STACK_SIZE()
+{
+    struct event res(event_type::RESPONSE_INT,(int)(current_func_stack_space_.stack_pointer-current_func_stack_space_.frame_pointer));
+    return res;
+}
+
 void Memory_manager::handle_READY_TO_PUSH_F_PARAM_CPU_REGS(list<struct ic_data * > * f_params)
 {
     size_t int_f_params_num=0;
@@ -188,11 +194,6 @@ struct event Memory_manager::handle_READY_TO_POP_TEMP_VARS()
 {
     struct event res;
     size_t stack_offset=0;
-
-    /*if(current_func_stack_space_.f_params_passed_by_stack_as_caller.empty() && !current_func_stack_space_.temp_vars.empty())
-    {
-        stack_offset=current_func_stack_space_.stack_pointer-current_func_stack_space_.temp_vars.front().first;
-    }*/
 
     if(!current_func_stack_space_.temp_vars.empty())
     {
@@ -475,6 +476,9 @@ struct event Memory_manager::handler(struct event event)
             break;
         case event_type::READY_TO_POP_CONTEXT_RECOVERED_VFP_REGS:
             response=handle_READY_TO_POP_CONTEXT_RECOVERED_VFP_REGS();
+            break;
+        case event_type::GET_CURRENT_FUNC_STACK_SIZE:
+            response=handle_GET_CURRENT_FUNC_STACK_SIZE();
             break;
         case event_type::READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS:
             handle_READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS(((list<reg_index> *)event.pointer_data));

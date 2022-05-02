@@ -51,14 +51,15 @@ void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph 
     Arm_vfp_multiple_registers_load_and_store_instruction * enter_vpush=nullptr,* exit_vpop=nullptr;
     set<Arm_cpu_multiple_registers_load_and_store_instruction * > exit_pops;
     set<Arm_vfp_multiple_registers_load_and_store_instruction * > exit_vpops;
-    Arm_cpu_data_process_instruction * cpu_data_process_instruction;
+    Arm_cpu_data_process_instruction * cpu_data_process_instruction,* assign_fp=nullptr;;
     Arm_cpu_single_register_load_and_store_instruction * cpu_single_register_load_and_store_instruction;
     Arm_vfp_single_register_load_and_store_instruction * vfp_single_register_load_and_store_instruction;
     Arm_instruction * instruction;
     Arm_pseudo_instruction * pseudo_instruction;
     set<reg_index> used_regs;
-    list<reg_index> used_cpu_temp_regs,used_vfp_temp_regs,exit_pop_regs;
-    reg_index pc=(reg_index)notify(event(event_type::GET_PC_REG,nullptr)).int_data,lr=(reg_index)notify(event(event_type::GET_LR_REG,nullptr)).int_data,fp=(reg_index)notify(event(event_type::GET_FP_REG,nullptr)).int_data;
+    list<reg_index> used_cpu_temp_regs,used_vfp_temp_regs,push_cpu_regs,pop_cpu_regs;
+    int fp_sp_deviation=0;
+    reg_index pc=(reg_index)notify(event(event_type::GET_PC_REG,nullptr)).int_data,sp=(reg_index)notify(event(event_type::GET_SP_REG,nullptr)).int_data,lr=(reg_index)notify(event(event_type::GET_LR_REG,nullptr)).int_data,fp=(reg_index)notify(event(event_type::GET_FP_REG,nullptr)).int_data;
     bool tag=false;
     //统计整个函数中用到的所有的寄存器
     for(auto basic_block:arm_func->basic_blocks)
@@ -73,14 +74,7 @@ void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph 
                     case arm_op::PUSH:
                         if(enter_push==nullptr)
                         {
-                            if(!tag)
-                            {
-                                tag=true;
-                            }
-                            else
-                            {
-                                enter_push=dynamic_cast<Arm_cpu_multiple_registers_load_and_store_instruction *>(instruction);
-                            }
+                            enter_push=dynamic_cast<Arm_cpu_multiple_registers_load_and_store_instruction *>(instruction);
                             goto next;
                         }
                         break;
@@ -127,6 +121,11 @@ void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph 
                     case arm_op::TEQ:
                     case arm_op::MOV:
                     case arm_op::MVN:
+                        if(assign_fp==nullptr && instruction->get_op()==arm_op::ADD)
+                        {
+                            assign_fp=dynamic_cast<Arm_cpu_data_process_instruction *>(instruction);
+                            goto next;
+                        }
                         cpu_data_process_instruction=dynamic_cast<Arm_cpu_data_process_instruction *>(instruction);
                         if(cpu_data_process_instruction->get_operand2().type==operand2_type::RM_SHIFT)
                         {
@@ -189,9 +188,12 @@ next:
             used_vfp_temp_regs.push_back(reg);
         }
     }
-    exit_pop_regs=used_cpu_temp_regs;
-    exit_pop_regs.push_back(fp);
-    exit_pop_regs.push_back(pc);
+    push_cpu_regs=used_cpu_temp_regs;
+    push_cpu_regs.push_back(fp);
+    push_cpu_regs.push_back(lr);
+    pop_cpu_regs=used_cpu_temp_regs;
+    pop_cpu_regs.push_back(fp);
+    pop_cpu_regs.push_back(pc);
     for(auto basic_block:arm_func->basic_blocks)
     {
         for(list<Arm_asm_file_line * >::iterator arm_asm=basic_block->arm_sequence.begin();arm_asm!=basic_block->arm_sequence.end();arm_asm++)
@@ -199,13 +201,13 @@ next:
             if(enter_push==*arm_asm)
             {
                 delete *arm_asm;
-                if(used_cpu_temp_regs.empty())
+                if(push_cpu_regs.empty())
                 {
                     *arm_asm=new Arm_pseudo_instruction();
                 }
                 else
                 {
-                    *arm_asm=new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::PUSH,arm_condition::NONE,arm_registers(used_cpu_temp_regs));
+                    *arm_asm=new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::PUSH,arm_condition::NONE,arm_registers(push_cpu_regs));
                 }
             }
             else if(enter_vpush==*arm_asm)
@@ -220,17 +222,36 @@ next:
                     *arm_asm=new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPUSH,arm_condition::NONE,arm_registers(used_vfp_temp_regs));
                 }
             }
+            else if(assign_fp==*arm_asm)
+            {
+                for(auto reg:push_cpu_regs)
+                {
+                    fp_sp_deviation+=notify(event(event_type::GET_REG_BYTE_SIZE,(int)reg)).int_data;
+                }
+                for(auto reg:used_vfp_temp_regs)
+                {
+                    fp_sp_deviation+=notify(event(event_type::GET_REG_BYTE_SIZE,(int)reg)).int_data;
+                }
+                if(fp_sp_deviation==0)
+                {
+                    *arm_asm=new Arm_cpu_data_process_instruction(arm_op::MOV,arm_condition::NONE,false,fp,operand2(sp));
+                }
+                else
+                {
+                    *arm_asm=new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,fp,sp,operand2(fp_sp_deviation));
+                }
+            }
             else if(exit_pops.find((Arm_cpu_multiple_registers_load_and_store_instruction *)*arm_asm)!=exit_pops.end())
             {
                 exit_pops.erase((Arm_cpu_multiple_registers_load_and_store_instruction *)*arm_asm);
                 delete *arm_asm;
-                if(exit_pop_regs.empty())
+                if(pop_cpu_regs.empty())
                 {
                     *arm_asm=new Arm_pseudo_instruction();
                 }
                 else
                 {
-                    *arm_asm=new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::POP,arm_condition::NONE,arm_registers(exit_pop_regs));
+                    *arm_asm=new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::POP,arm_condition::NONE,arm_registers(pop_cpu_regs));
                 }
             }
             else if(exit_vpops.find((Arm_vfp_multiple_registers_load_and_store_instruction *)*arm_asm)!=exit_vpops.end())
