@@ -63,7 +63,7 @@ struct event Memory_manager::handle_READY_TO_PUSH_LOCAL_VARS(struct ic_func * fu
 {
     struct event res;
     size_t local_vars_total_byte_size=0;
-    set<struct ic_data * > local_vars=func->get_local_vars();
+    list<struct ic_data * > local_vars=func->get_local_vars();
     for(auto i:local_vars)
     {
         if(i->is_const() && !i->is_array_var())

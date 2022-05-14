@@ -205,10 +205,9 @@ private:
         //建立某个变量的值和某个寄存器之间的关系
         void build_var_value_reg(struct ic_data * var,reg_index reg)
         {
-            set<reg_index> empty;
             if(var_value_regs_map.find(var)==var_value_regs_map.end())
             {
-                var_value_regs_map.insert(make_pair(var,empty));
+                var_value_regs_map.insert(make_pair(var,set<reg_index>()));
             }
 
             if(var_value_regs_map.at(var).find(reg)==var_value_regs_map.at(var).end())
@@ -254,10 +253,9 @@ private:
         //建立某个int常量的值和某个寄存器之间的关系
         void build_const_int_value_reg(int const_int,reg_index reg)
         {
-            set<reg_index> empty;
             if(const_int_value_regs_map.find(const_int)==const_int_value_regs_map.end())
             {
-                const_int_value_regs_map.insert(make_pair(const_int,empty));
+                const_int_value_regs_map.insert(make_pair(const_int,set<reg_index>()));
             }
             
             if(const_int_value_regs_map.at(const_int).find(reg)==const_int_value_regs_map.at(const_int).end())
@@ -303,10 +301,9 @@ private:
         //建立某个int常量的值和某个寄存器之间的关系
         void build_const_float_value_reg(float const_float,reg_index reg)
         {
-            set<reg_index> empty;
             if(const_float_value_regs_map.find(const_float)==const_float_value_regs_map.end())
             {
-                const_float_value_regs_map.insert(make_pair(const_float,empty));
+                const_float_value_regs_map.insert(make_pair(const_float,set<reg_index>()));
             }
             
             if(const_float_value_regs_map.at(const_float).find(reg)==const_float_value_regs_map.at(const_float).end())
@@ -352,10 +349,9 @@ private:
         //建立某个变量的地址和某个寄存器之间的关系
         void build_var_addr_reg(struct ic_data * var,reg_index reg)
         {
-            set<reg_index> empty;
             if(var_addr_regs_map.find(var)==var_addr_regs_map.end())
             {
-                var_addr_regs_map.insert(make_pair(var,empty));
+                var_addr_regs_map.insert(make_pair(var,set<reg_index>()));
             }
 
             if(var_addr_regs_map.at(var).find(reg)==var_addr_regs_map.at(var).end())

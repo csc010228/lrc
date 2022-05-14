@@ -42,15 +42,19 @@ bool Instruction_generator::is_init_successful()
 
 Return
 ------
-返回下一条要翻译的中间代码
+返回下一条要翻译的中间代码，返回一个二元组pair<bool,struct quaternion>，如果二元组的first是false，表示该条中间代码无效，且之后不会再有中间代码了
 */
-struct quaternion Instruction_generator::get_next_intermediate_code()
+pair<bool,struct quaternion> Instruction_generator::get_next_intermediate_code()
 {
-    struct quaternion res;
+    pair<bool,struct quaternion> res;
     struct quaternion * p_ic=(struct quaternion *)notify(event(event_type::NEXT_IC,nullptr)).pointer_data;
     if(p_ic)
     {
-        res=*p_ic;
+        res=make_pair(true,*p_ic);
+    }
+    else
+    {
+        res=make_pair(false,quaternion());
     }
     return res;
 }

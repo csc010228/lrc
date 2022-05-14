@@ -20,6 +20,11 @@
         "new": "cpp",
         "iostream": "cpp",
         "__config": "cpp",
-        "__nullptr": "cpp"
+        "__nullptr": "cpp",
+        "ostream": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "__node_handle": "cpp",
+        "*.tcc": "cpp"
     }
 }

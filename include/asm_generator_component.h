@@ -94,7 +94,8 @@ enum class event_type
     POP_STACK,
     ALLOCATE_IDLE_CPU_REG,
     ATTACH_CONST_INT_TO_REG,
-    OPTIMIZE
+    OPTIMIZE,
+    IS_VAR_STILL_ALIVE
 };
 
 //汇编代码生成器组件之间互相传递的事件

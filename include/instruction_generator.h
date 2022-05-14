@@ -27,7 +27,7 @@ protected:
     virtual void generate_asm_codes()=0;
 
     //获取下一条要翻译的中间代码
-    struct quaternion get_next_intermediate_code();
+    pair<bool,struct quaternion> get_next_intermediate_code();
 
 public:
     //寄存器信息

@@ -13,6 +13,462 @@
 
 using namespace std;
 
+//===================================== struct ic_data =====================================//
+
+//用户定义的局部变量的构造函数
+ic_data::ic_data(string name,enum language_data_type data_type,list<struct ic_data * > * dimensions_len,OAA const_or_init_value,bool is_const):type(is_const?ic_data_type::LOCAL_CONST_VAR:ic_data_type::LOCAL_VAR),data_type(data_type),dimensions_len(dimensions_len),const_or_init_value(const_or_init_value),scope(nullptr)
+{
+    size_t name_size=name.size();
+    var_name=new char[name_size+1];
+    strcpy((char *)var_name,name.c_str());
+}
+
+//函数形参的构造函数
+ic_data::ic_data(string name,enum language_data_type data_type,list<struct ic_data * > * dimensions_len,bool is_const):type(is_const?ic_data_type::CONST_FUNC_F_PARAM:ic_data_type::FUNC_F_PARAM),data_type(data_type),dimensions_len(dimensions_len),scope(nullptr)
+{
+    size_t name_size=name.size();
+    var_name=new char[name_size+1];
+    strcpy((char *)var_name,name.c_str());
+}
+
+//临时变量的构造函数
+ic_data::ic_data(temporary_variable_index tmp_index,enum language_data_type data_type,list<struct ic_data * > * dimensions_len,OAA const_or_init_value,bool is_const):type(is_const?ic_data_type::CONST_TMP_VAR:ic_data_type::TMP_VAR),tmp_index(tmp_index),data_type(data_type),dimensions_len(dimensions_len),const_or_init_value(const_or_init_value),scope(nullptr)
+{
+    
+}
+
+//纯常量的构造函数
+ic_data::ic_data(enum language_data_type data_type,OAA const_or_init_value):var_name(nullptr),type(ic_data_type::PURE_CONST),data_type(data_type),dimensions_len(nullptr),const_or_init_value(const_or_init_value),scope(nullptr)
+{
+
+}
+
+//数组元素的构造函数
+ic_data::ic_data(struct ic_data * array_var,size_t offset_dimension_lens,struct ic_data * offset):type(ic_data_type::ARRAY_MEMBER),var_name(array_var->var_name),data_type(array_var->data_type),scope(nullptr)
+{
+    size_t i=0;
+    pair<struct ic_data *,struct ic_data * > * tmp=new pair<struct ic_data *,struct ic_data * >;
+    list<struct ic_data * > * array_var_dimensions_len=array_var->dimensions_len;
+    if(array_var_dimensions_len->size()>offset_dimension_lens)
+    {
+        dimensions_len=new list<struct ic_data * >;
+        i=array_var_dimensions_len->size()-offset_dimension_lens;
+        for(list<struct ic_data * >::reverse_iterator it=array_var_dimensions_len->rbegin();it!=array_var_dimensions_len->rend();it++)
+        {
+            if(i--!=0)
+            {
+                dimensions_len->push_front(*it);
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+    else
+    {
+        dimensions_len=nullptr;
+    }
+
+    tmp->first=array_var;
+    tmp->second=offset;
+    const_or_init_value=OAA((void *)tmp);
+}
+
+//判断该ic_data是不是临时变量
+bool ic_data::is_tmp_var() const
+{
+    return (type==ic_data_type::TMP_VAR || type==ic_data_type::CONST_TMP_VAR);
+}
+
+//判断该ic_data是不是数组
+bool ic_data::is_array_var() const
+{
+    return dimensions_len!=nullptr;
+}
+
+//判断该ic_data是不是const的，包括const变量和纯const
+bool ic_data::is_const() const
+{
+    return (is_const_var() || is_pure_const());
+}
+
+//判断该ic_data是不是const变量
+bool ic_data::is_const_var() const
+{
+    return (type==ic_data_type::LOCAL_CONST_VAR || type==ic_data_type::GLOBAL_CONST_VAR || type==ic_data_type::CONST_TMP_VAR);
+}
+
+//判断该ic_data是不是纯const
+bool ic_data::is_pure_const() const
+{
+    return type==ic_data_type::PURE_CONST;
+}
+
+//判断该ic_data是不是数组元素
+bool ic_data::is_array_member() const
+{
+    return type==ic_data_type::ARRAY_MEMBER;
+}
+
+//判断该ic_data是不是函数形参
+bool ic_data::is_f_param() const
+{
+    return (type==ic_data_type::FUNC_F_PARAM || type==ic_data_type::CONST_FUNC_F_PARAM);
+}
+
+//检查该ic_data和另一个ic_data是不是有关联的
+//只有数组和数组取元素会和其他的变量有关联
+bool ic_data::check_ic_data_related(struct ic_data * var)
+{
+    if(is_array_member())
+    {
+        //对于数组取元素来说
+        //先检查其所属的数组在定义的时候的偏移量中有没有var
+        for(auto i:(*get_belong_array()->dimensions_len))
+        {
+            if(i==var || (i->is_array_member() && i->check_ic_data_related(var)))
+            {
+                return true;
+            }
+        }
+        //再检查该数组取元素在取偏移地址的时候有没有var
+        if(get_offset()==var || (get_offset()->is_array_member() && get_offset()->check_ic_data_related(var)))
+        {
+            return true;
+        }
+        //最后检查其所属数组是不是var
+        if(get_belong_array()==var)
+        {
+            return true;
+        }
+    }
+    if(is_array_var())
+    {
+        //对于数组来说，检测var是不是定义数组的时候的某一个维度的偏移量
+        for(auto i:*dimensions_len)
+        {
+            if(i==var)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+//获取变量的值
+OAA ic_data::get_value() const
+{
+    return const_or_init_value;
+}
+
+//获取变量的值
+void ic_data::set_value(OAA new_value)
+{
+    const_or_init_value=new_value;
+}
+
+//获取该变量的数据类型
+enum language_data_type ic_data::get_data_type() const
+{
+    return data_type;
+}
+
+//为一个数组取元素变量获取它所属的数组
+struct ic_data * ic_data::get_belong_array() const
+{
+    if(!is_array_member())
+    {
+        return nullptr;
+    }
+    return ((pair<struct ic_data *,struct ic_data * > *)const_or_init_value.pointer_data)->first;
+}
+
+//为一个数组取元素变量获取它的偏移量
+struct ic_data * ic_data::get_offset() const
+{
+    if(!is_array_member())
+    {
+        return nullptr;
+    }
+    return ((pair<struct ic_data *,struct ic_data * > *)const_or_init_value.pointer_data)->second;
+}
+
+//获取变量的名字
+string ic_data::get_var_name() const
+{
+    if(var_name)
+    {
+        return string(var_name);
+    }
+    return "";
+};
+
+//获取变量的作用域
+struct ic_scope * ic_data::get_scope() const
+{
+    return this->scope;
+}
+
+//判断该变量是不是全局变量
+bool ic_data::is_global() const
+{
+    bool res=false;
+    if(scope!=nullptr)
+    {
+        res=scope->is_global();
+    }
+    return res;
+}
+
+//获取变量所占的空间(以byte为单位)
+size_t ic_data::get_byte_size(bool is_r_param) const
+{
+    size_t res=0,array_member_num=1;
+    pair<struct ic_data *,list<struct ic_data * > * > * tmp;
+    if(is_array_var())
+    {
+        if(is_f_param() || is_r_param)
+        {
+            //如果这个数组变量是一个函数形参的话
+            //那么该数组所占空间的大小就是一个指针的大小
+            res=bits_of_data_types.at(language_data_type::POINTER)/8;
+        }
+        else
+        {
+            //如果某一个数组是局部变量或者全局变量（总之不是函数形参）的话
+            //那么该数组所占的空间就是这个数组中所有的元素加起来的空间大小
+            for(auto i:(*dimensions_len))
+            {
+                array_member_num*=i->get_value().int_data;
+            }
+            res=array_member_num*(bits_of_data_types.at(data_type)/8);
+        }
+    }
+    else if(is_array_member())
+    {
+        //对于数组取元素这个变量来说，需要判断取元素的时候的情况
+        tmp=(pair<struct ic_data *,list<struct ic_data * > * > *)const_or_init_value.pointer_data;
+        if(tmp->first->dimensions_len->size()==tmp->second->size())
+        {
+            res=bits_of_data_types.at(data_type)/8;
+        }
+        else
+        {
+            res=bits_of_data_types.at(language_data_type::POINTER)/8;
+        }
+    }
+    else
+    {
+        res=bits_of_data_types.at(data_type)/8;
+    }
+    return res;
+}
+
+//获取变量所占据的内存空间（以4bytes为单位）
+size_t ic_data::get_4_bytes_size(bool is_r_param) const
+{
+    size_t res=0,byte_size=get_byte_size(is_r_param);
+    while(res*4<byte_size)
+    {
+        res++;
+    }
+    return res;
+}
+
+//==========================================================================//
+
+
+
+//===================================== struct ic_label =====================================//
+
+ic_label::ic_label(string label_name):name(label_name)
+{
+
+}
+
+//==========================================================================//
+
+
+
+//===================================== struct ic_func =====================================//
+
+ic_func::ic_func(string name,enum language_data_type return_type,list<struct ic_data * > * f_params):name(name),return_type(return_type),f_params(f_params),scope(nullptr)
+{
+    
+}
+
+ic_func::ic_func(string name,enum language_data_type return_type,size_t f_params_num,...):name(name),return_type(return_type),scope(nullptr)
+{
+    struct ic_data * f_param;
+    f_params=new list<struct ic_data * >;
+    va_list argptr;
+    va_start(argptr,f_params_num);
+    for(size_t i=0;i<f_params_num;i++)
+    {
+        f_param=va_arg(argptr,struct ic_data *);
+        f_params->push_back(f_param);
+    }
+    va_end(argptr);
+}
+
+struct ic_data * ic_func::get_f_param(string f_param_name) const
+{
+    struct ic_data * res=nullptr;
+    for(auto i:*f_params)
+    {
+        if(i->get_var_name()==f_param_name)
+        {
+            res=i;
+            break;
+        }
+    }
+    return res;
+}
+
+list<struct ic_data * > ic_func::get_f_params() const
+{
+    return (*f_params);
+}
+
+bool ic_func::add_f_param(struct ic_data * f_param)
+{
+    bool res=true;
+    string f_param_name=f_param->get_var_name();
+    if(get_f_param(f_param_name)==nullptr)
+    {
+        f_params->push_back(f_param);
+    }
+    else
+    {
+        res=false;
+    }
+    return res;
+}
+
+void ic_func::set_scope(struct ic_scope * scope)
+{
+    this->scope=scope;
+}
+
+//获取函数的所有局部变量（不包括临时变量和函数形参，但是会包括const变量）
+list<struct ic_data * > ic_func::get_local_vars() const
+{
+    list<struct ic_data * > res;
+    stack<struct ic_scope * > scopes;
+    struct ic_scope * current_scope;
+    scopes.push(scope);
+    
+    while(!scopes.empty())
+    {
+        current_scope=scopes.top();
+        scopes.pop();
+        for(auto i:current_scope->children)
+        {
+            if(i)
+            {
+                scopes.push(i);
+            }
+        }
+        for(auto i:current_scope->vars)
+        {
+            if(!i.second->is_f_param())
+            {
+                res.push_back(i.second);
+            }
+        }
+    }
+
+    return res;
+}
+
+//==========================================================================//
+
+
+
+//===================================== struct ic_scope =====================================//
+
+ic_scope::ic_scope():type(ic_scope_type::GLOBAL),father(nullptr),func(nullptr)
+{
+
+}
+
+ic_scope::ic_scope(struct ic_scope * father,struct ic_func * func):type(ic_scope_type::FUNC),father(father),func(func)
+{
+    func->set_scope(this);
+    for(auto i : *(func->f_params))
+    {
+        add_var(i);
+    }
+    father->children.push_back(this);
+}
+
+ic_scope::ic_scope(struct ic_scope * father):type(ic_scope_type::ANONYMOUS),father(father),func(nullptr)
+{
+    father->children.push_back(this);
+}
+
+void ic_scope::set_scope_type(enum ic_scope_type type)
+{
+    if(this->type==ic_scope_type::ANONYMOUS || this->type==ic_scope_type::IF || this->type==ic_scope_type::ELSE || this->type==ic_scope_type::WHILE)
+    {
+        if(this->father->different_type_children_num.find(type)==this->father->different_type_children_num.end())
+        {
+            this->father->different_type_children_num.insert(make_pair(type,0));
+        }
+        this->index_for_output=this->father->different_type_children_num[type]++;
+        this->type=type;
+    }
+}
+
+struct ic_scope * ic_scope::get_father() const
+{
+    return this->father;
+}
+
+bool ic_scope::is_global() const
+{
+    return this->type==ic_scope_type::GLOBAL;
+}
+
+bool ic_scope::is_func() const
+{
+    return this->type==ic_scope_type::FUNC;
+}
+
+struct ic_data * ic_scope::get_var(string var_name)
+{
+    struct ic_data * res=nullptr;
+    if(vars.find(var_name)!=vars.end())
+    {
+        res=vars.at(var_name);
+    }
+    return res;
+}
+
+bool ic_scope::add_var(struct ic_data * new_var)
+{
+    bool res=true;
+    string new_var_name=string(new_var->get_var_name());
+    if(get_var(new_var_name)==nullptr)
+    {
+        new_var->scope=this;
+        vars.insert(make_pair(new_var_name,new_var));
+    }
+    else
+    {
+        res=false;
+    }
+    return res;
+}
+
+//==========================================================================//
+
+
+
+//===================================== class Symbol_table =====================================//
+
 //单例对象
 Symbol_table * Symbol_table::instance_=nullptr;
 
@@ -45,8 +501,8 @@ Symbol_table::Symbol_table():tmp_vars_num_(0),labels_num_(0),current_scope_(null
     dimensions_len=new list<struct ic_data * >;
     dimensions_len->push_back(const_entry(language_data_type::INT,OAA((int)0)));
     functions_.insert(make_pair("putarray",new struct ic_func("putarray",language_data_type::VOID,(size_t)2,new struct ic_data("n",language_data_type::INT,nullptr,false),new struct ic_data("a",language_data_type::INT,dimensions_len,false))));
-    //void putfloat()
-    functions_.insert(make_pair("putfloat",new struct ic_func("putfloat",language_data_type::VOID,(size_t)0)));
+    //void putfloat(float a)
+    functions_.insert(make_pair("putfloat",new struct ic_func("putfloat",language_data_type::VOID,(size_t)1,new struct ic_data("a",language_data_type::FLOAT,nullptr,false))));
     //void putfarray(int n,float a[])
     dimensions_len=new list<struct ic_data * >;
     dimensions_len->push_back(const_entry(language_data_type::INT,OAA((int)0)));
@@ -333,3 +789,95 @@ struct ic_scope * Symbol_table::get_current_scope()
 {
     return current_scope_;
 }
+
+/*
+增加一个函数会更改的全局变量和数组形参
+
+Parameters
+----------
+func:要增加的函数
+data:要增加的数据
+*/
+void Symbol_table::add_func_def_global_vars_and_array_f_params(struct ic_func * func,struct ic_data * data)
+{
+    if(data->is_array_member())
+    {
+        data=data->get_belong_array();
+    }
+    if((data->is_f_param() && data->is_array_var()) || data->is_global())
+    {
+        if(funcs_def_global_vars_and_array_f_params_.find(func)==funcs_def_global_vars_and_array_f_params_.end())
+        {
+            funcs_def_global_vars_and_array_f_params_.insert(make_pair(func,set<struct ic_data * >()));
+        }
+        funcs_def_global_vars_and_array_f_params_.at(func).insert(data);
+    }
+}
+
+/*
+增加一个函数会使用的全局变量和数组形参
+
+Parameters
+----------
+func:要增加的函数
+data:要增加的数据
+*/
+void Symbol_table::add_func_use_global_vars_and_array_f_params(struct ic_func * func,struct ic_data * data)
+{
+    if(data->is_array_member())
+    {
+        data=data->get_belong_array();
+    }
+    if((data->is_f_param() && data->is_array_var()) || data->is_global())
+    {
+        if(funcs_use_global_vars_and_array_f_params_.find(func)==funcs_use_global_vars_and_array_f_params_.end())
+        {
+            funcs_use_global_vars_and_array_f_params_.insert(make_pair(func,set<struct ic_data * >()));
+        }
+        funcs_use_global_vars_and_array_f_params_.at(func).insert(data);
+    }
+}
+
+/*
+获取一个函数会更改的所有全局变量和数组形参
+
+Parameters
+----------
+func:要获取的函数
+
+Return
+------
+返回该函数会更改的所有全局变量和数组形参
+*/
+set<struct ic_data * > Symbol_table::get_func_def_global_vars_and_array_f_params(struct ic_func * func)
+{
+    set<struct ic_data * > res;
+    if(funcs_def_global_vars_and_array_f_params_.find(func)!=funcs_def_global_vars_and_array_f_params_.end())
+    {
+        res=funcs_def_global_vars_and_array_f_params_.at(func);
+    }
+    return res;
+}
+
+/*
+获取一个函数会使用的所有全局变量和数组形参
+
+Parameters
+----------
+func:要获取的函数
+
+Return
+------
+返回该函数会使用的所有全局变量和数组形参
+*/
+set<struct ic_data * > Symbol_table::get_func_use_global_vars_and_array_f_params(struct ic_func * func)
+{
+    set<struct ic_data * > res;
+    if(funcs_use_global_vars_and_array_f_params_.find(func)!=funcs_use_global_vars_and_array_f_params_.end())
+    {
+        res=funcs_use_global_vars_and_array_f_params_.at(func);
+    }
+    return res;
+}
+
+//==========================================================================//

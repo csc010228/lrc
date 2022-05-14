@@ -77,12 +77,6 @@ struct quaternion
         
     };
 
-    //查看这条中间代码是否可用
-    inline bool is_invalid() const
-    {
-        return (op==ic_op::NOP);
-    }
-
     enum ic_op op;                     //操作符
     pair<enum ic_operand,void *> arg1;                   //操作数1
     pair<enum ic_operand,void *> arg2;                   //操作数2
@@ -249,8 +243,8 @@ symbol_table->new_var(name,type,nullptr,value,true)
 symbol_table->new_tmp_var(type,nullptr,0,false)
 
 //在符号表中定义一个临时的const基本变量，并返回其指针
-#define def_const_tmp_var(type,value) \
-symbol_table->new_tmp_var(type,nullptr,value,true)
+// #define def_const_tmp_var(type,value) \
+// symbol_table->new_tmp_var(type,nullptr,value,true)
 
 //生成一个常量，并返回其指针
 #define def_const(type,value) \

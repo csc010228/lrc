@@ -165,6 +165,9 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::END_INSTRUCTION:
                 register_manager_->handler(event);
                 break;
+            case event_type::IS_VAR_STILL_ALIVE:
+                res=intermediate_code_manager_->handler(event);
+                break;
             default:
                 break;
         }

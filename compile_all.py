@@ -2,7 +2,7 @@
 import os
 
 #测试文件夹
-TEST_DIR='../compiler2021-master/test/'
+TEST_DIR='../compiler2021-master/test'
 
 #lrc编译器可执行文件名
 LRC_EXE_FILE='./lrc'
@@ -30,16 +30,19 @@ def complie_file(source_file,target_file):
 #编译目录file_dir下的所有sy文件
 def complier_dir(dir_name):
     error_num=0
+    success_num=0
     files_name_with_suffix_sy=files_name_with_suffix(dir_name,SOURCE_FILE_SUFFIX)
     for file in files_name_with_suffix_sy:
         is_success=complie_file(file,os.path.splitext(file)[0])
         if is_success:
             print(file+"\t\t\t\t\t\tsuccess!")
+            success_num=success_num+1
         else:
             error_num=error_num+1
             print(file+"\t\t\t\t\t\terror!")
-    return error_num
+    return success_num,error_num
 
 
 if __name__ == '__main__':
-    print(str(complier_dir(TEST_DIR))+" error")
+    success_num,error_num=complier_dir(TEST_DIR)
+    print(str(success_num)+" success,"+str(error_num)+" error")

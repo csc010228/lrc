@@ -103,12 +103,16 @@ bool Register_manager::allocate_designated_reg(reg_index reg)
         {
             if(var->is_tmp_var())
             {
-                //如果此时要被分配的寄存器中原本存放在临时变量的值的话，那么需要先将其入栈保存
-                event_data=new pair<struct ic_data *,reg_index>;
-                event_data->first=var;
-                event_data->second=reg;
-                notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
-                delete event_data;
+                //如果此时要被分配的寄存器中原本存放在临时变量的值的话，那么需要判断该临时变量之后是否仍旧活跃
+                //if(notify(event(event_type::IS_VAR_STILL_ALIVE,(void *)var)).bool_data)
+                //{
+                    //如果该临时变量仍旧是活跃的，那么需要将其入栈保存，否则的话就不用
+                    event_data=new pair<struct ic_data *,reg_index>;
+                    event_data->first=var;
+                    event_data->second=reg;
+                    notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
+                    delete event_data;
+                //}
             }
             else if(state==reg_state::DIRTY_VALUE)
             {
@@ -1332,14 +1336,13 @@ void Register_manager::handle_RETURN_VAR(struct ic_data * var)
 
 void Register_manager::handle_START_INSRUCTION(set<reg_index> * regs_unaccessible)
 {
-    set<reg_index> empty;
     if(regs_unaccessible)
     {
         current_instructions_regs_info_.involved_regs.push_back(*regs_unaccessible);
     }
     else
     {
-        current_instructions_regs_info_.involved_regs.push_back(empty);
+        current_instructions_regs_info_.involved_regs.push_back(set<reg_index>());
     }
 }
 
@@ -1381,6 +1384,13 @@ void Register_manager::handle_SAVE_REGS_WHEN_CALLING_FUNC()
     {
         //目前先把所有的DIRTY_VALUE寄存器和USED寄存器全部进行写回保存(之所以要把USED的寄存器也写回是因为里面可能是临时变量)
         //把寄存器设置成USED，因为之后写入参数的时候可能会用到它们
+
+        //在函数调用的时候需要保存回内存的数据有：
+        //参数寄存器中的DIRTY_VALUE数据和USED的临时变量
+        //被调用的函数可能使用到的全局变量
+        //被调用函数可能会用到的数组形参对应的实参的数组取元素
+        //和上述两类变量有关的变量
+        //会把这些寄存器设置为USED，而不是NOT_USED，因为之后写入参数的时候可能会用到它们
         if(i.second.state==reg_state::DIRTY_VALUE)
         {
             set_reg_USED(i.first);
@@ -1402,7 +1412,7 @@ void Register_manager::handle_SAVE_REGS_WHEN_CALLING_ABI_FUNC()
     struct ic_data * tmp_var;
     for(auto i:regs_.reg_indexs)
     {
-        //只需要把参数寄存器中的DIRTY_VALUE寄存器和USED寄存器全部进行写回保存(之所以要把USED的寄存器也写回是因为里面可能是临时变量)即可
+        //只需要把参数寄存器中的DIRTY_VALUE寄存器和USED的临时变量寄存器全部进行写回保存即可
         //把寄存器设置成USED，因为之后写入参数的时候可能会用到它们
         if(i.second.attr!=reg_attr::ARGUMENT)
         {
@@ -1486,8 +1496,8 @@ void Register_manager::handle_RET_FROM_CALLED_FUNC(struct ic_data * return_value
         else if(i.second.attr==reg_attr::TEMP && i.second.state==reg_state::USED && i.second.related_data_type==reg_related_data_type::VAR)
         {
             //同时要把存放如下几种类型的变量的寄存器从USED设置为NOT_USED（因为这些变量可能会在函数调用的过程中被改变）（这里不会再有DIRTY_VALUE的寄存器了）：
-            //全局变量
-            //数组取元素
+            //调用的函数可能会改变的全局变量
+            //调用的函数可能会改变的数组形参对应的实参取元素
             //和上述两类变量有关的变量
             var=i.second.var_data;
             if(var->is_global() || var->is_array_member())

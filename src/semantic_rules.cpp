@@ -300,6 +300,12 @@ string output_zero_operand_ic(struct quaternion qua)
     return "\t"+output_ic_op(qua.op)+"\t\t"+output_ic_operand(qua.result,false);
 }
 
+//输出空代码
+string output_nop_ic(struct quaternion qua)
+{
+    return "";
+}
+
 //输出单操作数的中间代码
 string output_one_operand_ic(struct quaternion qua)
 {
@@ -360,6 +366,7 @@ string output_return_ic(struct quaternion qua)
 
 //各种类型的中间代码的输出函数
 map<ic_op,ic_output> ic_outputs={
+    {ic_op::NOP,output_nop_ic},                         //空语句
     {ic_op::ASSIGN,output_one_operand_ic},              //赋值
     {ic_op::ADD,output_two_operands_ic},                    //加
     {ic_op::SUB,output_two_operands_ic},                    //减

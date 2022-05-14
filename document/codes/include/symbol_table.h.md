@@ -420,7 +420,7 @@
             this->scope=scope;
         };
     
-        inline set<struct ic_data * > get_local_vars() const;
+        inline list<struct ic_data * > get_local_vars() const;
     
         string name;                                        //标识符名称字符串
         enum language_data_type return_type;                //返回值类型

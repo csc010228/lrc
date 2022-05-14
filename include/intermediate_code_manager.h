@@ -20,16 +20,20 @@ protected:
     struct ic_flow_graph * intermediate_codes_flow_graph_;
 
     //当前正在转换成汇编的中间代码所在函数
-    list<struct ic_func_flow_graph * >::iterator current_func_;
+    list<struct ic_func_flow_graph * >::iterator current_func_pos_;
 
     //当前正在转换成汇编的中间代码所在基本块
-    list<struct ic_basic_block * >::iterator current_basic_block_;
+    list<struct ic_basic_block * >::iterator current_basic_block_pos_;
 
     //当前正在转换成汇编的中间代码的位置
-    vector<struct quaternion_with_def_use_info>::iterator current_ic_;
+    vector<struct quaternion_with_def_use_info>::iterator current_ic_with_info_pos_;
+
+    //当前正在转换成汇编的中间代码
+    struct quaternion_with_def_use_info current_ic_woth_info_;
 
     //事件处理函数
     struct event handle_NEXT_IC();
+    struct event handle_IS_VAR_STILL_ALIVE(struct ic_data * var);
 
 public:
     //构造函数

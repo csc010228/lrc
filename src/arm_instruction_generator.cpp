@@ -39,11 +39,11 @@ void Arm_instruction_generator::generate_asm_codes()
 */
 void Arm_instruction_generator::generate_arm_flow_graph()
 {
-    struct quaternion ic=get_next_intermediate_code();
-    while(!ic.is_invalid())
+    pair<bool,struct quaternion> next=get_next_intermediate_code();
+    while(next.first)
     {
-        ic_to_arm_asm(ic);
-        ic=get_next_intermediate_code();
+        ic_to_arm_asm(next.second);
+        next=get_next_intermediate_code();
     }
 }
 
@@ -61,6 +61,8 @@ void Arm_instruction_generator::ic_to_arm_asm(struct quaternion intermediate_cod
     //cout<<((int)intermediate_code.op)<<endl;
     switch(intermediate_code.op)
     {
+        case ic_op::NOP:
+            break;
         case ic_op::ASSIGN:
             assign_ic_to_arm_asm((struct ic_data *)intermediate_code.arg1.second,(struct ic_data *)intermediate_code.result.second);
             break;
@@ -1467,16 +1469,16 @@ void Arm_instruction_generator::handle_WRITE_CONST_FLOAT_TO_REG(float const_floa
         float float_data;
     } float_to_int;
     float_to_int.float_data=const_float_data;
-    if(notify(event(event_type::IS_CPU_REG,nullptr)).bool_data)
-    {
-        event_data=new pair<int,reg_index>(float_to_int.int_data,reg);
-        notify(event(event_type::WRITE_CONST_INT_TO_REG,(void *)event_data));
-        delete event_data;
-    }
-    else if(notify(event(event_type::IS_VFP_REG,nullptr)).bool_data)
-    {
-        push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,precision::S,reg,to_string(const_float_data)));
-    }
+    // if(notify(event(event_type::IS_CPU_REG,nullptr)).bool_data)
+    // {
+    //     event_data=new pair<int,reg_index>(float_to_int.int_data,reg);
+    //     notify(event(event_type::WRITE_CONST_INT_TO_REG,(void *)event_data));
+    //     delete event_data;
+    // }
+    // else if(notify(event(event_type::IS_VFP_REG,nullptr)).bool_data)
+    // {
+    //     push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,precision::S,reg,to_string(const_float_data)));
+    // }
     //push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,reg,to_string(float_to_int.int_data)));
 }
 
@@ -1775,19 +1777,6 @@ void Arm_instruction_generator::handle_CALL_FUNC(string func_name,list<struct ic
     notify(event(event_type::SAVE_REGS_WHEN_CALLING_FUNC,nullptr));
     //把需要入栈的参数从右到左入栈
     //默认每一参数都是4bytes的
-    /*for(list<struct ic_data * >::reverse_iterator i=r_params->rbegin();i!=r_params->rend();i++)
-    {
-        if(r_params_num<=4)
-        {
-            break;
-        }
-        notify(event(event_type::START_INSTRUCTION,nullptr));
-        reg=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)(*i))).int_data;
-        push_instruction(new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::PUSH,arm_condition::NONE,arm_registers(1,reg)));
-        notify(event(event_type::PUSH_ARGUMENT_TO_STACK_WHEN_CALLING_FUNC,(void *)(*i)));
-        notify(event(event_type::END_INSTRUCTION,nullptr));
-        r_params_num--;
-    }*/
     for(auto i:*r_params)
     {
         if(i->get_data_type()==language_data_type::INT || i->is_array_var())
@@ -1860,19 +1849,6 @@ void Arm_instruction_generator::handle_CALL_ABI_FUNC(string func_name,list<struc
     notify(event(event_type::SAVE_REGS_WHEN_CALLING_ABI_FUNC,nullptr));
     //把需要入栈的参数从右到左入栈
     //默认每一参数都是4bytes的
-    /*for(list<struct ic_data *>::reverse_iterator i=r_params->rbegin();i!=r_params->rend();i++)
-    {
-        if(r_params_num<=4)
-        {
-            break;
-        }
-        notify(event(event_type::START_INSTRUCTION,nullptr));
-        reg=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)(*i))).int_data;
-        push_instruction(new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::PUSH,arm_condition::NONE,arm_registers(1,reg)));
-        notify(event(event_type::PUSH_ARGUMENT_TO_STACK_WHEN_CALLING_FUNC,(void *)(*i)));
-        notify(event(event_type::END_INSTRUCTION,nullptr));
-        r_params_num--;
-    }*/
     for(auto i:*r_params)
     {
         if(i->get_data_type()==language_data_type::INT || i->is_array_var())

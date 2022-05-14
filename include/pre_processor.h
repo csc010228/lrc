@@ -31,11 +31,6 @@ struct macro_func
 
     };
 
-    /*string macro_relacement(list<string> r_params) const
-    {
-        
-    };*/
-
     string macro_fun_name;                  //宏函数名
     size_t f_param_num;                     //形参个数
     list<size_t> f_params_in_content;       //形参在宏函数内容中的顺序

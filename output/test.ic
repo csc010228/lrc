@@ -1,73 +1,22 @@
-int n
-int insertsort ( int insertsort::a[0] )  : 
-	int insertsort::i
-	ASSIGN		1 --> insertsort::i
-.0 : 
-	LT		insertsort::i , n --> (int)@0
-	IF_NOT_JMP		@0 --> .3
-	int insertsort::while_0::temp
-	MUL		insertsort::i , 1 --> (int)@1
-	ADD		@1 , 0 --> (int)@2
-	ASSIGN		insertsort::a[@2] --> insertsort::while_0::temp
-	int insertsort::while_0::j
-	SUB		insertsort::i , 1 --> (int)@3
-	ASSIGN		@3 --> insertsort::while_0::j
-.1 : 
-	GT		insertsort::while_0::j , -1 --> (int)@4
-	IF_NOT_JMP		@4 --> .2
-	MUL		insertsort::while_0::j , 1 --> (int)@5
-	ADD		@5 , 0 --> (int)@6
-	LT		insertsort::while_0::temp , insertsort::a[@6] --> (int)@7
-	IF_NOT_JMP		@7 --> .2
-	ADD		insertsort::while_0::j , 1 --> (int)@8
-	MUL		@8 , 1 --> (int)@9
-	ADD		@9 , 0 --> (int)@10
-	MUL		insertsort::while_0::j , 1 --> (int)@11
-	ADD		@11 , 0 --> (int)@12
-	ASSIGN		insertsort::a[@12] --> insertsort::a[@10]
-	SUB		insertsort::while_0::j , 1 --> (int)@13
-	ASSIGN		@13 --> insertsort::while_0::j
+int if_ifElse_ (  )  : 
+	int if_ifElse_::a
+	ASSIGN		5 --> if_ifElse_::a
+	int if_ifElse_::b
+	ASSIGN		10 --> if_ifElse_::b
+	EQ		if_ifElse_::a , 5 --> (int)@0
+	IF_NOT_JMP		@0 --> .2
+	EQ		if_ifElse_::b , 10 --> (int)@1
+	IF_NOT_JMP		@1 --> .0
+	ASSIGN		25 --> if_ifElse_::a
 	JMP		.1
+.0 : 
+	ADD		if_ifElse_::a , 15 --> (int)@2
+	ASSIGN		@2 --> if_ifElse_::a
+.1 : 
 .2 : 
-	ADD		insertsort::while_0::j , 1 --> (int)@14
-	MUL		@14 , 1 --> (int)@15
-	ADD		@15 , 0 --> (int)@16
-	ASSIGN		insertsort::while_0::temp --> insertsort::a[@16]
-	ADD		insertsort::i , 1 --> (int)@17
-	ASSIGN		@17 --> insertsort::i
-	JMP		.0
-.3 : 
-	RET		0
+	RET		if_ifElse_::a
 
 int main (  )  : 
-	ASSIGN		10 --> n
-	int main::a[10]
-	ASSIGN		4 --> main::a[0]
-	ASSIGN		3 --> main::a[1]
-	ASSIGN		9 --> main::a[2]
-	ASSIGN		2 --> main::a[3]
-	ASSIGN		0 --> main::a[4]
-	ASSIGN		1 --> main::a[5]
-	ASSIGN		6 --> main::a[6]
-	ASSIGN		5 --> main::a[7]
-	ASSIGN		7 --> main::a[8]
-	ASSIGN		8 --> main::a[9]
-	int main::i
-	CALL		insertsort ( main::a )  --> (int)@18
-	ASSIGN		@18 --> main::i
-.4 : 
-	LT		main::i , n --> (int)@19
-	IF_NOT_JMP		@19 --> .5
-	int main::while_0::tmp
-	MUL		main::i , 1 --> (int)@20
-	ADD		@20 , 0 --> (int)@21
-	ASSIGN		main::a[@21] --> main::while_0::tmp
-	CALL		putint ( main::while_0::tmp ) 
-	ASSIGN		10 --> main::while_0::tmp
-	CALL		putch ( main::while_0::tmp ) 
-	ADD		main::i , 1 --> (int)@22
-	ASSIGN		@22 --> main::i
-	JMP		.4
-.5 : 
-	RET		0
+	CALL		if_ifElse_ (  )  --> (int)@3
+	RET		@3
 

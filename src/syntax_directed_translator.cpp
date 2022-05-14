@@ -61,10 +61,9 @@ Syntax_directed_translator::~Syntax_directed_translator()
 */
 void Syntax_directed_translator::check_semantic_stack()
 {
-    map<string,union semantic_stack_node_member> empty;
     while(stack_top_ >= semantic_stack_->size())
     {
-        semantic_stack_->push_back(empty);
+        semantic_stack_->push_back(map<string,union semantic_stack_node_member>());
     }
 }
 

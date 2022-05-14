@@ -18,12 +18,6 @@
             
         };
     
-        //查看这条中间代码是否可用
-        inline bool is_invalid() const
-        {
-            return (op==ic_op::NOP);
-        }
-    
         enum ic_op op;                     //操作符
         pair<enum ic_operand,void *> arg1;                   //操作数1
         pair<enum ic_operand,void *> arg2;                   //操作数2
