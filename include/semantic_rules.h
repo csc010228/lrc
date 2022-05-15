@@ -28,12 +28,7 @@ enum class ic_op
     MUL,                        //乘
     DIV,                        //除
     MOD,                        //取模
-    // L_SHIFT,                    //左移位
-    // R_SHIFT,                    //右移位
     NOT,                        //非
-    // AND,                        //与
-    // OR,                         //或
-    // XOR,                        //异或
     EQ,                         //是否相等
     UEQ,                        //是否不相等
     GT,                         //比较是否大于

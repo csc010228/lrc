@@ -418,22 +418,14 @@ syntax_symbol_set:要去除空符号的集合
 */
 set<syntax_symbol_index> Grammer::set_difference_empty(set<syntax_symbol_index> syntax_symbol_set)
 {
-    int k=0;
-    //cout<<"set_difference_empty start "<<syntax_symbol_set.size()<<endl;
     for(set<syntax_symbol_index>::iterator i=syntax_symbol_set.begin();i!=syntax_symbol_set.end();i++)
     {
-        //cout<<(*i)<<endl;
-        //cout<<(++k)<<endl;
         if((*i)==empty_symbol_)
         {
-            //cout<<"S"<<endl;
             syntax_symbol_set.erase(i);
             break;
-            //cout<<"E"<<endl;
         }
-        //cout<<"ENDNNN"<<endl;
     }
-    //cout<<"set_difference_empty end"<<endl;
     return syntax_symbol_set;
 }
 

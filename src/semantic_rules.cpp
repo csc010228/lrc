@@ -303,7 +303,7 @@ string output_zero_operand_ic(struct quaternion qua)
 //输出空代码
 string output_nop_ic(struct quaternion qua)
 {
-    return "";
+    return "\tNOP";
 }
 
 //输出单操作数的中间代码

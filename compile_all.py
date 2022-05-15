@@ -10,6 +10,9 @@ LRC_EXE_FILE='./lrc'
 #源文件后缀
 SOURCE_FILE_SUFFIX='.sy'
 
+#需要删除的文件后缀
+DELETE_FILE_SUFFIX='.pre'
+
 #在目录file_dir下获取带有某一个特定后缀suffix的文件名
 def files_name_with_suffix(file_dir,suffix):
     files_name=[]
@@ -42,7 +45,14 @@ def complier_dir(dir_name):
             print(file+"\t\t\t\t\t\terror!")
     return success_num,error_num
 
+#删除某一个目录下的所有特定后缀的文件
+def delete_specific_suffix_file(dir_name,suffix):
+    files_name_with_suffix_sy=files_name_with_suffix(dir_name,suffix)
+    for file in files_name_with_suffix_sy:
+        os.remove(file)
+
 
 if __name__ == '__main__':
     success_num,error_num=complier_dir(TEST_DIR)
     print(str(success_num)+" success,"+str(error_num)+" error")
+    delete_specific_suffix_file(TEST_DIR,DELETE_FILE_SUFFIX)

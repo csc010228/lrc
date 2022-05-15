@@ -82,7 +82,7 @@ struct quaternion_with_def_use_info
     void add_to_du_chain(struct ic_data * data,set<ic_pos> poses);
 
     //将该条中间代码使用的某一个数据替换成另一个常量数据
-    void replace_used_data_to_const(struct ic_data * source,struct ic_data * destination);
+    void replace_used_data(struct ic_data * source,struct ic_data * destination);
 
     //中间代码
     struct quaternion intermediate_code;
