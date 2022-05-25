@@ -74,6 +74,8 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::GET_R0_REG:
             case event_type::GET_R1_REG:
             case event_type::GET_S0_REG:
+            case event_type::GET_APSR_REG:
+            case event_type::GET_FPSCR_REG:
             case event_type::READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS:
             case event_type::READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS:
             case event_type::CLEAR_FLAG:
@@ -92,7 +94,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::GET_VAR_CARED_FLAG:
             case event_type::GET_CONST_INT_S_VALUE_REG:
             case event_type::ALLOCATE_IDLE_CPU_REG:
-            case event_type::ATTACH_CONST_INT_TO_REG:
+            case event_type::ATTACH_CONST_TO_REG:
             case event_type::IS_CPU_REG:
             case event_type::IS_VFP_REG:
                 res=register_manager_->handler(event);
@@ -124,10 +126,10 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
                 break;
             case event_type::CALL_FUNC:
             case event_type::CALL_ABI_FUNC:
-            case event_type::MOVE_DATA_BETWEEN_CPU_REGS:
+            case event_type::MOVE_DATA_BETWEEN_REGS:
             case event_type::ASSIGN_VAR:
-            case event_type::WRITE_CONST_INT_TO_REG:
-            case event_type::WRITE_CONST_FLOAT_TO_REG:
+            case event_type::WRITE_CONST_TO_CPU_REG:
+            case event_type::WRITE_CONST_TO_VFP_REG:
                 instruction_generator_->handler(event);
                 break;
             case event_type::RET_FROM_CALLED_FUNC:
@@ -150,11 +152,11 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
         {
             case event_type::STORE_VAR_TO_MEM:
             case event_type::LOAD_VAR_TO_REG:
-            case event_type::WRITE_CONST_INT_TO_REG:
-            case event_type::WRITE_CONST_FLOAT_TO_REG:
+            case event_type::WRITE_CONST_TO_CPU_REG:
+            case event_type::WRITE_CONST_TO_VFP_REG:
             case event_type::WRITE_ADDR_TO_REG:
             case event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK:
-            case event_type::MOVE_DATA_BETWEEN_CPU_REGS:
+            case event_type::MOVE_DATA_BETWEEN_REGS:
                 instruction_generator_->handler(event);
                 break;
             case event_type::READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS:
@@ -293,6 +295,8 @@ bool Arm_asm_generator::init()
         reg("s29",45,reg_attr::TEMP,true,reg_state::NOT_USED,32,reg_processor::VFP),
         reg("s30",46,reg_attr::TEMP,true,reg_state::NOT_USED,32,reg_processor::VFP),
         reg("s31",47,reg_attr::TEMP,true,reg_state::NOT_USED,32,reg_processor::VFP),
+        reg("APSR_nzcv",48,reg_attr::FLAGS,false,reg_state::NOT_USED,32,reg_processor::CPU),
+        reg("FPSCR",49,reg_attr::FLAGS,false,reg_state::NOT_USED,32,reg_processor::VFP),
     };
     return Asm_generator::init(arm_regs,flag_reg("cpsr",4,flag_in_flag_reg::NEGATIVE,flag_in_flag_reg::ZERO,flag_in_flag_reg::CARRY,flag_in_flag_reg::OVERFLOW),arm_memory_info);
 }

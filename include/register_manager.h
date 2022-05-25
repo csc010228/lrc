@@ -139,6 +139,11 @@ enum class flag_in_flag_reg
 //标志寄存器信息
 struct flag_reg
 {
+    flag_reg():name("")
+    {
+        
+    };
+
     flag_reg(string name,size_t flag_num_in_flag_reg,...):name(name)
     {
         /*va_list argptr;
@@ -175,11 +180,6 @@ private:
         struct flag_reg flag_reg;                      //标志寄存器
         map<reg_index,struct reg> reg_indexs;          //寄存器编号和寄存器之间的映射
         map<string,reg_index> reg_names;               //寄存器名字和寄存器编号之间的映射
-
-        regs():flag_reg("",0)
-        {
-
-        };
     } regs_;
 
     //当前函数的寄存器信息
@@ -194,6 +194,7 @@ private:
         map<struct ic_data *,set<reg_index> > var_value_regs_map;         //存储变量的值和寄存器之间的映射关系的map
         map<int,set<reg_index> > const_int_value_regs_map;                //存储int常数的值和寄存器之间的映射关系的map
         map<float,set<reg_index> > const_float_value_regs_map;                //存储float常数的值和寄存器之间的映射关系的map
+        //map<OAA,set<reg_index> > const_value_regs_map;                      //存储常数的值和寄存器之间的映射关系的map
         map<struct ic_data *,set<reg_index> > var_addr_regs_map;          //存储变量的地址和寄存器之间的映射关系的map
 
         //查看某个变量的值和某个寄存器之间是否有关系
@@ -479,6 +480,8 @@ private:
     struct event handle_GET_FP_REG();
     struct event handle_GET_LR_REG();
     struct event handle_GET_PC_REG();
+    struct event handle_GET_APSR_REG();
+    struct event handle_GET_FPSCR_REG();
     struct event handle_IS_CPU_REG(reg_index reg);
     struct event handle_IS_VFP_REG(reg_index reg);
     struct event handle_IS_ARGUMENT_REG(reg_index reg);
@@ -513,7 +516,7 @@ private:
     struct event handle_CHECK_VAR_ATTACHED_TO_FLAG(struct ic_data * var);
     struct event handle_GET_VAR_CARED_FLAG();
     struct event handle_ALLOCATE_IDLE_CPU_REG();
-    void handle_ATTACH_CONST_INT_TO_REG(int const_int,reg_index reg);
+    void handle_ATTACH_CONST_TO_REG(OAA const_data,reg_index reg);
 
 public:
     //构造函数

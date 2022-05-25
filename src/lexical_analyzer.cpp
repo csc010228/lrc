@@ -601,6 +601,9 @@ void Lexical_analyzer::error_handle(enum my_error_code ec)
         case my_error_code::CONST_DOUBLE_TOO_LONG:
             cout<<endl<<"Line "<<line_<<" Error: Const double length is too long (Max const int length is "<<MAX_LEN_OF_ID<<")"<<endl;
             break;
+        case my_error_code::INVALID_CONST_FORMAT:
+            cout<<endl<<"Line "<<line_<<" Error: Invalid const format"<<endl;
+            break;
         default:
             cout<<"Line "<<line_<<" Error: Unknown error"<<endl;
             break;
@@ -616,7 +619,7 @@ struct token * Lexical_analyzer::token_scan()
     char ch;
     int length;
     int tag;
-    enum digit_type dig_typ;
+    enum digit_type dig_type;
 
     //跳过此前的所有空白字符
     if(!skip_all_blanks())
@@ -673,33 +676,36 @@ repeat:
     }
 
     //识别整常数和实常数
-    if(is_digit(ch,digit_type::DIGIT))
+    if(is_digit(ch,digit_type::DIGIT) || ch=='.')
     {
         if(ch=='0')
         {   
             //如果常数的开头是0，那么就说明这个可能是8进制数（也有可能是16进制）
             base_=8;
-            dig_typ=digit_type::OCTAL;
+            dig_type=digit_type::OCTAL;
         }
         else
         {
             //如果常数的开头不是0，那么就这个是10进制数
             base_=10;
-            dig_typ=digit_type::DIGIT;
+            dig_type=digit_type::DIGIT;
         }
         length=1;
 again:
-        do
+        if(ch!='.')
         {
-            if(length>MAX_LEN_OF_ID)
+            do
             {
-                error_handle(my_error_code::CONST_INT_TOO_LONG);
-                retract(1);
-                return get_token(code_of_kind::CONST_INT);
-            }
-            next_char(code_of_kind::CONST_INT,ch);
-            length++;
-        }while(is_digit(ch,dig_typ));
+                if(length>MAX_LEN_OF_ID)
+                {
+                    error_handle(my_error_code::CONST_INT_TOO_LONG);
+                    retract(1);
+                    return get_token(code_of_kind::CONST_INT);
+                }
+                next_char(code_of_kind::CONST_INT,ch);
+                length++;
+            }while(is_digit(ch,dig_type));
+        }
         if(ch=='.')
         {
             do
@@ -711,15 +717,116 @@ again:
                 }
                 next_char(code_of_kind::CONST_FLOAT,ch);
                 length++;
-            }while(is_digit(ch,dig_typ));
-            retract(1);
-            return get_token(code_of_kind::CONST_FLOAT);
+            }while(is_digit(ch,(dig_type==digit_type::HEXADECIMAL?digit_type::HEXADECIMAL:digit_type::DIGIT)));
+            if((ch=='e' || ch=='E' && dig_type!=digit_type::HEXADECIMAL) || (ch=='p' || ch=='P' && dig_type==digit_type::HEXADECIMAL))
+            {
+                next_char(code_of_kind::CONST_FLOAT,ch);
+                length++;
+                if(ch=='-' || ch=='+')
+                {
+                    tag=-1;
+                    do
+                    {
+                        if(length>MAX_LEN_OF_ID)
+                        {
+                            error_handle(my_error_code::CONST_DOUBLE_TOO_LONG);
+                            break;
+                        }
+                        next_char(code_of_kind::CONST_FLOAT,ch);
+                        length++;
+                        tag++;
+                    }while(is_digit(ch,digit_type::DIGIT));
+                    if(tag==0)
+                    {
+                        error_handle(my_error_code::INVALID_CONST_FORMAT);
+                        retract(1);
+                        return get_token(code_of_kind::CONST_FLOAT);
+                    }
+                    retract(1);
+                    return get_token(code_of_kind::CONST_FLOAT);
+                }
+                else if(is_digit(ch,digit_type::DIGIT))
+                {
+                    do
+                    {
+                        if(length>MAX_LEN_OF_ID)
+                        {
+                            error_handle(my_error_code::CONST_DOUBLE_TOO_LONG);
+                            break;
+                        }
+                        next_char(code_of_kind::CONST_FLOAT,ch);
+                        length++;
+                    }while(is_digit(ch,digit_type::DIGIT));
+                    retract(1);
+                    return get_token(code_of_kind::CONST_FLOAT);
+                }
+                else
+                {
+                    error_handle(my_error_code::INVALID_CONST_FORMAT);
+                    retract(1);
+                    return get_token(code_of_kind::CONST_FLOAT);
+                }
+            }
+            else
+            {
+                retract(1);
+                return get_token(code_of_kind::CONST_FLOAT);
+            }
+        }
+        else if((ch=='e' || ch=='E' && dig_type!=digit_type::HEXADECIMAL) || (ch=='p' || ch=='P' && dig_type==digit_type::HEXADECIMAL))
+        {
+            next_char(code_of_kind::CONST_FLOAT,ch);
+            length++;
+            if(ch=='-' || ch=='+')
+            {
+                tag=-1;
+                do
+                {
+                    if(length>MAX_LEN_OF_ID)
+                    {
+                        error_handle(my_error_code::CONST_DOUBLE_TOO_LONG);
+                        break;
+                    }
+                    next_char(code_of_kind::CONST_FLOAT,ch);
+                    length++;
+                    tag++;
+                }while(is_digit(ch,digit_type::DIGIT));
+                if(tag==0)
+                {
+                    error_handle(my_error_code::INVALID_CONST_FORMAT);
+                    retract(1);
+                    return get_token(code_of_kind::CONST_FLOAT);
+                }
+                retract(1);
+                return get_token(code_of_kind::CONST_FLOAT);
+            }
+            else if(is_digit(ch,digit_type::DIGIT))
+            {
+                do
+                {
+                    if(length>MAX_LEN_OF_ID)
+                    {
+                        error_handle(my_error_code::CONST_DOUBLE_TOO_LONG);
+                        break;
+                    }
+                    next_char(code_of_kind::CONST_FLOAT,ch);
+                    length++;
+                }while(is_digit(ch,digit_type::DIGIT));
+                retract(1);
+                return get_token(code_of_kind::CONST_FLOAT);
+            }
+            else
+            {
+                error_handle(my_error_code::INVALID_CONST_FORMAT);
+                retract(1);
+                return get_token(code_of_kind::CONST_FLOAT);
+            }
         }
         else if(length==2 && (ch=='x' || ch=='X'))
         {
             //如果常数以0x或者0X开头，那么说明是16进制数
             base_=16;
-            dig_typ=digit_type::HEXADECIMAL;
+            dig_type=digit_type::HEXADECIMAL;
             goto again;
         }
         else

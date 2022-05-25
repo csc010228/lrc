@@ -578,6 +578,7 @@ void Arm_instruction_generator::not_ic_to_arm_asm(struct ic_data * arg1,struct i
             notify(event(event_type::START_INSTRUCTION,nullptr));
             Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
             push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+            push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             event_data=new pair<struct ic_data *,int>(result,(int)(arm_condition::EQ));
             notify(event(event_type::CHANGE_FLAGS_FOR_VAR,(void *)event_data));
             delete event_data;
@@ -651,18 +652,21 @@ void Arm_instruction_generator::eq_ic_to_arm_asm(struct ic_data * arg1,struct ic
                 //如果EQ的第一个操作数是常数0
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg2)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             }
             else if(arg2->is_const() && !arg2->is_array_var() && arg2->get_value().float_data==0)
             {
                 //如果EQ的第二个操作数是常数0
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             }
             else
             {
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
                 Rm=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg2)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn,Rm));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             }
             break;
         default:
@@ -703,18 +707,21 @@ void Arm_instruction_generator::ueq_ic_to_arm_asm(struct ic_data * arg1,struct i
                 //如果EQ的第一个操作数是常数0
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg2)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             }
             else if(arg2->is_const() && !arg2->is_array_var() && arg2->get_value().float_data==0)
             {
                 //如果EQ的第二个操作数是常数0
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             }
             else
             {
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
                 Rm=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg2)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn,Rm));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             }
             break;
         default:
@@ -757,6 +764,7 @@ void Arm_instruction_generator::gt_ic_to_arm_asm(struct ic_data * arg1,struct ic
                 //如果EQ的第一个操作数是常数0
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg2)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
                 cond=arm_condition::LE;
             }
             else if(arg2->is_const() && !arg2->is_array_var() && arg2->get_value().float_data==0)
@@ -764,12 +772,14 @@ void Arm_instruction_generator::gt_ic_to_arm_asm(struct ic_data * arg1,struct ic
                 //如果EQ的第二个操作数是常数0
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             }
             else
             {
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
                 Rm=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg2)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn,Rm));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             }
             break;
         default:
@@ -812,6 +822,7 @@ void Arm_instruction_generator::lt_ic_to_arm_asm(struct ic_data * arg1,struct ic
                 //如果EQ的第一个操作数是常数0
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg2)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
                 cond=arm_condition::GE;
             }
             else if(arg2->is_const() && !arg2->is_array_var() && arg2->get_value().float_data==0)
@@ -819,12 +830,14 @@ void Arm_instruction_generator::lt_ic_to_arm_asm(struct ic_data * arg1,struct ic
                 //如果EQ的第二个操作数是常数0
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             }
             else
             {
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
                 Rm=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg2)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn,Rm));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             }
             break;
         default:
@@ -867,6 +880,7 @@ void Arm_instruction_generator::ge_ic_to_arm_asm(struct ic_data * arg1,struct ic
                 //如果EQ的第一个操作数是常数0
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg2)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
                 cond=arm_condition::LT;
             }
             else if(arg2->is_const() && !arg2->is_array_var() && arg2->get_value().float_data==0)
@@ -874,12 +888,14 @@ void Arm_instruction_generator::ge_ic_to_arm_asm(struct ic_data * arg1,struct ic
                 //如果EQ的第二个操作数是常数0
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             }
             else
             {
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
                 Rm=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg2)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn,Rm));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             }
             break;
         default:
@@ -922,6 +938,7 @@ void Arm_instruction_generator::le_ic_to_arm_asm(struct ic_data * arg1,struct ic
                 //如果EQ的第一个操作数是常数0
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg2)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
                 cond=arm_condition::GT;
             }
             else if(arg2->is_const() && !arg2->is_array_var() && arg2->get_value().float_data==0)
@@ -929,12 +946,14 @@ void Arm_instruction_generator::le_ic_to_arm_asm(struct ic_data * arg1,struct ic
                 //如果EQ的第二个操作数是常数0
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             }
             else
             {
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
                 Rm=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg2)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn,Rm));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
             }
             break;
         default:
@@ -989,6 +1008,7 @@ void Arm_instruction_generator::if_jmp_ic_to_arm_asm(struct ic_data * arg1,struc
                 notify(event(event_type::START_INSTRUCTION,nullptr));
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
                 event_data=new pair<struct ic_data *,int>(arg1,(int)(arm_condition::NE));
                 notify(event(event_type::CHANGE_FLAGS_FOR_VAR,(void *)event_data));
                 delete event_data;
@@ -1058,6 +1078,7 @@ void Arm_instruction_generator::if_not_jmp_ic_to_arm_asm(struct ic_data * arg1,s
                 notify(event(event_type::START_INSTRUCTION,nullptr));
                 Rn=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)arg1)).int_data;
                 push_instruction(new Arm_vfp_data_process_instruction(false,arm_condition::NONE,precision::S,Rn));
+                push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMRS,arm_condition::NONE,(reg_index)notify(event(event_type::GET_APSR_REG,nullptr)).int_data,(reg_index)notify(event(event_type::GET_FPSCR_REG,nullptr)).int_data));
                 event_data=new pair<struct ic_data *,int>(arg1,(int)(arm_condition::NE));
                 notify(event(event_type::CHANGE_FLAGS_FOR_VAR,(void *)event_data));
                 delete event_data;
@@ -1303,7 +1324,7 @@ void Arm_instruction_generator::ret_ic_to_arm_asm(struct ic_data * result)
     set<reg_index> * regs_unaccessible;
     reg_index const_reg;
     struct operand2 op2;
-    pair<int,reg_index> * event_data;
+    pair<OAA,reg_index> * event_data;
     //先把此时留在寄存器中的脏值全部写回内存
     notify(event(event_type::FUNC_RET,nullptr));
     //再把返回值放入寄存器
@@ -1354,11 +1375,11 @@ void Arm_instruction_generator::ret_ic_to_arm_asm(struct ic_data * result)
                 stack_offset=(size_t)(notify(event(event_type::READY_TO_POP_TEMP_VARS,nullptr)).int_data+notify(event(event_type::READY_TO_POP_LOCAL_VARS,nullptr)).int_data+notify(event(event_type::READY_TO_POP_F_PARAM_VFP_REGS,nullptr)).int_data+notify(event(event_type::READY_TO_POP_F_PARAM_CPU_REGS,nullptr)).int_data);
                 //然后把新的stack_offset值写入寄存器中
                 //push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,const_reg,to_string(stack_offset)));
-                event_data=new pair<int,reg_index>(stack_offset,const_reg);
-                notify(event(event_type::WRITE_CONST_INT_TO_REG,(void *)event_data));
+                event_data=new pair<OAA,reg_index>(OAA((int)stack_offset),const_reg);
+                notify(event(event_type::WRITE_CONST_TO_CPU_REG,(void *)event_data));
                 //再通知内存管理模块：寄存器被新的stack_offset占用了
                 //event_data=new pair<int,reg_index>(stack_offset,const_reg);
-                notify(event(event_type::ATTACH_CONST_INT_TO_REG,(void *)event_data));
+                notify(event(event_type::ATTACH_CONST_TO_REG,(void *)event_data));
                 delete event_data;
                 //最后把得到的寄存器作为operand2的一部分即可
                 op2=operand2(const_reg);
@@ -1444,14 +1465,13 @@ void Arm_instruction_generator::push_directive(Arm_directive * directive)
     arm_flow_graph_.add_arm_asm_to_global(directive);
 }
 
-void Arm_instruction_generator::handle_WRITE_CONST_INT_TO_REG(int const_int_data,reg_index reg)
+void Arm_instruction_generator::handle_WRITE_CONST_TO_CPU_REG(OAA const_data,reg_index reg)
 {
     union {
         int int_data;
         unsigned int unsigned_int_data;
     } signed_int_to_unsigned_int;
-    unsigned int tmp;
-    signed_int_to_unsigned_int.int_data=const_int_data;
+    signed_int_to_unsigned_int.int_data=const_data.int_data;
     push_instruction(new Arm_cpu_data_process_instruction(arm_op::MOVW,arm_condition::NONE,reg,immed_16r(signed_int_to_unsigned_int.unsigned_int_data & 0x0000ffff)));
     signed_int_to_unsigned_int.unsigned_int_data=signed_int_to_unsigned_int.unsigned_int_data >> 16;
     if(signed_int_to_unsigned_int.unsigned_int_data>0)
@@ -1461,31 +1481,16 @@ void Arm_instruction_generator::handle_WRITE_CONST_INT_TO_REG(int const_int_data
     //push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,reg,to_string(const_int_data)));
 }
 
-void Arm_instruction_generator::handle_WRITE_CONST_FLOAT_TO_REG(float const_float_data,reg_index reg)
+void Arm_instruction_generator::handle_WRITE_CONST_TO_VFP_REG(OAA const_data,reg_index reg)
 {
-    pair<int,reg_index> * event_data;
-    union {
-        int int_data;
-        float float_data;
-    } float_to_int;
-    float_to_int.float_data=const_float_data;
-    // if(notify(event(event_type::IS_CPU_REG,nullptr)).bool_data)
-    // {
-    //     event_data=new pair<int,reg_index>(float_to_int.int_data,reg);
-    //     notify(event(event_type::WRITE_CONST_INT_TO_REG,(void *)event_data));
-    //     delete event_data;
-    // }
-    // else if(notify(event(event_type::IS_VFP_REG,nullptr)).bool_data)
-    // {
-    //     push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,precision::S,reg,to_string(const_float_data)));
-    // }
-    //push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,reg,to_string(float_to_int.int_data)));
+
+    push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,precision::S,reg,::to_string(const_data.int_data)));
 }
 
 void Arm_instruction_generator::handle_STORE_VAR_TO_MEM(struct ic_data * var,reg_index reg)
 {
     size_t var_stack_pos_from_sp;
-    reg_index addr_reg;
+    reg_index addr_reg,offset_reg,new_reg;
 
     if(var->is_const() || var->is_tmp_var() || (var->is_array_var() && !var->is_f_param()) || (var->is_array_member() && var->is_array_var()))
     {
@@ -1496,53 +1501,96 @@ void Arm_instruction_generator::handle_STORE_VAR_TO_MEM(struct ic_data * var,reg
     }
 
     notify(event(event_type::START_INSTRUCTION,nullptr));
-    switch(var->get_data_type())
+    if(var->is_array_member())
     {
-        case language_data_type::INT:
-            if(var->is_array_member())
+        //对于数组取元素的变量，需要先获取其所属数组的地址，然后取偏移
+        addr_reg=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)(var->get_belong_array()))).int_data;
+        //取偏移的时候需要乘上数组元素类型的大小（这里默认是4）
+        if(notify(event(event_type::IS_CPU_REG,(int)reg)).bool_data)
+        {
+            push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::STR,arm_condition::NONE,arm_data_type::W,reg,addr_reg,get_flexoffset((var->get_offset()),flexoffset_shift_op::LSL_N,2,false),false));
+        }
+        else if(notify(event(event_type::IS_VFP_REG,(int)reg)).bool_data)
+        {
+            if(var->get_offset()->is_const() && var->get_offset()->get_value().int_data<=(1020/4) && var->get_offset()->get_value().int_data>=(-1020/4))
             {
-                //对于数组取元素的变量，需要先获取其所属数组的地址，然后取偏移
-                addr_reg=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)(var->get_belong_array()))).int_data;
-                //取偏移的时候需要乘上数组元素类型的大小（这里默认是4）
-                push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::STR,arm_condition::NONE,arm_data_type::W,reg,addr_reg,get_flexoffset((var->get_offset()),flexoffset_shift_op::LSL_N,2,false),false));
-            }
-            else if(var->is_global())
-            {
-                //对于全局变量
-                addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
-                push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::STR,arm_condition::NONE,arm_data_type::W,reg,addr_reg));
-                //push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::STR,arm_condition::NONE,arm_data_type::W,reg,var->get_var_name()));
+                push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VSTR,arm_condition::NONE,precision::S,reg,addr_reg,var->get_offset()->get_value().int_data*4,vfp_single_register_load_and_store_type::RN_OFFSET));
             }
             else
             {
-                //对于那些非数组取元素的局部变量和函数形参，使用栈指针sp的偏移量来取它们的地址
-                addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
-                push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::STR,arm_condition::NONE,arm_data_type::W,reg,addr_reg));
+                
             }
-            break;
-        case language_data_type::FLOAT:
-            if(var->is_array_member())
-            {
-                //对于数组取元素的变量，需要先获取其所属数组的地址，然后取偏移
-                addr_reg=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)(var->get_belong_array()))).int_data;
-                //取偏移的时候需要乘上数组元素类型的大小（这里默认是4）
-                push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VSTR,arm_condition::NONE,precision::S,reg,addr_reg,get_flexoffset((var->get_offset()),flexoffset_shift_op::LSL_N,2,false)));
-            }
-            else if(var->is_global())
-            {
-                //对于全局变量
-                push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VSTR,arm_condition::NONE,precision::S,reg,var->get_var_name()));
-            }
-            else
-            {
-                //对于那些非数组取元素的局部变量和函数形参，使用栈指针sp的偏移量来取它们的地址
-                addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
-                push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VSTR,arm_condition::NONE,precision::S,reg,addr_reg));
-            }
-            break;
-        default:
-            break;
+        }
     }
+    else
+    {
+        //对于全局变量和那些非数组取元素的局部变量和函数形参，先获取他们的地址寄存器，然后再将其保存到内存中
+        addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
+        if(notify(event(event_type::IS_CPU_REG,(int)reg)).bool_data)
+        {
+            push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::STR,arm_condition::NONE,arm_data_type::W,reg,addr_reg));
+        }
+        else if(notify(event(event_type::IS_VFP_REG,(int)reg)).bool_data)
+        {
+            push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VSTR,arm_condition::NONE,precision::S,reg,addr_reg));
+        }
+    }
+    // switch(var->get_data_type())
+    // {
+    //     case language_data_type::INT:
+    //         if(var->is_array_member())
+    //         {
+    //             //对于数组取元素的变量，需要先获取其所属数组的地址，然后取偏移
+    //             addr_reg=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)(var->get_belong_array()))).int_data;
+    //             //取偏移的时候需要乘上数组元素类型的大小（这里默认是4）
+    //             push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::STR,arm_condition::NONE,arm_data_type::W,reg,addr_reg,get_flexoffset((var->get_offset()),flexoffset_shift_op::LSL_N,2,false),false));
+    //         }
+    //         else if(var->is_global())
+    //         {
+    //             //对于全局变量
+    //             addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
+    //             push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::STR,arm_condition::NONE,arm_data_type::W,reg,addr_reg));
+    //             //push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::STR,arm_condition::NONE,arm_data_type::W,reg,var->get_var_name()));
+    //         }
+    //         else
+    //         {
+    //             //对于那些非数组取元素的局部变量和函数形参，使用栈指针sp的偏移量来取它们的地址
+    //             addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
+    //             push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::STR,arm_condition::NONE,arm_data_type::W,reg,addr_reg));
+    //         }
+    //         break;
+    //     case language_data_type::FLOAT:
+    //         if(var->is_array_member())
+    //         {
+    //             //对于数组取元素的变量，需要先获取其所属数组的地址，然后取偏移
+    //             addr_reg=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)(var->get_belong_array()))).int_data;
+    //             //取偏移的时候需要乘上数组元素类型的大小（这里默认是4）
+    //             if(var->get_offset()->is_const() && var->get_offset()->get_value().int_data<=(1020/4) && var->get_offset()->get_value().int_data>=(-1020/4))
+    //             {
+    //                 push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VSTR,arm_condition::NONE,precision::S,reg,addr_reg,var->get_offset()->get_value().int_data));
+    //             }
+    //             else
+    //             {
+                    
+    //             }
+    //         }
+    //         else if(var->is_global())
+    //         {
+    //             //对于全局变量
+    //             //push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VSTR,arm_condition::NONE,precision::S,reg,var->get_var_name()));
+    //             addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
+    //             push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VSTR,arm_condition::NONE,precision::S,reg,addr_reg));
+    //         }
+    //         else
+    //         {
+    //             //对于那些非数组取元素的局部变量和函数形参，使用栈指针sp的偏移量来取它们的地址
+    //             addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
+    //             push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VSTR,arm_condition::NONE,precision::S,reg,addr_reg));
+    //         }
+    //         break;
+    //     default:
+    //         break;
+    // }
     notify(event(event_type::END_INSTRUCTION,nullptr));
 }
 
@@ -1551,7 +1599,7 @@ void Arm_instruction_generator::handle_LOAD_VAR_TO_REG(struct ic_data * var,reg_
     size_t var_stack_pos_from_sp;
     reg_index addr_reg,const_reg;
     struct operand2 op2;
-    pair<int,reg_index> * event_data;
+    pair<OAA,reg_index> * event_data;
 
     notify(event(event_type::START_INSTRUCTION,nullptr));
     if(var->is_array_var())
@@ -1606,12 +1654,12 @@ void Arm_instruction_generator::handle_LOAD_VAR_TO_REG(struct ic_data * var,reg_
                     //分配完之后还要再进行一次GET_VAR_STACK_POS_FROM_SP，得到新的var_stack_pos_from_sp，因为上面的ALLOCATE_IDLE_REG可能会使得栈顶的位置发送变化
                     var_stack_pos_from_sp=(size_t)notify(event(event_type::GET_VAR_STACK_POS_FROM_SP,(void *)var)).int_data;
                     //然后把新的var_stack_pos_from_sp值写入寄存器中
-                    event_data=new pair<int,reg_index>(var_stack_pos_from_sp,const_reg);
-                    notify(event(event_type::WRITE_CONST_INT_TO_REG,(void *)event_data));
+                    event_data=new pair<OAA,reg_index>(OAA((int)var_stack_pos_from_sp),const_reg);
+                    notify(event(event_type::WRITE_CONST_TO_CPU_REG,(void *)event_data));
                     //push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,const_reg,to_string(var_stack_pos_from_sp)));
                     //再通知内存管理模块：寄存器被新的var_stack_pos_from_sp占用了
                     //event_data=new pair<int,reg_index>(var_stack_pos_from_sp,const_reg);
-                    notify(event(event_type::ATTACH_CONST_INT_TO_REG,(void *)event_data));
+                    notify(event(event_type::ATTACH_CONST_TO_REG,(void *)event_data));
                     delete event_data;
                     //最后把得到的寄存器作为operand2的一部分即可
                     op2=operand2(const_reg);
@@ -1622,53 +1670,87 @@ void Arm_instruction_generator::handle_LOAD_VAR_TO_REG(struct ic_data * var,reg_
     }
     else
     {
-        switch(var->get_data_type())
+        if(var->is_array_member())
         {
-            case language_data_type::INT:
-                if(var->is_array_member())
+            //如果要load到寄存器中的变量是数组取元素,并且该数组取元素不是数组
+            addr_reg=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)(var->get_belong_array()))).int_data;
+            //默认数组元素的大小都是4bytes
+            if(notify(event(event_type::IS_CPU_REG,(int)reg)).bool_data)
+            {
+                push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::LDR,arm_condition::NONE,arm_data_type::W,reg,addr_reg,get_flexoffset((var->get_offset()),flexoffset_shift_op::LSL_N,2,false),false));
+            }
+            else if(notify(event(event_type::IS_VFP_REG,(int)reg)).bool_data)
+            {
+                if(var->get_offset()->is_const() && var->get_offset()->get_value().int_data<=(1020/4) && var->get_offset()->get_value().int_data>=(-1020/4))
                 {
-                    //如果要load到寄存器中的变量是数组取元素,并且该数组取元素不是数组
-                    addr_reg=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)(var->get_belong_array()))).int_data;
-                    //默认数组元素的大小都是4bytes
-                    push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::LDR,arm_condition::NONE,arm_data_type::W,reg,addr_reg,get_flexoffset((var->get_offset()),flexoffset_shift_op::LSL_N,2,false),false));
-                }
-                else if(var->is_global())
-                {
-                    //如果要load到寄存器中的变量是全局变量
-                    addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
-                    push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::LDR,arm_condition::NONE,arm_data_type::W,reg,addr_reg));
-                }
-                else
-                {
-                    //如果要load到寄存器中的变量是局部变量或者函数形参或者临时变量
-                    addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
-                    push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::LDR,arm_condition::NONE,arm_data_type::W,reg,addr_reg));
-                }
-                break;
-            case language_data_type::FLOAT:
-                if(var->is_array_member())
-                {
-                    //如果要load到寄存器中的变量是数组取元素,并且该数组取元素不是数组
-                    addr_reg=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)(var->get_belong_array()))).int_data;
-                    //默认数组元素的大小都是4bytes
-                    push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VLDR,arm_condition::NONE,precision::S,reg,addr_reg,get_flexoffset((var->get_offset()),flexoffset_shift_op::LSL_N,2,false)));
-                }
-                else if(var->is_global())
-                {
-                    //如果要load到寄存器中的变量是全局变量
-                    addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
-                    push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VLDR,arm_condition::NONE,precision::S,reg,addr_reg));
+                    push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VLDR,arm_condition::NONE,precision::S,reg,addr_reg,var->get_offset()->get_value().int_data*4,vfp_single_register_load_and_store_type::RN_OFFSET));
                 }
                 else
                 {
-                    //如果要load到寄存器中的变量是全局变量或者局部变量或者函数形参或者临时变量
-                    addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
-                    push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VLDR,arm_condition::NONE,precision::S,reg,addr_reg));
+                    
                 }
-                break;
-            default:
-                break;
+            }
         }
+        else
+        {
+            //如果要load到寄存器中的变量是全局变量或者局部变量或者函数形参或者临时变量
+            addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
+            if(notify(event(event_type::IS_CPU_REG,(int)reg)).bool_data)
+            {
+                push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::LDR,arm_condition::NONE,arm_data_type::W,reg,addr_reg));
+            }
+            else if(notify(event(event_type::IS_VFP_REG,(int)reg)).bool_data)
+            {
+                push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VLDR,arm_condition::NONE,precision::S,reg,addr_reg));
+            }
+        }
+        // switch(var->get_data_type())
+        // {
+        //     case language_data_type::INT:
+        //         if(var->is_array_member())
+        //         {
+        //             //如果要load到寄存器中的变量是数组取元素,并且该数组取元素不是数组
+        //             addr_reg=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)(var->get_belong_array()))).int_data;
+        //             //默认数组元素的大小都是4bytes
+        //             push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::LDR,arm_condition::NONE,arm_data_type::W,reg,addr_reg,get_flexoffset((var->get_offset()),flexoffset_shift_op::LSL_N,2,false),false));
+        //         }
+        //         else if(var->is_global())
+        //         {
+        //             //如果要load到寄存器中的变量是全局变量
+        //             addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
+        //             push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::LDR,arm_condition::NONE,arm_data_type::W,reg,addr_reg));
+        //         }
+        //         else
+        //         {
+        //             //如果要load到寄存器中的变量是局部变量或者函数形参或者临时变量
+        //             addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
+        //             push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::LDR,arm_condition::NONE,arm_data_type::W,reg,addr_reg));
+        //         }
+        //         break;
+        //     case language_data_type::FLOAT:
+        //         if(var->is_array_member())
+        //         {
+        //             //如果要load到寄存器中的变量是数组取元素,并且该数组取元素不是数组
+        //             addr_reg=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)(var->get_belong_array()))).int_data;
+        //             //默认数组元素的大小都是4bytes
+        //             push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VLDR,arm_condition::NONE,precision::S,reg,addr_reg,get_flexoffset((var->get_offset()),flexoffset_shift_op::LSL_N,2,false)));
+        //         }
+        //         else if(var->is_global())
+        //         {
+        //             //如果要load到寄存器中的变量是全局变量
+        //             addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
+        //             push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VLDR,arm_condition::NONE,precision::S,reg,addr_reg));
+        //         }
+        //         else
+        //         {
+        //             //如果要load到寄存器中的变量是全局变量或者局部变量或者函数形参或者临时变量
+        //             addr_reg=(reg_index)notify(event(event_type::GET_ADDR_REG,(void *)var)).int_data;
+        //             push_instruction(new Arm_vfp_single_register_load_and_store_instruction(arm_op::VLDR,arm_condition::NONE,precision::S,reg,addr_reg));
+        //         }
+        //         break;
+        //     default:
+        //         break;
+        // }
     }
     notify(event(event_type::END_INSTRUCTION,nullptr));
 }
@@ -1678,7 +1760,7 @@ void Arm_instruction_generator::handle_WRITE_ADDR_TO_REG(struct ic_data * var,re
     size_t var_stack_pos_from_sp,var_stack_pos_from_fp;
     reg_index sp,fp,const_reg;
     struct operand2 op2;
-    pair<int,reg_index> * event_data;
+    pair<OAA,reg_index> * event_data;
 
     notify(event(event_type::START_INSTRUCTION,nullptr));
     if(var->is_global())
@@ -1725,12 +1807,12 @@ void Arm_instruction_generator::handle_WRITE_ADDR_TO_REG(struct ic_data * var,re
                 //分配完之后还要再进行一次GET_VAR_STACK_POS_FROM_SP，得到新的var_stack_pos_from_sp，因为上面的ALLOCATE_IDLE_REG可能会使得栈顶的位置发送变化
                 var_stack_pos_from_sp=(size_t)notify(event(event_type::GET_VAR_STACK_POS_FROM_SP,(void *)var)).int_data;
                 //然后把新的var_stack_pos_from_sp值写入寄存器中即可
-                event_data=new pair<int,reg_index>(var_stack_pos_from_sp,const_reg);
-                notify(event(event_type::WRITE_CONST_INT_TO_REG,(void *)event_data));
+                event_data=new pair<OAA,reg_index>(OAA((int)var_stack_pos_from_sp),const_reg);
+                notify(event(event_type::WRITE_CONST_TO_CPU_REG,(void *)event_data));
                 //push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,const_reg,to_string(var_stack_pos_from_sp)));
                 //通知内存管理模块：寄存器被新的var_stack_pos_from_sp占用了
                 //event_data=new pair<int,reg_index>(var_stack_pos_from_sp,const_reg);
-                notify(event(event_type::ATTACH_CONST_INT_TO_REG,(void *)event_data));
+                notify(event(event_type::ATTACH_CONST_TO_REG,(void *)event_data));
                 delete event_data;
                 //最后把得到的寄存器作为operand2的一部分即可
                 op2=operand2(const_reg);
@@ -1762,7 +1844,6 @@ void Arm_instruction_generator::handle_PUSH_TEMP_VAR_FROM_REG_TO_STACK(struct ic
 
 void Arm_instruction_generator::handle_CALL_FUNC(string func_name,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg)
 {
-    //size_t r_params_num=r_params->size();
     size_t int_r_params_num=0,float_r_params_num=0;
     int pop_stack_size=0;
     reg_index reg,sp=(reg_index)notify(event(event_type::GET_SP_REG,nullptr)).int_data;
@@ -1800,16 +1881,13 @@ void Arm_instruction_generator::handle_CALL_FUNC(string func_name,list<struct ic
     {
         notify(event(event_type::START_INSTRUCTION,nullptr));
         reg=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)i)).int_data;
-        switch(i->get_data_type())
+        if(i->get_data_type()==language_data_type::INT || i->is_array_var())
         {
-            case language_data_type::INT:
-                push_instruction(new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::PUSH,arm_condition::NONE,arm_registers(1,reg)));
-                break;
-            case language_data_type::FLOAT:
-                push_instruction(new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPUSH,arm_condition::NONE,arm_registers(1,reg)));
-                break;
-            default:
-                break;
+            push_instruction(new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::PUSH,arm_condition::NONE,arm_registers(1,reg)));
+        }
+        else if(i->get_data_type()==language_data_type::FLOAT)
+        {
+            push_instruction(new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPUSH,arm_condition::NONE,arm_registers(1,reg)));
         }
         notify(event(event_type::PUSH_ARGUMENT_TO_STACK_WHEN_CALLING_FUNC,(void *)i));
         notify(event(event_type::END_INSTRUCTION,nullptr));
@@ -1900,7 +1978,10 @@ void Arm_instruction_generator::handle_CALL_ABI_FUNC(string func_name,list<struc
     {
         //此时需要将存放返回值的寄存器设置为不可获取的
         regs_unaccessible=new set<reg_index>;
-        regs_unaccessible->insert(return_reg);
+        if(return_value!=nullptr)
+        {
+            regs_unaccessible->insert(return_reg);
+        }
         notify(event(event_type::START_INSTRUCTION,(void *)regs_unaccessible));
         delete regs_unaccessible;
         push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,sp,sp,get_operand2(pop_stack_size)));
@@ -1908,7 +1989,7 @@ void Arm_instruction_generator::handle_CALL_ABI_FUNC(string func_name,list<struc
     }
 }
 
-void Arm_instruction_generator::handle_MOVE_DATA_BETWEEN_CPU_REGS(reg_index from,reg_index to)
+void Arm_instruction_generator::handle_MOVE_DATA_BETWEEN_REGS(reg_index from,reg_index to)
 {
     if(from!=to)
     {
@@ -1918,7 +1999,7 @@ void Arm_instruction_generator::handle_MOVE_DATA_BETWEEN_CPU_REGS(reg_index from
         }
         else
         {
-            push_instruction(new Arm_vfp_register_transfer_instruction(arm_condition::NONE,to,from));
+            push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMOV,arm_condition::NONE,to,from));
         }
     }
 }
@@ -1929,18 +2010,17 @@ void Arm_instruction_generator::handle_ASSIGN_VAR(struct ic_data * from,struct i
     struct operand2 operand2;
     list<struct ic_data * > * r_params;
     pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > * event_data_1;
-    pair<int,reg_index> * event_data_2;
-    pair<float,reg_index> * event_data_3;
+    pair<OAA,reg_index> * event_data_2;
     notify(event(event_type::START_INSTRUCTION,nullptr));
     if(from->get_data_type()==language_data_type::INT && to->get_data_type()==language_data_type::INT)
     {
         if(from->is_const() && !from->is_array_var())
         {
             Rd=(reg_index)notify(event(event_type::GET_REG_FOR_WRITING_VAR,(void *)to)).int_data;
-            event_data_2=new pair<int,reg_index>(from->get_value().int_data,Rd);
-            notify(event(event_type::WRITE_CONST_INT_TO_REG,(void *)event_data_2));
+            event_data_2=new pair<OAA,reg_index>(OAA((int)from->get_value().int_data),Rd);
+            notify(event(event_type::WRITE_CONST_TO_CPU_REG,(void *)event_data_2));
+            //notify(event(event_type::ATTACH_CONST_TO_REG,(void *)event_data));
             delete event_data_2;
-            //push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,Rd,to_string(from->get_value().int_data)));
         }
         else
         {
@@ -1954,16 +2034,16 @@ void Arm_instruction_generator::handle_ASSIGN_VAR(struct ic_data * from,struct i
         if(from->is_const() && !from->is_array_var())
         {
             Rd=(reg_index)notify(event(event_type::GET_REG_FOR_WRITING_VAR,(void *)to)).int_data;
-            event_data_3=new pair<float,reg_index>(from->get_value().float_data,Rd);
-            notify(event(event_type::WRITE_CONST_FLOAT_TO_REG,(void *)event_data_3));
-            delete event_data_3;
-            //push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,precision::S,Rd,to_string(from->get_value().float_data)));
+            event_data_2=new pair<OAA,reg_index>(OAA((float)from->get_value().float_data),Rd);
+            notify(event(event_type::WRITE_CONST_TO_VFP_REG,(void *)event_data_2));
+            //notify(event(event_type::ATTACH_CONST_TO_REG,(void *)event_data));
+            delete event_data_2;
         }
         else
         {
             Rm=(reg_index)notify(event(event_type::GET_REG_FOR_READING_VAR,(void *)from)).int_data;
             Rd=(reg_index)notify(event(event_type::GET_REG_FOR_WRITING_VAR,(void *)to)).int_data;
-            push_instruction(new Arm_vfp_register_transfer_instruction(arm_condition::NONE,Rd,Rm));
+            push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMOV,arm_condition::NONE,Rd,Rm));
         }
     }
     else if(from->get_data_type()==language_data_type::INT && to->get_data_type()==language_data_type::FLOAT)
@@ -1971,23 +2051,37 @@ void Arm_instruction_generator::handle_ASSIGN_VAR(struct ic_data * from,struct i
         if(from->is_const() && !from->is_array_var())
         {
             Rd=(reg_index)notify(event(event_type::GET_REG_FOR_WRITING_VAR,(void *)to)).int_data;
-            event_data_3=new pair<float,reg_index>((float)(from->get_value().int_data),Rd);
-            notify(event(event_type::WRITE_CONST_FLOAT_TO_REG,(void *)event_data_3));
-            delete event_data_3;
-            //push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,precision::S,Rd,to_string((float)(from->get_value().int_data))));
+            event_data_2=new pair<OAA,reg_index>(OAA((float)(from->get_value().int_data)),Rd);
+            notify(event(event_type::WRITE_CONST_TO_VFP_REG,(void *)event_data_2));
+            //notify(event(event_type::ATTACH_CONST_TO_REG,(void *)event_data));
+            delete event_data_2;
         }
         else
         {
+            // r_params=new list<struct ic_data * >;
+            // event_data_1=new pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >;
+            // event_data_1->first.first="__aeabi_i2f";
+            // r_params->push_back(from);
+            // event_data_1->first.second=r_params;
+            // event_data_1->second.first=to;
+            // event_data_1->second.second=(reg_index)notify(event(event_type::GET_S0_REG,nullptr)).int_data;
+            // notify(event(event_type::CALL_ABI_FUNC,(void *)event_data_1));
+            // delete r_params;
+            // delete event_data_1;
             r_params=new list<struct ic_data * >;
             event_data_1=new pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >;
             event_data_1->first.first="__aeabi_i2f";
             r_params->push_back(from);
             event_data_1->first.second=r_params;
-            event_data_1->second.first=to;
-            event_data_1->second.second=(reg_index)notify(event(event_type::GET_S0_REG,nullptr)).int_data;
+            event_data_1->second.first=nullptr;
+            event_data_1->second.second=(reg_index)0;
             notify(event(event_type::CALL_ABI_FUNC,(void *)event_data_1));
             delete r_params;
             delete event_data_1;
+            notify(event(event_type::END_INSTRUCTION,nullptr));
+            notify(event(event_type::START_INSTRUCTION,nullptr));
+            Rd=(reg_index)notify(event(event_type::GET_REG_FOR_WRITING_VAR,(void *)to)).int_data;
+            push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMOV,arm_condition::NONE,Rd,(reg_index)notify(event(event_type::GET_R0_REG,nullptr)).int_data));
         }
     }
     else if(from->get_data_type()==language_data_type::FLOAT && to->get_data_type()==language_data_type::INT)
@@ -1995,23 +2089,37 @@ void Arm_instruction_generator::handle_ASSIGN_VAR(struct ic_data * from,struct i
         if(from->is_const() && !from->is_array_var())
         {
             Rd=(reg_index)notify(event(event_type::GET_REG_FOR_WRITING_VAR,(void *)to)).int_data;
-            event_data_2=new pair<int,reg_index>((int)(from->get_value().float_data),Rd);
-            notify(event(event_type::WRITE_CONST_INT_TO_REG,(void *)event_data_2));
+            event_data_2=new pair<OAA,reg_index>(OAA((int)(from->get_value().float_data)),Rd);
+            notify(event(event_type::WRITE_CONST_TO_CPU_REG,(void *)event_data_2));
+            //notify(event(event_type::ATTACH_CONST_TO_REG,(void *)event_data));
             delete event_data_2;
-            //push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,Rd,to_string((int)(from->get_value().float_data))));
         }
         else
         {
+            // r_params=new list<struct ic_data * >;
+            // event_data_1=new pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >;
+            // event_data_1->first.first="__aeabi_f2iz";
+            // r_params->push_back(from);
+            // event_data_1->first.second=r_params;
+            // event_data_1->second.first=to;
+            // event_data_1->second.second=(reg_index)notify(event(event_type::GET_R0_REG,nullptr)).int_data;
+            // notify(event(event_type::CALL_ABI_FUNC,(void *)event_data_1));
+            // delete r_params;
+            // delete event_data_1;
             r_params=new list<struct ic_data * >;
             event_data_1=new pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >;
             event_data_1->first.first="__aeabi_f2iz";
             r_params->push_back(from);
             event_data_1->first.second=r_params;
-            event_data_1->second.first=to;
-            event_data_1->second.second=(reg_index)notify(event(event_type::GET_R0_REG,nullptr)).int_data;
+            event_data_1->second.first=nullptr;
+            event_data_1->second.second=(reg_index)0;
             notify(event(event_type::CALL_ABI_FUNC,(void *)event_data_1));
             delete r_params;
             delete event_data_1;
+            notify(event(event_type::END_INSTRUCTION,nullptr));
+            notify(event(event_type::START_INSTRUCTION,nullptr));
+            Rd=(reg_index)notify(event(event_type::GET_REG_FOR_WRITING_VAR,(void *)to)).int_data;
+            push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMOV,arm_condition::NONE,Rd,(reg_index)notify(event(event_type::GET_S0_REG,nullptr)).int_data));
         }
     }
     notify(event(event_type::END_INSTRUCTION,nullptr));
@@ -2049,11 +2157,11 @@ struct event Arm_instruction_generator::handler(struct event event)
     struct event res;
     switch(event.type)
     {
-        case event_type::WRITE_CONST_INT_TO_REG:
-            handle_WRITE_CONST_INT_TO_REG(((pair<int,reg_index> *)event.pointer_data)->first,((pair<int,reg_index> *)event.pointer_data)->second);
+        case event_type::WRITE_CONST_TO_CPU_REG:
+            handle_WRITE_CONST_TO_CPU_REG(((pair<OAA,reg_index> *)event.pointer_data)->first,((pair<OAA,reg_index> *)event.pointer_data)->second);
             break;
-        case event_type::WRITE_CONST_FLOAT_TO_REG:
-            handle_WRITE_CONST_FLOAT_TO_REG(((pair<float,reg_index> *)event.pointer_data)->first,((pair<float,reg_index> *)event.pointer_data)->second);
+        case event_type::WRITE_CONST_TO_VFP_REG:
+            handle_WRITE_CONST_TO_VFP_REG(((pair<OAA,reg_index> *)event.pointer_data)->first,((pair<OAA,reg_index> *)event.pointer_data)->second);
             break;
         case event_type::STORE_VAR_TO_MEM:
             handle_STORE_VAR_TO_MEM(((pair<struct ic_data *,reg_index> *)event.pointer_data)->first,((pair<struct ic_data *,reg_index> *)event.pointer_data)->second);
@@ -2073,8 +2181,8 @@ struct event Arm_instruction_generator::handler(struct event event)
         case event_type::CALL_ABI_FUNC:
             handle_CALL_ABI_FUNC(((pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > * )event.pointer_data)->first.first,((pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > * )event.pointer_data)->first.second,((pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > * )event.pointer_data)->second.first,((pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > * )event.pointer_data)->second.second);
             break;
-        case event_type::MOVE_DATA_BETWEEN_CPU_REGS:
-            handle_MOVE_DATA_BETWEEN_CPU_REGS(((pair<reg_index,reg_index> *)event.pointer_data)->first,((pair<reg_index,reg_index> *)event.pointer_data)->second);
+        case event_type::MOVE_DATA_BETWEEN_REGS:
+            handle_MOVE_DATA_BETWEEN_REGS(((pair<reg_index,reg_index> *)event.pointer_data)->first,((pair<reg_index,reg_index> *)event.pointer_data)->second);
             break;
         case event_type::ASSIGN_VAR:
             handle_ASSIGN_VAR(((pair<struct ic_data *,struct ic_data * > *)event.pointer_data)->first,((pair<struct ic_data *,struct ic_data * > *)event.pointer_data)->second);

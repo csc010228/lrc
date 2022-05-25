@@ -105,15 +105,15 @@ protected:
     inline void push_directive(Arm_directive * directive);
 
     //事件处理函数
-    void handle_WRITE_CONST_INT_TO_REG(int const_int_data,reg_index reg);
-    void handle_WRITE_CONST_FLOAT_TO_REG(float const_float_data,reg_index reg);
+    void handle_WRITE_CONST_TO_CPU_REG(OAA const_data,reg_index reg);
+    void handle_WRITE_CONST_TO_VFP_REG(OAA const_data,reg_index reg);
     void handle_STORE_VAR_TO_MEM(struct ic_data * var,reg_index reg);
     void handle_LOAD_VAR_TO_REG(struct ic_data * var,reg_index reg);
     void handle_WRITE_ADDR_TO_REG(struct ic_data * var,reg_index reg);
     void handle_PUSH_TEMP_VAR_FROM_REG_TO_STACK(struct ic_data * var,reg_index reg);
     void handle_CALL_FUNC(string func_name,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg);
     void handle_CALL_ABI_FUNC(string func_name,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg);
-    void handle_MOVE_DATA_BETWEEN_CPU_REGS(reg_index from,reg_index to);
+    void handle_MOVE_DATA_BETWEEN_REGS(reg_index from,reg_index to);
     void handle_ASSIGN_VAR(struct ic_data * from,struct ic_data * to);
     void handle_POP_STACK(size_t pop_size);
     void handle_START_FUNC(struct ic_func * func);

@@ -144,14 +144,6 @@ void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph 
                             used_regs.insert(cpu_single_register_load_and_store_instruction->get_flexoffset().Rm_shift.Rm);
                         }
                         break;
-                    case arm_op::VLDR:
-                    case arm_op::VSTR:
-                        vfp_single_register_load_and_store_instruction=dynamic_cast<Arm_vfp_single_register_load_and_store_instruction *>(instruction);
-                        if(vfp_single_register_load_and_store_instruction->get_flexoffset().type==flexoffset_type::RM_SHIFT)
-                        {
-                            used_regs.insert(vfp_single_register_load_and_store_instruction->get_flexoffset().Rm_shift.Rm);
-                        }
-                        break;
                     default:
                         break;
                 }

@@ -28,7 +28,7 @@ using namespace std;
 #define SPECIFY_TARGET_FLAG "-o"
 #define OPTIMIZATION_FLAG "-O1"
 
-bool lrc(string source_program_filename,string target_filename,bool debug=false)
+bool lrc(string source_program_filename,string target_filename,bool optimize,bool debug)
 {
     bool res=false;
     Symbol_table * symbol_table;
@@ -100,7 +100,7 @@ bool lrc(string source_program_filename,string target_filename,bool debug=false)
     }
 
     //初始化中间代码优化器
-    ic_optimizer.init();
+    ic_optimizer.init(optimize);
 
     //中间代码优化
     if(debug)
@@ -133,25 +133,86 @@ out:
 
 int main(int argc,char * argv[])
 {
-    string source_program_filename;
-    string target_filename;
-    string debug_info;
-    bool debug;
+    string source_program_filename,target_filename,debug_info,flag;
+    bool optimize=false,debug=false;
 
     switch(argc)
     {
-        case 3:
+        // case 3:
+        //     source_program_filename=argv[1];
+        //     target_filename=argv[2];
+        //     debug=false;
+        //     break;
+        // case 4:
+        //     source_program_filename=argv[2];
+        //     target_filename=argv[3];
+        //     debug_info=argv[1];
+        //     if(debug_info==DEBUG_FLAG)
+        //     {
+        //         debug=true;
+        //     }
+        //     else
+        //     {
+        //         cout<<"No such command!"<<endl;
+        //         return -1;
+        //     }
+        //     break;
+        // default:
+        //     cout<<"No such command!"<<endl;
+        //     return -1;
+        //     break;
+        //compiler testcase.sysy -S -o testcase.s
+        case 5:
             source_program_filename=argv[1];
-            target_filename=argv[2];
-            debug=false;
+            flag=argv[2];
+            if(flag!=GENERATE_ASM_FLAG)
+            {
+                cout<<"No such command!"<<endl;
+                return -1;
+            }
+            flag=argv[3];
+            if(flag!=SPECIFY_TARGET_FLAG)
+            {
+                cout<<"No such command!"<<endl;
+                return -1;
+            }
+            target_filename=argv[4];
+            if(!(target_filename.size()>2 && target_filename.substr(target_filename.size()-2)==ASM_CODES_OUTPUT_FILE_SUFFIX))
+            {
+                cout<<"No such command!"<<endl;
+                return -1;
+            }
+            target_filename=target_filename.substr(0,target_filename.size()-2);
             break;
-        case 4:
-            source_program_filename=argv[2];
-            target_filename=argv[3];
-            debug_info=argv[1];
-            if(debug_info==DEBUG_FLAG)
+        case 6:
+            source_program_filename=argv[1];
+            flag=argv[2];
+            if(flag!=GENERATE_ASM_FLAG)
+            {
+                cout<<"No such command!"<<endl;
+                return -1;
+            }
+            flag=argv[3];
+            if(flag!=SPECIFY_TARGET_FLAG)
+            {
+                cout<<"No such command!"<<endl;
+                return -1;
+            }
+            target_filename=argv[4];
+            if(!(target_filename.size()>2 && target_filename.substr(target_filename.size()-2)==ASM_CODES_OUTPUT_FILE_SUFFIX))
+            {
+                cout<<"No such command!"<<endl;
+                return -1;
+            }
+            target_filename=target_filename.substr(0,target_filename.size()-2);
+            flag=argv[5];
+            if(flag==DEBUG_FLAG)
             {
                 debug=true;
+            }
+            else if(flag==OPTIMIZATION_FLAG)
+            {
+                optimize=true;
             }
             else
             {
@@ -159,11 +220,47 @@ int main(int argc,char * argv[])
                 return -1;
             }
             break;
+        case 7:
+            source_program_filename=argv[1];
+            flag=argv[2];
+            if(flag!=GENERATE_ASM_FLAG)
+            {
+                cout<<"No such command!"<<endl;
+                return -1;
+            }
+            flag=argv[3];
+            if(flag!=SPECIFY_TARGET_FLAG)
+            {
+                cout<<"No such command!"<<endl;
+                return -1;
+            }
+            target_filename=argv[4];
+            if(!(target_filename.size()>2 && target_filename.substr(target_filename.size()-2)==ASM_CODES_OUTPUT_FILE_SUFFIX))
+            {
+                cout<<"No such command!"<<endl;
+                return -1;
+            }
+            target_filename=target_filename.substr(0,target_filename.size()-2);
+            flag=argv[5];
+            if(flag!=OPTIMIZATION_FLAG)
+            {
+                cout<<"No such command!"<<endl;
+                return -1;
+            }
+            flag=argv[6];
+            if(flag!=DEBUG_FLAG)
+            {
+                cout<<"No such command!"<<endl;
+                return -1;
+            }
+            optimize=true;
+            debug=true;
+            break;
         default:
             cout<<"No such command!"<<endl;
             return -1;
             break;
     }
 
-    return lrc(source_program_filename,target_filename,debug)?0:-1;
+    return lrc(source_program_filename,target_filename,optimize,debug)?0:-1;
 }

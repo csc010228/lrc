@@ -75,6 +75,7 @@ map<enum arm_op,string> op_output_map=
     {arm_op::LDR,"ldr"},
     {arm_op::STR,"str"},
     {arm_op::VMOV,"vmov"},
+    {arm_op::VMRS,"vmrs"},
     {arm_op::VABS,"vabs"},
     {arm_op::VCPY,"vcpy"},
     {arm_op::VNEG,"vneg"},
@@ -99,8 +100,8 @@ map<enum arm_op,string> op_output_map=
 
 map<enum precision,string> precision_output_map=
 {
-    {precision::S,".32"},
-    {precision::D,".64"},
+    {precision::S,".f32"},
+    {precision::D,".f64"},
 };
 
 map<enum arm_data_type,string> data_type_output_map=
@@ -190,6 +191,7 @@ map<enum arm_pseudo_op,string> pseudo_instruction_output_map=
     {arm_pseudo_op::ADR,"adr"},
     {arm_pseudo_op::ADRL,"adrl"},
     {arm_pseudo_op::LDR,"ldr"},
+    {arm_pseudo_op::VLDR,"vldr"},
     {arm_pseudo_op::NOP,"nop"},
     {arm_pseudo_op::IT,"it"}
 };
@@ -328,7 +330,7 @@ string Arm_pseudo_instruction::to_string() const
             break;
         default:
             res+=(condition_output_map[cond_]+" "+Instruction_generator::regs_info_[reg_]+",");
-            if(op_==arm_pseudo_op::LDR)
+            if(op_==arm_pseudo_op::LDR || op_==arm_pseudo_op::VLDR)
             {
                 res+="=";
             }
@@ -447,12 +449,10 @@ string Arm_vfp_data_process_instruction::to_string() const
         if(compare_with_zero_)
         {
             res+=",#0";
+            return res;
         }
     }
-    else
-    {
-        res+=(","+source_registers_.to_string());
-    }
+    res+=(","+source_registers_.to_string());
 
     return res;
 }
@@ -476,13 +476,19 @@ string Arm_vfp_single_register_load_and_store_instruction::to_string() const
 
     switch(single_register_load_and_store_type_)
     {
-        case arm_single_register_load_and_store_type::ZERO_OFFSET:
+        case vfp_single_register_load_and_store_type::RN:
             res+=("["+source_registers_.to_string()+"]");
             break;
-        case arm_single_register_load_and_store_type::PRE_INDEXED_OFFSET:
-            res+=("["+source_registers_.to_string()+","+flexoffset_.to_string()+"]");
+        case vfp_single_register_load_and_store_type::RN_OFFSET:
+            res+=("["+source_registers_.to_string()+",#"+::to_string(offset_)+"]");
             break;
-        case arm_single_register_load_and_store_type::PROGRAM_RELATIVE:
+        case vfp_single_register_load_and_store_type::PRE_DECREMENT:
+            res+=("["+source_registers_.to_string()+",#-"+::to_string(offset_)+"]!");
+            break;
+        case vfp_single_register_load_and_store_type::POST_INCREMENT:
+            res+=("["+source_registers_.to_string()+"],#"+::to_string(offset_));
+            break;
+        case vfp_single_register_load_and_store_type::PROGRAM_RELATIVE:
             res+=label_;
             break;
         default:

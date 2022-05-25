@@ -506,7 +506,7 @@ Return
 */
 reg_index Register_manager::get_reg_for_const(int const_int)
 {
-    pair<int,reg_index> * event_data;
+    pair<OAA,reg_index> * event_data;
     reg_index reg;
 
     //首先检查此时是否有寄存器中已经存放了这个常数，如果有的话直接返回即可
@@ -514,8 +514,8 @@ reg_index Register_manager::get_reg_for_const(int const_int)
     {
         //如果没有的话，那么就给该常数分配一个新的寄存器，并将该常数的值写入即可
         reg=allocate_idle_reg(reg_processor::CPU);
-        event_data=new pair<int,reg_index>(const_int,reg);
-        notify(event(event_type::WRITE_CONST_INT_TO_REG,(void *)event_data));
+        event_data=new pair<OAA,reg_index>(OAA((int)const_int),reg);
+        notify(event(event_type::WRITE_CONST_TO_CPU_REG,(void *)event_data));
         delete event_data;
         set_reg_USED_for_value(reg,const_int);
     }
@@ -542,7 +542,7 @@ Return
 */
 reg_index Register_manager::get_reg_for_const(float const_float)
 {
-    pair<float,reg_index> * event_data;
+    pair<OAA,reg_index> * event_data;
     reg_index reg;
 
     //首先检查此时是否有寄存器中已经存放了这个常数，如果有的话直接返回即可
@@ -550,8 +550,8 @@ reg_index Register_manager::get_reg_for_const(float const_float)
     {
         //如果没有的话，那么就给该常数分配一个新的寄存器，并将该常数的值写入即可
         reg=allocate_idle_reg(reg_processor::VFP);
-        event_data=new pair<float,reg_index>(const_float,reg);
-        notify(event(event_type::WRITE_CONST_FLOAT_TO_REG,(void *)event_data));
+        event_data=new pair<OAA,reg_index>(OAA((float)const_float),reg);
+        notify(event(event_type::WRITE_CONST_TO_VFP_REG,(void *)event_data));
         delete event_data;
         set_reg_USED_for_value(reg,const_float);
     }
@@ -740,7 +740,7 @@ bool Register_manager::get_designated_reg_for_const(reg_index reg,int const_int)
 {
     struct reg & designated_reg=regs_.reg_indexs.at(reg);
     pair<reg_index,reg_index> * event_data_1;
-    pair<int,reg_index> * event_data_2;
+    pair<OAA,reg_index> * event_data_2;
     reg_index from_reg;
     set<reg_index> * regs_unaccessible;
     //首先查看该变量是不是正在被分配，如果是的话，就获取失败
@@ -772,7 +772,7 @@ bool Register_manager::get_designated_reg_for_const(reg_index reg,int const_int)
             if(allocate_designated_reg(reg))
             {
                 event_data_1=new pair<reg_index,reg_index>(from_reg,reg);
-                notify(event(event_type::MOVE_DATA_BETWEEN_CPU_REGS,(void *)event_data_1));
+                notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data_1));
                 delete event_data_1;
                 set_reg_USED_for_value(reg,const_int);
                 notify(event(event_type::END_INSTRUCTION,nullptr));
@@ -789,8 +789,8 @@ bool Register_manager::get_designated_reg_for_const(reg_index reg,int const_int)
         //将指定的寄存器中的内容写回，然后把变量写入该寄存器即可
         if(allocate_designated_reg(reg))
         {
-            event_data_2=new pair<int,reg_index>(const_int,reg);
-            notify(event(event_type::WRITE_CONST_INT_TO_REG,(void *)event_data_2));
+            event_data_2=new pair<OAA,reg_index>(OAA((int)const_int),reg);
+            notify(event(event_type::WRITE_CONST_TO_CPU_REG,(void *)event_data_2));
             delete event_data_2;
             set_reg_USED_for_value(reg,const_int);
         }
@@ -820,7 +820,7 @@ bool Register_manager::get_designated_reg_for_const(reg_index reg,float const_fl
 {
     struct reg & designated_reg=regs_.reg_indexs.at(reg);
     pair<reg_index,reg_index> * event_data_1;
-    pair<float,reg_index> * event_data_2;
+    pair<OAA,reg_index> * event_data_2;
     reg_index from_reg;
     set<reg_index> * regs_unaccessible;
     //首先查看该变量是不是正在被分配，如果是的话，就获取失败
@@ -852,7 +852,7 @@ bool Register_manager::get_designated_reg_for_const(reg_index reg,float const_fl
             if(allocate_designated_reg(reg))
             {
                 event_data_1=new pair<reg_index,reg_index>(from_reg,reg);
-                notify(event(event_type::MOVE_DATA_BETWEEN_CPU_REGS,(void *)event_data_1));
+                notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data_1));
                 delete event_data_1;
                 set_reg_USED_for_value(reg,const_float);
                 notify(event(event_type::END_INSTRUCTION,nullptr));
@@ -869,8 +869,8 @@ bool Register_manager::get_designated_reg_for_const(reg_index reg,float const_fl
         //将指定的寄存器中的内容写回，然后把变量写入该寄存器即可
         if(allocate_designated_reg(reg))
         {
-            event_data_2=new pair<float,reg_index>(const_float,reg);
-            notify(event(event_type::WRITE_CONST_FLOAT_TO_REG,(void *)event_data_2));
+            event_data_2=new pair<OAA,reg_index>(OAA((float)const_float),reg);
+            notify(event(event_type::WRITE_CONST_TO_VFP_REG,(void *)event_data_2));
             delete event_data_2;
             set_reg_USED_for_value(reg,const_float);
         }
@@ -946,7 +946,7 @@ bool Register_manager::get_designated_reg_for_reading_var(reg_index reg,struct i
             if(allocate_designated_reg(reg))
             {
                 event_data_1=new pair<reg_index,reg_index>(from_reg,reg);
-                notify(event(event_type::MOVE_DATA_BETWEEN_CPU_REGS,(void *)event_data_1));
+                notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data_1));
                 delete event_data_1;
                 set_reg_USED_for_value(reg,var);
                 notify(event(event_type::END_INSTRUCTION,nullptr));
@@ -1168,7 +1168,7 @@ struct event Register_manager::handle_READY_TO_PUSH_F_PARAM_VFP_REGS(list<struct
     //默认函数参数每一个都是4bytes
     for(auto i:(*f_params))
     {
-        if(i->get_data_type()==language_data_type::FLOAT)
+        if(i->get_data_type()==language_data_type::FLOAT && !i->is_array_var())
         {
             if(float_f_params_num>=16)
             {
@@ -1287,6 +1287,16 @@ struct event Register_manager::handle_GET_LR_REG()
 struct event Register_manager::handle_GET_PC_REG()
 {
     return event(event_type::RESPONSE_INT,(int)regs_.reg_names.at("pc"));
+}
+
+struct event Register_manager::handle_GET_APSR_REG()
+{
+    return event(event_type::RESPONSE_INT,(int)regs_.reg_names.at("APSR_nzcv"));
+}
+
+struct event Register_manager::handle_GET_FPSCR_REG()
+{
+    return event(event_type::RESPONSE_INT,(int)regs_.reg_names.at("FPSCR"));
 }
 
 struct event Register_manager::handle_IS_CPU_REG(reg_index reg)
@@ -1623,15 +1633,15 @@ struct event Register_manager::handle_ALLOCATE_IDLE_CPU_REG()
     return event(event_type::RESPONSE_INT,(int)allocate_idle_reg(reg_processor::CPU));
 }
 
-void Register_manager::handle_ATTACH_CONST_INT_TO_REG(int const_int,reg_index reg)
+void Register_manager::handle_ATTACH_CONST_TO_REG(OAA const_data,reg_index reg)
 {
     struct reg & designated_reg=regs_.reg_indexs.at(reg);
     if(designated_reg.is_allocating())
     {
         designated_reg.state=reg_state::USED;
         designated_reg.related_data_type=reg_related_data_type::CONST_INT;
-        designated_reg.const_int_data=const_int;
-        current_basic_block_info_.build_const_int_value_reg(const_int,reg);
+        designated_reg.const_int_data=const_data.int_data;
+        current_basic_block_info_.build_const_int_value_reg(const_data.int_data,reg);
         set_got_by_current_instruction(reg);
     }
 }
@@ -1676,6 +1686,12 @@ struct event Register_manager::handler(struct event event)
             break;
         case event_type::GET_PC_REG:
             response=handle_GET_PC_REG();
+            break;
+        case event_type::GET_APSR_REG:
+            response=handle_GET_APSR_REG();
+            break;
+        case event_type::GET_FPSCR_REG:
+            response=handle_GET_FPSCR_REG();
             break;
         case event_type::IS_CPU_REG:
             response=handle_IS_CPU_REG((reg_index)event.int_data);
@@ -1779,8 +1795,8 @@ struct event Register_manager::handler(struct event event)
         case event_type::ALLOCATE_IDLE_CPU_REG:
             response=handle_ALLOCATE_IDLE_CPU_REG();
             break;
-        case event_type::ATTACH_CONST_INT_TO_REG:
-            handle_ATTACH_CONST_INT_TO_REG(((pair<int,reg_index> *)event.pointer_data)->first,((pair<int,reg_index> *)event.pointer_data)->second);
+        case event_type::ATTACH_CONST_TO_REG:
+            handle_ATTACH_CONST_TO_REG(((pair<OAA,reg_index> *)event.pointer_data)->first,((pair<OAA,reg_index> *)event.pointer_data)->second);
             break;
         default:
             break;

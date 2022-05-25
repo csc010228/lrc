@@ -463,37 +463,37 @@ struct ic_data * unary_compute(ic_op op,struct ic_data * arg)
         return res;
     }
     value=arg->get_value();
-    data_type=arg->data_type;
+    data_type=arg->get_data_type();
     switch(op)
     {
         case ic_op::ADD:
             if(data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::INT,value.int_data);
+                res=def_const(language_data_type::INT,((int)value.int_data));
             }
             else if(data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,value.float_data);
+                res=def_const(language_data_type::FLOAT,((float)value.float_data));
             }
             break;
         case ic_op::SUB:
             if(data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::INT,0-value.int_data);
+                res=def_const(language_data_type::INT,((int)0-value.int_data));
             }
             else if(data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,0.0-value.float_data);
+                res=def_const(language_data_type::FLOAT,((float)(0.0-(value.float_data))));
             }
             break;
         case ic_op::NOT:
             if(data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::INT,!value.int_data);
+                res=def_const(language_data_type::INT,((int)!value.int_data));
             }
             else if(data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,!value.float_data);
+                res=def_const(language_data_type::FLOAT,((float)!value.float_data));
             }
             break;
         default:
@@ -536,79 +536,79 @@ struct ic_data * binary_compute(ic_op op,struct ic_data * arg1,struct ic_data * 
         case ic_op::ADD:
             if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::INT,arg1_value.int_data+arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data+arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.int_data+arg2_value.float_data);
+                res=def_const(language_data_type::FLOAT,((float)arg1_value.int_data+arg2_value.float_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data+arg2_value.int_data);
+                res=def_const(language_data_type::FLOAT,((float)arg1_value.float_data+arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data+arg2_value.float_data);
+                res=def_const(language_data_type::FLOAT,((float)arg1_value.float_data+arg2_value.float_data));
             }
             break;
         case ic_op::SUB:
             if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::INT,arg1_value.int_data-arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data-arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.int_data-arg2_value.float_data);
+                res=def_const(language_data_type::FLOAT,((float)arg1_value.int_data-arg2_value.float_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data-arg2_value.int_data);
+                res=def_const(language_data_type::FLOAT,((float)arg1_value.float_data-arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data-arg2_value.float_data);
+                res=def_const(language_data_type::FLOAT,((float)arg1_value.float_data-arg2_value.float_data));
             }
             break;
         case ic_op::MUL:
             if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::INT,arg1_value.int_data*arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data*arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.int_data*arg2_value.float_data);
+                res=def_const(language_data_type::FLOAT,((float)arg1_value.int_data*arg2_value.float_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data*arg2_value.int_data);
+                res=def_const(language_data_type::FLOAT,((float)arg1_value.float_data*arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data*arg2_value.float_data);
+                res=def_const(language_data_type::FLOAT,((float)arg1_value.float_data*arg2_value.float_data));
             }
             break;
         case ic_op::DIV:
             if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::INT,arg1_value.int_data/arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data/arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.int_data/arg2_value.float_data);
+                res=def_const(language_data_type::FLOAT,((float)arg1_value.int_data/arg2_value.float_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data/arg2_value.int_data);
+                res=def_const(language_data_type::FLOAT,((float)arg1_value.float_data/arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data/arg2_value.float_data);
+                res=def_const(language_data_type::FLOAT,((float)arg1_value.float_data/arg2_value.float_data));
             }
             break;
         case ic_op::MOD:
             if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::INT,arg1_value.int_data%arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data%arg2_value.int_data));
             }
             break;
         /*case ic_op::AND:
@@ -668,109 +668,109 @@ struct ic_data * binary_compute(ic_op op,struct ic_data * arg1,struct ic_data * 
         case ic_op::EQ:
             if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::INT,arg1_value.int_data==arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data==arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.int_data==arg2_value.float_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data==arg2_value.float_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data==arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.float_data==arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data==arg2_value.float_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.float_data==arg2_value.float_data));
             }
             break;
         case ic_op::UEQ:
             if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::INT,arg1_value.int_data!=arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data!=arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.int_data!=arg2_value.float_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data!=arg2_value.float_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data!=arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.float_data!=arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data!=arg2_value.float_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.float_data!=arg2_value.float_data));
             }
             break;
         case ic_op::LT:
             if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::INT,arg1_value.int_data<arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data<arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.int_data<arg2_value.float_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data<arg2_value.float_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data<arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.float_data<arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data<arg2_value.float_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.float_data<arg2_value.float_data));
             }
             break;
         case ic_op::GT:
             if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::INT,arg1_value.int_data>arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data>arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.int_data>arg2_value.float_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data>arg2_value.float_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data>arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.float_data>arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data>arg2_value.float_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.float_data>arg2_value.float_data));
             }
             break;
         case ic_op::LE:
             if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::INT,arg1_value.int_data<=arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data<=arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.int_data<=arg2_value.float_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data<=arg2_value.float_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data<=arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.float_data<=arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data<=arg2_value.float_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.float_data<=arg2_value.float_data));
             }
             break;
         case ic_op::GE:
             if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::INT,arg1_value.int_data>=arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data>=arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.int_data>=arg2_value.float_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.int_data>=arg2_value.float_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::INT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data>=arg2_value.int_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.float_data>=arg2_value.int_data));
             }
             else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::FLOAT)
             {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data>=arg2_value.float_data);
+                res=def_const(language_data_type::INT,((int)arg1_value.float_data>=arg2_value.float_data));
             }
             break;
         default:
@@ -837,17 +837,31 @@ define_semantic_rule(semantic_rule_name)\
     }\
     else\
     {\
-        if(arg1->get_data_type()==language_data_type::INT && arg1->get_data_type()==language_data_type::FLOAT)\
+        if(arg1->get_data_type()==language_data_type::INT && arg2->get_data_type()==language_data_type::FLOAT)\
         {\
-            tmp_var=def_tmp_var(language_data_type::FLOAT);\
-            gen_one_operand_code(ic_op::ASSIGN,ic_operand::DATA,arg1,ic_operand::DATA,tmp_var);\
-            arg1=tmp_var;\
+            if(arg1->is_const())\
+            {\
+                arg1=def_const(language_data_type::FLOAT,(float)arg1->get_value().int_data);\
+            }\
+            else\
+            {\
+                tmp_var=def_tmp_var(language_data_type::FLOAT);\
+                gen_one_operand_code(ic_op::ASSIGN,ic_operand::DATA,arg1,ic_operand::DATA,tmp_var);\
+                arg1=tmp_var;\
+            }\
         }\
-        else if(arg1->get_data_type()==language_data_type::FLOAT && arg1->get_data_type()==language_data_type::INT)\
+        else if(arg1->get_data_type()==language_data_type::FLOAT && arg2->get_data_type()==language_data_type::INT)\
         {\
-            tmp_var=def_tmp_var(language_data_type::FLOAT);\
-            gen_one_operand_code(ic_op::ASSIGN,ic_operand::DATA,arg2,ic_operand::DATA,tmp_var);\
-            arg2=tmp_var;\
+            if(arg2->is_const())\
+            {\
+                arg2=def_const(language_data_type::FLOAT,(float)arg2->get_value().int_data);\
+            }\
+            else\
+            {\
+                tmp_var=def_tmp_var(language_data_type::FLOAT);\
+                gen_one_operand_code(ic_op::ASSIGN,ic_operand::DATA,arg2,ic_operand::DATA,tmp_var);\
+                arg2=tmp_var;\
+            }\
         }\
         res=def_tmp_var(type_conversion(arg1->get_data_type(),arg2->get_data_type()));\
         gen_two_operands_code(op,ic_operand::DATA,arg1,ic_operand::DATA,arg2,ic_operand::DATA,res);\
@@ -2593,7 +2607,6 @@ define_semantic_rule(___UNARY_EXP_4___)
     //生成一个临时变量来接收一元表达式的返回值
     struct ic_data * res,* arg;
     enum language_data_type right_unary_exp_type;
-    bool is_result_const=false;
     if(ic_op(get_syntax_symbol_attribute(UNARY_OP,unary_op,int))==ic_op::ADD)
     {
         copy_syntax_symbol_attribute_by_index(UNARY_EXP,0,UNARY_EXP,1);
@@ -2602,8 +2615,7 @@ define_semantic_rule(___UNARY_EXP_4___)
     {
         arg=((struct ic_data *)get_syntax_symbol_attribute_by_index(UNARY_EXP,value,pointer,1));
         right_unary_exp_type=arg->data_type;
-        is_result_const=arg->is_const();
-        if(!is_result_const)
+        if(!arg->is_const())
         {
             //结果不是一个常数
             res=def_tmp_var(right_unary_exp_type);

@@ -2,7 +2,7 @@
 import os
 
 #测试文件夹
-TEST_DIR='../compiler2021-master/test'
+TEST_DIR='../compiler2022-master/test/function'
 
 #lrc编译器可执行文件名
 LRC_EXE_FILE='./lrc'
@@ -24,7 +24,7 @@ def files_name_with_suffix(file_dir,suffix):
 
 #编译某一个sy文件
 def complie_file(source_file,target_file):
-    return_value=os.system(LRC_EXE_FILE+' '+source_file+' '+target_file)
+    return_value=os.system(LRC_EXE_FILE+' '+source_file+' -S -o '+target_file+'.s -O1')
     if return_value!=0:
         return False
     else:

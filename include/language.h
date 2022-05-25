@@ -39,7 +39,7 @@ enum class code_of_kind
 {
     ID,                 // 标识符
     CONST_INT,          // 无符号整常数
-    CONST_FLOAT,       // 单精度实常数
+    CONST_FLOAT,        // 单精度实常数
     CONST_CHAR,         // 字符常量
     CONST_STRING,       // 字符串常量
     SHORT,              // short

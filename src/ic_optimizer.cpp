@@ -937,9 +937,9 @@ Ic_optimizer::Ic_optimizer()
 /*
 初始化，设置优化选项
 */
-void Ic_optimizer::init()
+void Ic_optimizer::init(bool optimize)
 {
-    
+    need_optimize_=optimize;
 }
 
 /*
@@ -1782,12 +1782,15 @@ struct ic_flow_graph * Ic_optimizer::optimize(list<struct quaternion> * intermed
 {
     //建立中间代码流图
     intermediate_codes_flow_graph_=new struct ic_flow_graph(intermediate_codes);
-    //进行局部优化
-    local_optimize();
-    //进行数据流分析
-    data_flow_analysis();
-    //进行全局优化
-    global_optimize();
+    if(need_optimize_)
+    {
+        //进行局部优化
+        local_optimize();
+        //进行数据流分析
+        data_flow_analysis();
+        //进行全局优化
+        global_optimize();
+    }
     //返回优化结果
     return intermediate_codes_flow_graph_;
 }
@@ -1830,31 +1833,32 @@ struct ic_flow_graph * Ic_optimizer::optimize_then_output(list<struct quaternion
             //再输出函数流图
             for(auto i:res->func_flow_graphs)
             {
-                outFile<<endl<<endl<<endl;
+                outFile<<endl<<"============================================================================================================"<<endl;
                 for(auto j:i->basic_blocks)
                 {
-                    outFile<<"=========================================BASIC_BLOCK:"<<(j)<<"========================================="<<endl;
+                    outFile<<"-----------------------------------------BASIC_BLOCK:"<<(j)<<"-----------------------------------------"<<endl;
                     for(auto k:j->ic_sequence)
                     {
                         outFile<<(ic_outputs[k.intermediate_code.op](k.intermediate_code))<<endl;
                     }
                     if(j->jump_next && j->sequential_next)
                     {
-                        outFile<<"======================================NEXT:"<<(j->sequential_next)<<","<<(j->jump_next)<<"======================================"<<endl;
+                        outFile<<"-------------------------------------NEXT:"<<(j->sequential_next)<<","<<(j->jump_next)<<"-------------------------------------"<<endl;
                     }
                     else if(j->jump_next)
                     {
-                        outFile<<"============================================NEXT:"<<(j->jump_next)<<"============================================"<<endl;
+                        outFile<<"--------------------------------------------NEXT:"<<(j->jump_next)<<"---------------------------------------------"<<endl;
                     }
                     else if(j->sequential_next)
                     {
-                        outFile<<"============================================NEXT:"<<(j->sequential_next)<<"============================================"<<endl;
+                        outFile<<"--------------------------------------------NEXT:"<<(j->sequential_next)<<"---------------------------------------------"<<endl;
                     }
                     else
                     {
-                        outFile<<"============================================================================================================"<<endl;
+                        outFile<<"------------------------------------------------------------------------------------------------------------"<<endl;
                     }
                 }
+                outFile<<"============================================================================================================"<<endl;
             }
             outFile.close();
         }

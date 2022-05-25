@@ -60,6 +60,7 @@ enum class arm_op
     /*================Arm的vfp指令================*/
     //Register transfer
     VMOV,
+    VMRS,
     //Data process instruction
     VABS,
     VCPY,
@@ -301,25 +302,6 @@ enum class flexoffset_shift_op
     ROR_N,
     RRX
 };
-
-// //FlexOffset中的寄存器移位
-// struct flexoffset_shift
-// {
-//     flexoffset_shift(bool reverse,enum flexoffset_shift_op shift_op,int n):reverse(reverse),shift_op(shift_op),n(n)
-//     {
-        
-//     };
-
-//     flexoffset_shift(bool reverse,enum flexoffset_shift_op shift_op,reg_index Rm):reverse(reverse),shift_op(shift_op),Rm(Rm)
-//     {
-        
-//     };
-
-//     bool reverse;
-//     enum flexoffset_shift_op shift_op;
-//     int n;
-//     reg_index Rm;
-// };
 
 //flexoffset中Rm寄存器的移位
 struct Rm_shift 
@@ -920,8 +902,8 @@ private:
     float imm_;
 
 public:
-    //VMOV
-    Arm_vfp_register_transfer_instruction(enum arm_condition cond,reg_index Rd,reg_index Rn):Arm_vfp_instruction(arm_op::VMOV,cond,arm_registers(1,Rd),arm_registers(1,Rn))
+    //VMOV，VMRS
+    Arm_vfp_register_transfer_instruction(enum arm_op op,enum arm_condition cond,reg_index Rd,reg_index Rn):Arm_vfp_instruction(op,cond,arm_registers(1,Rd),arm_registers(1,Rn))
     {
 
     };
@@ -1027,6 +1009,16 @@ public:
     string to_string() const;
 };
 
+//arm的vfp的load和store的类型
+enum class vfp_single_register_load_and_store_type
+{
+    RN,
+    RN_OFFSET,
+    PROGRAM_RELATIVE,
+    POST_INCREMENT,
+    PRE_DECREMENT
+};
+
 //arm的vfp单寄存器load和store指令
 class Arm_vfp_single_register_load_and_store_instruction:public Arm_vfp_instruction
 {
@@ -1035,32 +1027,51 @@ private:
     enum precision precision_;
 
     //single register load and store的类型
-    enum arm_single_register_load_and_store_type single_register_load_and_store_type_;
+    //enum arm_single_register_load_and_store_type single_register_load_and_store_type_;
+    enum vfp_single_register_load_and_store_type single_register_load_and_store_type_;
 
     union
     {
         //是否将结果写回Rn
-        struct flexoffset flexoffset_;
+        int offset_;
 
         //要load和store的label
         string label_;
     };
 
 public:
-    //zero offset
-    Arm_vfp_single_register_load_and_store_instruction(enum arm_op op,enum arm_condition cond,enum precision precision,reg_index Fd,reg_index Rd):Arm_vfp_instruction(op,cond,arm_registers(1,Fd),arm_registers(1,Rd)),single_register_load_and_store_type_(arm_single_register_load_and_store_type::ZERO_OFFSET),precision_(precision)
+    // //zero offset
+    // Arm_vfp_single_register_load_and_store_instruction(enum arm_op op,enum arm_condition cond,enum precision precision,reg_index Fd,reg_index Rd):Arm_vfp_instruction(op,cond,arm_registers(1,Fd),arm_registers(1,Rd)),single_register_load_and_store_type_(arm_single_register_load_and_store_type::ZERO_OFFSET),precision_(precision)
+    // {
+
+    // };
+
+    // //pre-indexed offset
+    // Arm_vfp_single_register_load_and_store_instruction(enum arm_op op,enum arm_condition cond,enum precision precision,reg_index Fd,reg_index Rd,struct flexoffset flexoffset):Arm_vfp_instruction(op,cond,arm_registers(1,Fd),arm_registers(1,Rd)),single_register_load_and_store_type_(arm_single_register_load_and_store_type::PRE_INDEXED_OFFSET),flexoffset_(flexoffset),precision_(precision)
+    // {
+
+    // };
+
+    // //program-relative
+    // Arm_vfp_single_register_load_and_store_instruction(enum arm_op op,enum arm_condition cond,enum precision precision,reg_index Fd,string label):Arm_vfp_instruction(op,cond,arm_registers(1,Fd),arm_registers(0)),single_register_load_and_store_type_(arm_single_register_load_and_store_type::PROGRAM_RELATIVE),label_(label),precision_(precision)
+    // {
+
+    // };
+
+    //only Rn
+    Arm_vfp_single_register_load_and_store_instruction(enum arm_op op,enum arm_condition cond,enum precision precision,reg_index Fd,reg_index Rd):Arm_vfp_instruction(op,cond,arm_registers(1,Fd),arm_registers(1,Rd)),single_register_load_and_store_type_(vfp_single_register_load_and_store_type::RN),precision_(precision)
     {
 
     };
 
-    //pre-indexed pffset
-    Arm_vfp_single_register_load_and_store_instruction(enum arm_op op,enum arm_condition cond,enum precision precision,reg_index Fd,reg_index Rd,struct flexoffset flexoffset):Arm_vfp_instruction(op,cond,arm_registers(1,Fd),arm_registers(1,Rd)),single_register_load_and_store_type_(arm_single_register_load_and_store_type::PRE_INDEXED_OFFSET),flexoffset_(flexoffset),precision_(precision)
+    //Rn and offset,post-increment,pre-decrement
+    Arm_vfp_single_register_load_and_store_instruction(enum arm_op op,enum arm_condition cond,enum precision precision,reg_index Fd,reg_index Rd,int offset,enum vfp_single_register_load_and_store_type single_register_load_and_store_type):Arm_vfp_instruction(op,cond,arm_registers(1,Fd),arm_registers(1,Rd)),single_register_load_and_store_type_(single_register_load_and_store_type),offset_(offset),precision_(precision)
     {
 
     };
 
-    //program-relative
-    Arm_vfp_single_register_load_and_store_instruction(enum arm_op op,enum arm_condition cond,enum precision precision,reg_index Fd,string label):Arm_vfp_instruction(op,cond,arm_registers(1,Fd),arm_registers(0)),single_register_load_and_store_type_(arm_single_register_load_and_store_type::PROGRAM_RELATIVE),label_(label),precision_(precision)
+    //label
+    Arm_vfp_single_register_load_and_store_instruction(enum arm_op op,enum arm_condition cond,enum precision precision,reg_index Fd,string label):Arm_vfp_instruction(op,cond,arm_registers(1,Fd),arm_registers(0)),single_register_load_and_store_type_(vfp_single_register_load_and_store_type::PROGRAM_RELATIVE),label_(label),precision_(precision)
     {
 
     };
@@ -1068,11 +1079,6 @@ public:
     ~Arm_vfp_single_register_load_and_store_instruction()
     {
 
-    };
-
-    inline struct flexoffset get_flexoffset() const
-    {
-        return flexoffset_;
     };
 
     //转换成字符串

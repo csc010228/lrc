@@ -179,6 +179,9 @@ class Ic_optimizer
 {
 
 protected:
+    //是否需要优化
+    bool need_optimize_;
+
     //目前正在处理的中间代码流图
     struct ic_flow_graph * intermediate_codes_flow_graph_;
 
@@ -231,7 +234,7 @@ public:
     Ic_optimizer();
 
     //初始化
-    void init();
+    void init(bool optimize);
 
     //代码优化
     struct ic_flow_graph * optimize(list<struct quaternion> * intermediate_codes);

@@ -25,6 +25,7 @@ enum class my_error_code
     NONEXISTENT_ESCAPE_CHAR,                //不存在的转义字符
     UNCLOSED_CONST_CHAR,                    //不闭合的常量字符
     UNCLOSED_CONST_STRING,                  //不闭合的常量字符串
+    INVALID_CONST_FORMAT,                   //不符合规定的常数格式
 };
 
 #endif //__MY_ERROR_H
