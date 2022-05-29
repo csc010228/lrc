@@ -163,20 +163,20 @@ int main(int argc,char * argv[])
         //     break;
         //compiler testcase.sysy -S -o testcase.s
         case 5:
-            source_program_filename=argv[1];
-            flag=argv[2];
+            source_program_filename=argv[4];
+            flag=argv[1];
             if(flag!=GENERATE_ASM_FLAG)
             {
                 cout<<"No such command!"<<endl;
                 return -1;
             }
-            flag=argv[3];
+            flag=argv[2];
             if(flag!=SPECIFY_TARGET_FLAG)
             {
                 cout<<"No such command!"<<endl;
                 return -1;
             }
-            target_filename=argv[4];
+            target_filename=argv[3];
             if(!(target_filename.size()>2 && target_filename.substr(target_filename.size()-2)==ASM_CODES_OUTPUT_FILE_SUFFIX))
             {
                 cout<<"No such command!"<<endl;
@@ -185,20 +185,20 @@ int main(int argc,char * argv[])
             target_filename=target_filename.substr(0,target_filename.size()-2);
             break;
         case 6:
-            source_program_filename=argv[1];
-            flag=argv[2];
+            source_program_filename=argv[4];
+            flag=argv[1];
             if(flag!=GENERATE_ASM_FLAG)
             {
                 cout<<"No such command!"<<endl;
                 return -1;
             }
-            flag=argv[3];
+            flag=argv[2];
             if(flag!=SPECIFY_TARGET_FLAG)
             {
                 cout<<"No such command!"<<endl;
                 return -1;
             }
-            target_filename=argv[4];
+            target_filename=argv[3];
             if(!(target_filename.size()>2 && target_filename.substr(target_filename.size()-2)==ASM_CODES_OUTPUT_FILE_SUFFIX))
             {
                 cout<<"No such command!"<<endl;
@@ -221,20 +221,20 @@ int main(int argc,char * argv[])
             }
             break;
         case 7:
-            source_program_filename=argv[1];
-            flag=argv[2];
+            source_program_filename=argv[4];
+            flag=argv[1];
             if(flag!=GENERATE_ASM_FLAG)
             {
                 cout<<"No such command!"<<endl;
                 return -1;
             }
-            flag=argv[3];
+            flag=argv[2];
             if(flag!=SPECIFY_TARGET_FLAG)
             {
                 cout<<"No such command!"<<endl;
                 return -1;
             }
-            target_filename=argv[4];
+            target_filename=argv[3];
             if(!(target_filename.size()>2 && target_filename.substr(target_filename.size()-2)==ASM_CODES_OUTPUT_FILE_SUFFIX))
             {
                 cout<<"No such command!"<<endl;
@@ -242,20 +242,98 @@ int main(int argc,char * argv[])
             }
             target_filename=target_filename.substr(0,target_filename.size()-2);
             flag=argv[5];
-            if(flag!=OPTIMIZATION_FLAG)
+            if(flag==OPTIMIZATION_FLAG)
+            {
+                optimize=true;
+            }
+            else
             {
                 cout<<"No such command!"<<endl;
                 return -1;
             }
             flag=argv[6];
-            if(flag!=DEBUG_FLAG)
+            if(flag==DEBUG_FLAG)
+            {
+                debug=true;
+            }
+            else
             {
                 cout<<"No such command!"<<endl;
                 return -1;
             }
-            optimize=true;
-            debug=true;
             break;
+        // case 6:
+        //     source_program_filename=argv[1];
+        //     flag=argv[2];
+        //     if(flag!=GENERATE_ASM_FLAG)
+        //     {
+        //         cout<<"No such command!"<<endl;
+        //         return -1;
+        //     }
+        //     flag=argv[3];
+        //     if(flag!=SPECIFY_TARGET_FLAG)
+        //     {
+        //         cout<<"No such command!"<<endl;
+        //         return -1;
+        //     }
+        //     target_filename=argv[4];
+        //     if(!(target_filename.size()>2 && target_filename.substr(target_filename.size()-2)==ASM_CODES_OUTPUT_FILE_SUFFIX))
+        //     {
+        //         cout<<"No such command!"<<endl;
+        //         return -1;
+        //     }
+        //     target_filename=target_filename.substr(0,target_filename.size()-2);
+        //     flag=argv[5];
+        //     if(flag==DEBUG_FLAG)
+        //     {
+        //         debug=true;
+        //     }
+        //     else if(flag==OPTIMIZATION_FLAG)
+        //     {
+        //         optimize=true;
+        //     }
+        //     else
+        //     {
+        //         cout<<"No such command!"<<endl;
+        //         return -1;
+        //     }
+        //     break;
+        // case 7:
+        //     source_program_filename=argv[1];
+        //     flag=argv[2];
+        //     if(flag!=GENERATE_ASM_FLAG)
+        //     {
+        //         cout<<"No such command!"<<endl;
+        //         return -1;
+        //     }
+        //     flag=argv[3];
+        //     if(flag!=SPECIFY_TARGET_FLAG)
+        //     {
+        //         cout<<"No such command!"<<endl;
+        //         return -1;
+        //     }
+        //     target_filename=argv[4];
+        //     if(!(target_filename.size()>2 && target_filename.substr(target_filename.size()-2)==ASM_CODES_OUTPUT_FILE_SUFFIX))
+        //     {
+        //         cout<<"No such command!"<<endl;
+        //         return -1;
+        //     }
+        //     target_filename=target_filename.substr(0,target_filename.size()-2);
+        //     flag=argv[5];
+        //     if(flag!=OPTIMIZATION_FLAG)
+        //     {
+        //         cout<<"No such command!"<<endl;
+        //         return -1;
+        //     }
+        //     flag=argv[6];
+        //     if(flag!=DEBUG_FLAG)
+        //     {
+        //         cout<<"No such command!"<<endl;
+        //         return -1;
+        //     }
+        //     optimize=true;
+        //     debug=true;
+        //     break;
         default:
             cout<<"No such command!"<<endl;
             return -1;
