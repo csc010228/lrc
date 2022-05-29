@@ -50,18 +50,18 @@ protected:
     void div_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result);
     //根据一条MOD中间代码生成最终的arm汇编代码
     void mod_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result);
-    //根据一条L_SHIFT中间代码生成最终的arm汇编代码
-    void l_shift_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result);
-    //根据一条R_SHIFT中间代码生成最终的arm汇编代码
-    void r_shift_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result);
+    // //根据一条L_SHIFT中间代码生成最终的arm汇编代码
+    // void l_shift_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result);
+    // //根据一条R_SHIFT中间代码生成最终的arm汇编代码
+    // void r_shift_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result);
     //根据一条NOT中间代码生成最终的arm汇编代码
     void not_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * result);
-    //根据一条AND中间代码生成最终的arm汇编代码
-    void and_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result);
-    //根据一条OR中间代码生成最终的arm汇编代码
-    void or_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result);
-    //根据一条XOR中间代码生成最终的arm汇编代码
-    void xor_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result);
+    // //根据一条AND中间代码生成最终的arm汇编代码
+    // void and_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result);
+    // //根据一条OR中间代码生成最终的arm汇编代码
+    // void or_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result);
+    // //根据一条XOR中间代码生成最终的arm汇编代码
+    // void xor_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result);
     //根据一条EQ中间代码生成最终的arm汇编代码
     void eq_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result);
     //根据一条UEQ中间代码生成最终的arm汇编代码
@@ -105,14 +105,13 @@ protected:
     inline void push_directive(Arm_directive * directive);
 
     //事件处理函数
-    void handle_WRITE_CONST_TO_CPU_REG(OAA const_data,reg_index reg);
-    void handle_WRITE_CONST_TO_VFP_REG(OAA const_data,reg_index reg);
+    void handle_WRITE_CONST_TO_REG(OAA const_data,reg_index reg);
     void handle_STORE_VAR_TO_MEM(struct ic_data * var,reg_index reg);
     void handle_LOAD_VAR_TO_REG(struct ic_data * var,reg_index reg);
     void handle_WRITE_ADDR_TO_REG(struct ic_data * var,reg_index reg);
     void handle_PUSH_TEMP_VAR_FROM_REG_TO_STACK(struct ic_data * var,reg_index reg);
     void handle_CALL_FUNC(string func_name,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg);
-    void handle_CALL_ABI_FUNC(string func_name,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg);
+    void handle_CALL_ABI_FUNC(string func_name,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg,list<reg_index> * r_param_regs);
     void handle_MOVE_DATA_BETWEEN_REGS(reg_index from,reg_index to);
     void handle_ASSIGN_VAR(struct ic_data * from,struct ic_data * to);
     void handle_POP_STACK(size_t pop_size);

@@ -22,9 +22,12 @@ enum class event_type
     RESPONSE_BOOL,                          //返回bool类型数据
     RESPONSE_INT,                           //返回int类型数据
     RESPONSE_POINTER,                       //返回指针数据
-    GET_REG_FOR_INT_CONST,                  //为某一个常数获取一个寄存器
-    GET_REG_FOR_READING_VAR,                //为读某一个变量获取一个寄存器
-    GET_REG_FOR_WRITING_VAR,                //为写某一个变量获取一个寄存器
+    GET_CPU_REG_FOR_CONST,                  //为某一个常数获取一个寄存器
+    GET_VFP_REG_FOR_CONST,
+    GET_CPU_REG_FOR_READING_VAR,                //为读某一个变量获取一个寄存器
+    GET_VFP_REG_FOR_READING_VAR,
+    GET_CPU_REG_FOR_WRITING_VAR,                //为写某一个变量获取一个寄存器
+    GET_VFP_REG_FOR_WRITING_VAR,
     STORE_VAR_TO_MEM,                       //把一个存储在寄存器中的变量写入内存
     LOAD_VAR_TO_REG,                        //把一个存储在内存中的变量写入寄存器中
     GET_CURRENT_FUNC_STACK_SIZE,            //获取当前函数的栈空间大小（sp-fp）
@@ -74,21 +77,18 @@ enum class event_type
     CALL_FUNC,
     CALL_ABI_FUNC,
     GET_REG_BYTE_SIZE,
-    WRITE_CONST_TO_CPU_REG,
-    WRITE_CONST_TO_VFP_REG,
+    WRITE_CONST_TO_REG,
     PUSH_VAR_TO_STACK,
     PUSH_ARGUMENT_TO_STACK_WHEN_CALLING_FUNC,
     PUSH_TEMP_VAR_FROM_REG_TO_STACK,
     CHECK_TEMP_VAR_IN_STACK,
-    CHECK_CONST_INT_OWN_VALUE_REG,
-    CHECK_VAR_OWN_VALUE_REG,
-    GET_VAR_S_VALUE_REG,
-    GET_CONST_INT_S_VALUE_REG,
+    CHECK_CONST_INT_VALUE_OWN_CPU_REG,
+    GET_CONST_VALUE_S_CPU_REG,
     SAVE_REGS_WHEN_CALLING_FUNC,
     SAVE_REGS_WHEN_CALLING_ABI_FUNC,
     PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_FUNC,
+    PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_ABI_FUNC,
     MOVE_DATA_BETWEEN_REGS,
-    PUSH_ARGUMENT_FROM_REG_TO_STACK_WHEN_CALLING_FUNC,
     RET_FROM_CALLED_FUNC,
     RET_FROM_CALLED_ABI_FUNC,
     CHECK_VAR_ATTACHED_TO_FLAG,
@@ -96,6 +96,9 @@ enum class event_type
     POP_STACK,
     ALLOCATE_IDLE_CPU_REG,
     ATTACH_CONST_TO_REG,
+    ATTACH_VAR_VALUE_TO_REG,
+    ATTACH_VAR_VALUE_TO_REG_THEN_SET_DIRTY,
+    UNATTACH_REG_S_ALL_DATA,
     OPTIMIZE,
     IS_VAR_STILL_ALIVE
 };

@@ -62,20 +62,31 @@ void Memory_manager::handle_FUNC_DEFINE(struct ic_func * func)
 struct event Memory_manager::handle_READY_TO_PUSH_LOCAL_VARS(struct ic_func * func)
 {
     struct event res;
-    size_t local_vars_total_byte_size=0;
+    size_t local_vars_total_byte_size=0,local_var_4_bytes_size,tmp_1;
+    bool need_padding=false;
     list<struct ic_data * > local_vars=func->get_local_vars();
-    for(auto i:local_vars)
+    for(auto local_var:local_vars)
     {
-        if(i->is_const() && !i->is_array_var())
+        if(local_var->is_const() && !local_var->is_array_var())
         {
             //如果局部变量是常数数组的话，仍旧需要将其入栈
             continue;
         }
-        local_vars_total_byte_size+=i->get_4_bytes_size();
-        current_func_stack_space_.push_to_local_vars(i);
+        else if(local_var->is_array_var() && local_var->get_data_type()==language_data_type::FLOAT)
+        {
+            //float类型的局部变量数组需要是8bytes对齐的
+            need_padding=true;
+        }
+        local_vars_total_byte_size+=local_var->get_4_bytes_size();
+        current_func_stack_space_.push_to_local_vars(local_var);
     }
     res.type=event_type::RESPONSE_INT;
     res.int_data=local_vars_total_byte_size*4;
+    if(need_padding && local_vars_total_byte_size%2==1)
+    {
+        current_func_stack_space_.padding_bytes=4;
+        res.int_data+=4;
+    }
     return res;
 }
 
@@ -135,7 +146,7 @@ void Memory_manager::handle_READY_TO_PUSH_F_PARAM_VFP_REGS(list<struct ic_data *
     //这里假设每一个参数都是4bytes大小的
     for(auto i:*f_params)
     {
-        if(i->get_data_type()==language_data_type::FLOAT)
+        if(i->get_data_type()==language_data_type::FLOAT && !i->is_array_var())
         {
             if(float_f_params_num>=16)
             {
@@ -234,7 +245,7 @@ struct event Memory_manager::handle_READY_TO_POP_LOCAL_VARS()
     }
 
     res.type=event_type::RESPONSE_INT;
-    res.int_data=stack_offset;
+    res.int_data=stack_offset+current_func_stack_space_.padding_bytes;
     return res;
 }
 

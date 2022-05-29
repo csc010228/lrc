@@ -1,144 +1,125 @@
-const float RADIUS = 5.500000
-const float PI = 3.141593
-const float EPS = 0.000001
-const float PI_HEX = 3.141593
-const float HEX2 = 0.078125
-const float FACT = -33000.000000
-const float EVAL1 = 95.033188
-const float EVAL2 = 34.557522
-const float EVAL3 = 34.557522
-const float CONV1 = 233.000000
-const float CONV2 = 4095.000000
-const int MAX = 1000000000
-const int TWO = 2
-const int THREE = 3
-const int FIVE = 5
-float float_abs ( float float_abs::x )  : 
-	LT		float_abs::x , 0.000000 --> (float)@0
-	IF_NOT_JMP		@0 --> .0
-	SUB		0.000000 , float_abs::x --> (float)@1
-	RET		@1
+int M
+int L
+int N
+int add ( float add::a0[0] , float add::a1[0] , float add::a2[0] , float add::b0[0] , float add::b1[0] , float add::b2[0] , float add::c0[0] , float add::c1[0] , float add::c2[0] )  : 
+	int add::i
+	ASSIGN		0 --> add::i
 .0 : 
-	RET		float_abs::x
-
-float circle_area ( int circle_area::radius )  : 
-	ASSIGN		circle_area::radius --> (float)@2
-	MUL		PI , @2 --> (float)@3
-	ASSIGN		circle_area::radius --> (float)@4
-	MUL		@3 , @4 --> (float)@5
-	MUL		circle_area::radius , circle_area::radius --> (int)@6
-	ASSIGN		@6 --> (float)@7
-	MUL		@7 , PI --> (float)@8
-	ADD		@5 , @8 --> (float)@9
-	DIV		@9 , 2.000000 --> (float)@10
-	RET		@10
-
-int float_eq ( float float_eq::a , float float_eq::b )  : 
-	SUB		float_eq::a , float_eq::b --> (float)@11
-	CALL		float_abs ( @11 )  --> (float)@12
-	LT		@12 , EPS --> (float)@13
-	IF_NOT_JMP		@13 --> .1
-	RET		1
-	JMP		.2
+	LT		add::i , M --> (int)@0
+	IF_NOT_JMP		@0 --> .1
+	MUL		add::i , 1 --> (int)@1
+	ADD		@1 , 0 --> (int)@2
+	MUL		add::i , 1 --> (int)@3
+	ADD		@3 , 0 --> (int)@4
+	MUL		add::i , 1 --> (int)@5
+	ADD		@5 , 0 --> (int)@6
+	ADD		add::a0[@4] , add::b0[@6] --> (float)@7
+	ASSIGN		@7 --> add::c0[@2]
+	MUL		add::i , 1 --> (int)@8
+	ADD		@8 , 0 --> (int)@9
+	MUL		add::i , 1 --> (int)@10
+	ADD		@10 , 0 --> (int)@11
+	MUL		add::i , 1 --> (int)@12
+	ADD		@12 , 0 --> (int)@13
+	ADD		add::a1[@11] , add::b1[@13] --> (float)@14
+	ASSIGN		@14 --> add::c1[@9]
+	MUL		add::i , 1 --> (int)@15
+	ADD		@15 , 0 --> (int)@16
+	MUL		add::i , 1 --> (int)@17
+	ADD		@17 , 0 --> (int)@18
+	MUL		add::i , 1 --> (int)@19
+	ADD		@19 , 0 --> (int)@20
+	ADD		add::a2[@18] , add::b2[@20] --> (float)@21
+	ASSIGN		@21 --> add::c2[@16]
+	ADD		add::i , 1 --> (int)@22
+	ASSIGN		@22 --> add::i
+	JMP		.0
 .1 : 
 	RET		0
-.2 : 
-
-void error (  )  : 
-	CALL		putch ( 101 ) 
-	CALL		putch ( 114 ) 
-	CALL		putch ( 114 ) 
-	CALL		putch ( 111 ) 
-	CALL		putch ( 114 ) 
-	CALL		putch ( 10 ) 
-	RET
-
-void ok (  )  : 
-	CALL		putch ( 111 ) 
-	CALL		putch ( 107 ) 
-	CALL		putch ( 10 ) 
-	RET
-
-void assert ( int assert::cond )  : 
-	NOT		assert::cond --> (int)@14
-	IF_NOT_JMP		@14 --> .3
-	CALL		error (  ) 
-	JMP		.4
-.3 : 
-	CALL		ok (  ) 
-.4 : 
-	RET
 
 int main (  )  : 
-	CALL		float_eq ( HEX2 , FACT )  --> (int)@15
-	NOT		@15 --> (int)@16
-	CALL		assert ( @16 ) 
-	CALL		float_eq ( EVAL1 , EVAL2 )  --> (int)@17
-	NOT		@17 --> (int)@18
-	CALL		assert ( @18 ) 
-	CALL		float_eq ( EVAL2 , EVAL3 )  --> (int)@19
-	CALL		assert ( @19 ) 
-	CALL		circle_area ( 5 )  --> (float)@20
-	CALL		circle_area ( FIVE )  --> (float)@21
-	CALL		float_eq ( @20 , @21 )  --> (int)@22
-	CALL		assert ( @22 ) 
-	CALL		float_eq ( CONV1 , CONV2 )  --> (int)@23
-	NOT		@23 --> (int)@24
-	CALL		assert ( @24 ) 
-	CALL		ok (  ) 
-.5 : 
-	CALL		ok (  ) 
-.6 : 
-	JMP		.7
-	CALL		error (  ) 
-.7 : 
-	JMP		.8
-	JMP		.9
-.8 : 
-	CALL		ok (  ) 
-.9 : 
+	ASSIGN		3 --> N
+	ASSIGN		3 --> M
+	ASSIGN		3 --> L
+	float main::a0[3]
+	float main::a1[3]
+	float main::a2[3]
+	float main::b0[3]
+	float main::b1[3]
+	float main::b2[3]
+	float main::c0[6]
+	float main::c1[3]
+	float main::c2[3]
 	int main::i
-	ASSIGN		1 --> main::i
-	int main::p
-	ASSIGN		0 --> main::p
-	float main::arr[10] = { 0 , ...... } 
-	ASSIGN		1.000000 --> main::arr[0]
-	ASSIGN		2.000000 --> main::arr[1]
-	CALL		getfarray ( main::arr )  --> (int)@25
-	int main::len
-	ASSIGN		@25 --> main::len
-.10 : 
-	LT		main::i , MAX --> (int)@26
-	IF_NOT_JMP		@26 --> .11
-	CALL		getfloat (  )  --> (float)@27
-	float main::while_0::input
-	ASSIGN		@27 --> main::while_0::input
-	MUL		PI , main::while_0::input --> (float)@28
-	MUL		@28 , main::while_0::input --> (float)@29
-	ASSIGN		main::while_0::input --> (int)@30
-	CALL		circle_area ( @30 )  --> (float)@31
-	float main::while_0::area
-	ASSIGN		@29 --> main::while_0::area
-	float main::while_0::area_trunc
-	ASSIGN		@31 --> main::while_0::area_trunc
-	MUL		main::p , 1 --> (int)@32
+	ASSIGN		0 --> main::i
+.2 : 
+	LT		main::i , M --> (int)@23
+	IF_NOT_JMP		@23 --> .3
+	MUL		main::i , 1 --> (int)@24
+	ADD		@24 , 0 --> (int)@25
+	ASSIGN		main::i --> main::a0[@25]
+	MUL		main::i , 1 --> (int)@26
+	ADD		@26 , 0 --> (int)@27
+	ASSIGN		main::i --> main::a1[@27]
+	MUL		main::i , 1 --> (int)@28
+	ADD		@28 , 0 --> (int)@29
+	ASSIGN		main::i --> main::a2[@29]
+	MUL		main::i , 1 --> (int)@30
+	ADD		@30 , 0 --> (int)@31
+	ASSIGN		main::i --> main::b0[@31]
+	MUL		main::i , 1 --> (int)@32
 	ADD		@32 , 0 --> (int)@33
-	MUL		main::p , 1 --> (int)@34
+	ASSIGN		main::i --> main::b1[@33]
+	MUL		main::i , 1 --> (int)@34
 	ADD		@34 , 0 --> (int)@35
-	ADD		main::arr[@35] , main::while_0::input --> (float)@36
-	ASSIGN		@36 --> main::arr[@33]
-	CALL		putfloat ( main::while_0::area ) 
-	CALL		putch ( 32 ) 
-	ASSIGN		main::while_0::area_trunc --> (int)@37
-	CALL		putint ( @37 ) 
-	CALL		putch ( 10 ) 
-	ASSIGN		main::i --> (float)@38
-	MUL		@38 , 10.000000 --> (float)@39
-	ASSIGN		@39 --> main::i
-	ADD		main::p , 1 --> (int)@40
-	ASSIGN		@40 --> main::p
-	JMP		.10
-.11 : 
-	CALL		putfarray ( main::len , main::arr ) 
+	ASSIGN		main::i --> main::b2[@35]
+	ADD		main::i , 1 --> (int)@36
+	ASSIGN		@36 --> main::i
+	JMP		.2
+.3 : 
+	CALL		add ( main::a0 , main::a1 , main::a2 , main::b0 , main::b1 , main::b2 , main::c0 , main::c1 , main::c2 )  --> (int)@37
+	ASSIGN		@37 --> main::i
+	int main::x
+.4 : 
+	LT		main::i , N --> (int)@38
+	IF_NOT_JMP		@38 --> .5
+	MUL		main::i , 1 --> (int)@39
+	ADD		@39 , 0 --> (int)@40
+	ASSIGN		main::c0[@40] --> main::x
+	CALL		putint ( main::x ) 
+	ADD		main::i , 1 --> (int)@41
+	ASSIGN		@41 --> main::i
+	JMP		.4
+.5 : 
+	ASSIGN		10 --> main::x
+	CALL		putch ( main::x ) 
+	ASSIGN		0 --> main::i
+.6 : 
+	LT		main::i , N --> (int)@42
+	IF_NOT_JMP		@42 --> .7
+	MUL		main::i , 1 --> (int)@43
+	ADD		@43 , 0 --> (int)@44
+	ASSIGN		main::c1[@44] --> main::x
+	CALL		putint ( main::x ) 
+	ADD		main::i , 1 --> (int)@45
+	ASSIGN		@45 --> main::i
+	JMP		.6
+.7 : 
+	ASSIGN		10 --> main::x
+	CALL		putch ( main::x ) 
+	ASSIGN		0 --> main::i
+.8 : 
+	LT		main::i , N --> (int)@46
+	IF_NOT_JMP		@46 --> .9
+	MUL		main::i , 1 --> (int)@47
+	ADD		@47 , 0 --> (int)@48
+	ASSIGN		main::c2[@48] --> main::x
+	CALL		putint ( main::x ) 
+	ADD		main::i , 1 --> (int)@49
+	ASSIGN		@49 --> main::i
+	JMP		.8
+.9 : 
+	ASSIGN		10 --> main::x
+	CALL		putch ( main::x ) 
 	RET		0
 

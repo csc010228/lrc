@@ -39,19 +39,17 @@ enum class reg_attr
 //寄存器状态
 enum class reg_state
 {
-    NOT_USED,           //该寄存器没有被使用
+    EMPTY,              //该寄存器是空的，还没有被使用
     USED,               //该寄存器被使用了
-    DIRTY_VALUE,        //该寄存器是脏值的（即寄存器的值和对应的变量的内存值不一致，寄存器的值是最新的）
+    ALLOCATING,         //该寄存器正在被分配
 };
 
-//寄存器相关数据的类型
-enum class reg_related_data_type
+//寄存器中存储的变量状态
+enum class reg_var_state
 {
-    NONE,
-    VAR,
-    ADDR,
-    CONST_INT,
-    CONST_FLOAT
+    DIRTY,                  //该寄存器存储的变量是脏值（即寄存器的值和对应的变量的内存值不一致，寄存器的值是最新的）
+    NOT_DIRTY,              //该寄存器存储的变量不是脏值
+    ADDR,                   //该寄存器存储的是变量的地址
 };
 
 //寄存器所属的处理器
@@ -64,21 +62,91 @@ enum class reg_processor
 //寄存器信息
 struct reg
 {
-    reg(string name,reg_index index,enum reg_attr attr,bool writable,enum reg_state state,size_t size,enum reg_processor processor):name(name),index(index),attr(attr),writable(writable),state(state),size(size),related_data_type(reg_related_data_type::NONE),processor(processor)
+    reg(string name,reg_index index,enum reg_attr attr,bool writable,size_t size,enum reg_processor processor):name(name),index(index),attr(attr),writable(writable),state(reg_state::EMPTY),size(size),attached_const(false),processor(processor)
     {
 
     };
 
-    inline bool is_allocating() const
+    void clear()
     {
-        return (state==reg_state::USED && related_data_type==reg_related_data_type::NONE);
-    }
+        state=reg_state::EMPTY;
+        attached_const=false;
+        var_datas.clear();
+    };
 
-    inline void set_allocating()
+    void add_value(OAA const_value)
     {
         state=reg_state::USED;
-        related_data_type=reg_related_data_type::NONE;
-    }
+        attached_const=true;
+        const_data=const_value;
+    };
+
+    void add_value(struct ic_data * var)
+    {
+        state=reg_state::USED;
+        if(var_datas.find(var)==var_datas.end())
+        {
+            var_datas.insert(make_pair(var,reg_var_state::NOT_DIRTY));
+        }
+    };
+
+    void add_addr(struct ic_data * var)
+    {
+        state=reg_state::USED;
+        if(var_datas.find(var)==var_datas.end())
+        {
+            var_datas.insert(make_pair(var,reg_var_state::ADDR));
+        }
+    };
+
+    void set_value_DIRTY(struct ic_data * var)
+    {
+        if(!var->is_tmp_var() && var_datas.find(var)!=var_datas.end() && var_datas.at(var)==reg_var_state::NOT_DIRTY)
+        {
+            var_datas.at(var)=reg_var_state::DIRTY;
+        }
+    };
+
+    void set_value_NOT_DIRTY(struct ic_data * var)
+    {
+        if(var_datas.find(var)!=var_datas.end() && var_datas.at(var)==reg_var_state::DIRTY)
+        {
+            var_datas.at(var)=reg_var_state::NOT_DIRTY;
+        }
+    };
+
+    void remove_value(OAA const_value)
+    {
+        attached_const=false;
+        if(var_datas.empty())
+        {
+            state=reg_state::EMPTY;
+        }
+    };
+
+    void remove_value(struct ic_data * var)
+    {
+        if(var_datas.find(var)!=var_datas.end() && var_datas.at(var)!=reg_var_state::ADDR)
+        {
+            var_datas.erase(var);
+        }
+        if(var_datas.empty() && attached_const==false)
+        {
+            state=reg_state::EMPTY;
+        }
+    };
+
+    void remove_addr(struct ic_data * var)
+    {
+        if(var_datas.find(var)!=var_datas.end() && var_datas.at(var)==reg_var_state::ADDR)
+        {
+            var_datas.erase(var);
+        }
+        if(var_datas.empty() && attached_const==false)
+        {
+            state=reg_state::EMPTY;
+        }
+    };
 
     bool operator <(const struct reg & a) const
     {
@@ -114,16 +182,13 @@ struct reg
     reg_index index;            //编号
     enum reg_attr attr;         //属性
     bool writable;              //是否可写
-    enum reg_state state;       //状态
     size_t size;                //寄存器大小（单位是bit）
-    enum reg_related_data_type related_data_type;         //相关数据的类型
     enum reg_processor processor;                           //所属的处理器
-    union          //相关数据
-    {
-        struct ic_data * var_data;
-        int const_int_data;
-        float const_float_data;
-    };
+    enum reg_state state;       //状态
+    bool attached_const;        //是否存放了常数
+    //相关数据
+    map<struct ic_data *,enum reg_var_state> var_datas;
+    OAA const_data;
 };
 
 //标志寄存器的信息
@@ -166,6 +231,48 @@ struct flag_reg
     pair<struct ic_data *,int> related_data;          //标志位寄存器中的所有标志对应的数据
 };
 
+struct regs_info
+{
+    struct flag_reg flag_reg;                      //标志寄存器
+    map<reg_index,struct reg> reg_indexs;          //寄存器编号和寄存器之间的映射
+    map<string,reg_index> reg_names;               //寄存器名字和寄存器编号之间的映射
+
+    map<struct ic_data *,set<reg_index> > var_value_regs_map;           //存储变量的值和寄存器之间的映射关系的map
+    map<OAA,set<reg_index> > const_value_regs_map;                      //存储常数的值和寄存器之间的映射关系的map
+    map<struct ic_data *,set<reg_index> > var_addr_regs_map;            //存储变量的地址和寄存器之间的映射关系的map
+
+    list<set<reg_index> > current_instructions_involved_regs;             //存储当前的指令所用到的寄存器
+
+    uint8_t available_CPU_regs_num;                 //可用的CPU寄存器个数
+    uint8_t available_VFP_regs_num;                 //可用的VFP寄存器个数
+
+    //构造函数
+    regs_info();
+    regs_info(set<struct reg> regs,struct flag_reg flag_reg);
+    //清空所有的寄存器信息
+    void clear();
+    //把一个变量的值和一个寄存器建立关联
+    void attach_value_to_reg(struct ic_data * var,reg_index reg);
+    //把一个常量的值和一个寄存器建立关联
+    void attach_value_to_reg(OAA const_value,reg_index reg);
+    //把一个变量的地址和一个寄存器建立关联
+    void attach_addr_to_reg(struct ic_data * var,reg_index reg);
+    //把一个变量的值和一个寄存器解除关联
+    void unattach_value_to_reg(struct ic_data * var,reg_index reg);
+    //把一个常量的值和一个寄存器解除关联
+    void unattach_value_to_reg(OAA const_value,reg_index reg);
+    //把一个变量的地址和一个寄存器解除关联
+    void unattach_addr_to_reg(struct ic_data * var,reg_index reg);
+    //把一个寄存器上的所有数据和该寄存器解除关联
+    void unattach_reg_s_all_data(reg_index reg);
+    //获取存放着某一个常数值的所有寄存器
+    set<reg_index> get_const_owned_value_regs(OAA const_value);
+    //获取存放着某一个变量值的所有寄存器
+    set<reg_index> get_var_owned_value_regs(struct ic_data * var);
+    //获取存放着某一个变量地址的所有寄存器
+    set<reg_index> get_var_owned_addr_regs(struct ic_data * var);
+};
+
 //寄存器管理器
 class Register_manager:public Asm_generator_component
 {
@@ -175,229 +282,7 @@ private:
     bool is_init_successful_;
 
     //寄存器信息
-    struct regs
-    {
-        struct flag_reg flag_reg;                      //标志寄存器
-        map<reg_index,struct reg> reg_indexs;          //寄存器编号和寄存器之间的映射
-        map<string,reg_index> reg_names;               //寄存器名字和寄存器编号之间的映射
-    } regs_;
-
-    //当前函数的寄存器信息
-    struct func_regs_info
-    {
-        list<reg_index> context_saved_regs;                     //当前函数用于保存上下文的寄存器
-    } current_func_regs_info_;
-
-    //当前基本块的寄存器信息
-    struct basic_blocK_regs_info
-    {
-        map<struct ic_data *,set<reg_index> > var_value_regs_map;         //存储变量的值和寄存器之间的映射关系的map
-        map<int,set<reg_index> > const_int_value_regs_map;                //存储int常数的值和寄存器之间的映射关系的map
-        map<float,set<reg_index> > const_float_value_regs_map;                //存储float常数的值和寄存器之间的映射关系的map
-        //map<OAA,set<reg_index> > const_value_regs_map;                      //存储常数的值和寄存器之间的映射关系的map
-        map<struct ic_data *,set<reg_index> > var_addr_regs_map;          //存储变量的地址和寄存器之间的映射关系的map
-
-        //查看某个变量的值和某个寄存器之间是否有关系
-        bool check_var_value_reg(struct ic_data * var,reg_index reg)
-        {
-            return (var_value_regs_map.find(var)!=var_value_regs_map.end() && var_value_regs_map.at(var).find(reg)!=var_value_regs_map.at(var).end());
-        };
-
-        //建立某个变量的值和某个寄存器之间的关系
-        void build_var_value_reg(struct ic_data * var,reg_index reg)
-        {
-            if(var_value_regs_map.find(var)==var_value_regs_map.end())
-            {
-                var_value_regs_map.insert(make_pair(var,set<reg_index>()));
-            }
-
-            if(var_value_regs_map.at(var).find(reg)==var_value_regs_map.at(var).end())
-            {
-                var_value_regs_map.at(var).insert(reg);
-            }
-        };
-
-        //解除某个变量的值和某个寄存器之间的关系
-        void relieve_var_value_reg(struct ic_data * var,reg_index reg)
-        {
-            if(var_value_regs_map.find(var)!=var_value_regs_map.end())
-            {
-                if(var_value_regs_map.at(var).find(reg)!=var_value_regs_map.at(var).end())
-                {
-                    var_value_regs_map.at(var).erase(reg);
-                }
-                
-                if(var_value_regs_map.at(var).empty())
-                {
-                    var_value_regs_map.erase(var);
-                }
-            }
-        };
-
-        //随机获取一个和某一个变量的值有关的寄存器
-        reg_index randomly_get_var_value_reg(struct ic_data * var)
-        {
-            reg_index res;
-            if(var_value_regs_map.find(var)!=var_value_regs_map.end() && !var_value_regs_map.at(var).empty())
-            {
-                res=*(var_value_regs_map.at(var).begin());
-            }
-            return res;
-        };
-
-        //查看某个int常量的值和某个寄存器之间是否有关系
-        bool check_const_int_value_reg(int const_int,reg_index reg)
-        {
-            return (const_int_value_regs_map.find(const_int)!=const_int_value_regs_map.end() && const_int_value_regs_map.at(const_int).find(reg)!=const_int_value_regs_map.at(const_int).end());
-        };
-
-        //建立某个int常量的值和某个寄存器之间的关系
-        void build_const_int_value_reg(int const_int,reg_index reg)
-        {
-            if(const_int_value_regs_map.find(const_int)==const_int_value_regs_map.end())
-            {
-                const_int_value_regs_map.insert(make_pair(const_int,set<reg_index>()));
-            }
-            
-            if(const_int_value_regs_map.at(const_int).find(reg)==const_int_value_regs_map.at(const_int).end())
-            {
-                const_int_value_regs_map.at(const_int).insert(reg);
-            }
-        };
-
-        //解除某个int常量的值和某个寄存器之间的关系
-        void relieve_const_int_value_reg(int const_int,reg_index reg)
-        {
-            if(const_int_value_regs_map.find(const_int)!=const_int_value_regs_map.end())
-            {
-                if(const_int_value_regs_map.at(const_int).find(reg)!=const_int_value_regs_map.at(const_int).end())
-                {
-                    const_int_value_regs_map.at(const_int).erase(reg);
-                }
-                
-                if(const_int_value_regs_map.at(const_int).empty())
-                {
-                    const_int_value_regs_map.erase(const_int);
-                }
-            }
-        };
-
-        //随机获取一个和某一个int常量的值有关的寄存器
-        reg_index randomly_get_const_int_value_reg(int const_int)
-        {
-            reg_index res;
-            if(const_int_value_regs_map.find(const_int)!=const_int_value_regs_map.end() && !const_int_value_regs_map.at(const_int).empty())
-            {
-                res=*(const_int_value_regs_map.at(const_int).begin());
-            }
-            return res;
-        };
-
-        //查看某个float常量的值和某个寄存器之间是否有关系
-        bool check_const_float_value_reg(float const_float,reg_index reg)
-        {
-            return (const_float_value_regs_map.find(const_float)!=const_float_value_regs_map.end() && const_float_value_regs_map.at(const_float).find(reg)!=const_float_value_regs_map.at(const_float).end());
-        };
-
-        //建立某个int常量的值和某个寄存器之间的关系
-        void build_const_float_value_reg(float const_float,reg_index reg)
-        {
-            if(const_float_value_regs_map.find(const_float)==const_float_value_regs_map.end())
-            {
-                const_float_value_regs_map.insert(make_pair(const_float,set<reg_index>()));
-            }
-            
-            if(const_float_value_regs_map.at(const_float).find(reg)==const_float_value_regs_map.at(const_float).end())
-            {
-                const_float_value_regs_map.at(const_float).insert(reg);
-            }
-        };
-
-        //解除某个float常量的值和某个寄存器之间的关系
-        void relieve_const_float_value_reg(float const_float,reg_index reg)
-        {
-            if(const_float_value_regs_map.find(const_float)!=const_float_value_regs_map.end())
-            {
-                if(const_float_value_regs_map.at(const_float).find(reg)!=const_float_value_regs_map.at(const_float).end())
-                {
-                    const_float_value_regs_map.at(const_float).erase(reg);
-                }
-                
-                if(const_float_value_regs_map.at(const_float).empty())
-                {
-                    const_float_value_regs_map.erase(const_float);
-                }
-            }
-        };
-
-        //随机获取一个和某一个float常量的值有关的寄存器
-        reg_index randomly_get_const_float_value_reg(float const_float)
-        {
-            reg_index res;
-            if(const_float_value_regs_map.find(const_float)!=const_float_value_regs_map.end() && !const_float_value_regs_map.at(const_float).empty())
-            {
-                res=*(const_float_value_regs_map.at(const_float).begin());
-            }
-            return res;
-        };
-
-        //查看某个变量的地址和某个寄存器之间是否有关系
-        bool check_var_addr_reg(struct ic_data * var,reg_index reg)
-        {
-            return (var_addr_regs_map.find(var)!=var_addr_regs_map.end() && var_addr_regs_map.at(var).find(reg)!=var_addr_regs_map.at(var).end());
-        };
-
-        //建立某个变量的地址和某个寄存器之间的关系
-        void build_var_addr_reg(struct ic_data * var,reg_index reg)
-        {
-            if(var_addr_regs_map.find(var)==var_addr_regs_map.end())
-            {
-                var_addr_regs_map.insert(make_pair(var,set<reg_index>()));
-            }
-
-            if(var_addr_regs_map.at(var).find(reg)==var_addr_regs_map.at(var).end())
-            {
-                var_addr_regs_map.at(var).insert(reg);
-            }
-        };
-
-        //解除某个变量的地址和某个寄存器之间的关系
-        void relieve_var_addr_reg(struct ic_data * var,reg_index reg)
-        {
-            if(var_addr_regs_map.find(var)!=var_addr_regs_map.end())
-            {
-                if(var_addr_regs_map.at(var).find(reg)!=var_addr_regs_map.at(var).end())
-                {
-                    var_addr_regs_map.at(var).erase(reg);
-                }
-                
-                if(var_addr_regs_map.at(var).empty())
-                {
-                    var_addr_regs_map.erase(var);
-                }
-            }
-        };
-
-        //随机获取一个和某一个变量的地址有关的寄存器
-        reg_index randomly_get_var_addr_reg(struct ic_data * var)
-        {
-            reg_index res;
-            if(var_addr_regs_map.find(var)!=var_addr_regs_map.end() && !var_addr_regs_map.at(var).empty())
-            {
-                res=*(var_addr_regs_map.at(var).begin());
-            }
-            return res;
-        };
-    } current_basic_block_info_;
-
-    //当前正在生成的指令所用到的寄存器的信息
-    struct instructions_regs_info
-    {
-        list<set<reg_index> > involved_regs;             //存储当前的指令所用到的寄存器
-    } current_instructions_regs_info_;
-
-    //把当前的寄存器信息全部清空
-    void clear();
+    struct regs_info regs_info_;
 
     //将一个指定的寄存器设置为新分配
     bool allocate_designated_reg(reg_index reg);
@@ -411,65 +296,26 @@ private:
     //查看一个寄存器是否正在被当前的指令所使用
     bool is_got_by_current_instruction(reg_index reg);
 
-    //设置某一个寄存器的新的状态为NOT_USED
-    bool set_reg_NOT_USED(reg_index reg);
-
-    //把某一个寄存器设置为被某一个变量的值所使用
-    bool set_reg_USED_for_value(reg_index reg,struct ic_data * var_data);
-
-    //把某一个寄存器设置为被一个int常数所使用
-    bool set_reg_USED_for_value(reg_index reg,int const_int_data);
-
-    //把某一个寄存器设置为被一个float常数所使用
-    bool set_reg_USED_for_value(reg_index reg,float const_float_data);
-
-    //把某一个寄存器设置为被某一个变量的地址所使用
-    bool set_reg_USED_for_addr(reg_index reg,struct ic_data * var_data);
-
-    //设置某一个寄存器的新的状态为DIRTY_VALUE
-    bool set_reg_DIRTY_VALUE(reg_index reg);
-
-    //把一个DIRTY_VALUE寄存器设置为USED
-    bool set_reg_USED(reg_index reg);
-
-    //查看某一个int常数是否占有一个寄存器来存储它的值
-    bool check_const_own_value_reg(int const_int);
-
-    //查看某一个float常数是否占有一个寄存器来存储它的值
-    bool check_const_own_value_reg(float const_float);
-
-    //查看某一个变量是否占有一个寄存器来存储它的值
-    bool check_var_own_value_reg(struct ic_data * var);
-
-    //查看某一个变量是否占有一个寄存器来存储它的地址
-    bool check_var_own_addr_reg(struct ic_data * var);
-
     //为某一个int常量获取一个寄存器
-    reg_index get_reg_for_const(int const_int);
-
-    //为某一个float常量获取一个寄存器
-    reg_index get_reg_for_const(float const_float);
+    reg_index get_reg_for_const(OAA const_data,enum reg_processor processor);
 
     //为了读取某一个变量而获取一个寄存器
-    reg_index get_reg_for_reading_var(struct ic_data * var);
+    reg_index get_reg_for_reading_var(struct ic_data * var,enum reg_processor processor);
 
     //为了写某一个变量而获取一个寄存器
-    reg_index get_reg_for_writing_var(struct ic_data * var);
+    reg_index get_reg_for_writing_var(struct ic_data * var,enum reg_processor processor);
 
     //为了读取某一个变量的地址而获取一个寄存器
     reg_index get_reg_for_var_addr(struct ic_data * var);
 
     //为了某一个int常量的值而获取一个特定的寄存器
-    bool get_designated_reg_for_const(reg_index reg,int const_int);
-
-    //为了某一个float常量的值而获取一个特定的寄存器
-    bool get_designated_reg_for_const(reg_index reg,float const_float);
+    void get_designated_reg_for_const(reg_index reg,OAA const_data);
 
     //为了读取某一个变量而获取一个特定的寄存器
-    bool get_designated_reg_for_reading_var(reg_index reg,struct ic_data * var);
+    void get_designated_reg_for_reading_var(reg_index reg,struct ic_data * var);
 
     //为了写某一个变量而获取一个特定的寄存器
-    bool get_designated_reg_for_writing_var(reg_index reg,struct ic_data * var);
+    void get_designated_reg_for_writing_var(reg_index reg,struct ic_data * var);
 
     //事件处理
     void handle_FUNC_DEFINE(struct ic_func * func);
@@ -493,9 +339,12 @@ private:
     void handle_END_BASIC_BLOCK_WITHOUT_FLAG();
     void handle_CLEAR_FLAG();
     void handle_RETURN_VAR(struct ic_data * var);
-    struct event handle_GET_REG_FOR_INT_CONST(int const_int_data);
-    struct event handle_GET_REG_FOR_READING_VAR(struct ic_data * var_data);
-    struct event handle_GET_REG_FOR_WRITING_VAR(struct ic_data * var_data);
+    struct event handle_GET_CPU_REG_FOR_CONST(OAA const_data);
+    struct event handle_GET_VFP_REG_FOR_CONST(OAA const_data);
+    struct event handle_GET_CPU_REG_FOR_READING_VAR(struct ic_data * var_data);
+    struct event handle_GET_CPU_REG_FOR_WRITING_VAR(struct ic_data * var_data);
+    struct event handle_GET_VFP_REG_FOR_READING_VAR(struct ic_data * var_data);
+    struct event handle_GET_VFP_REG_FOR_WRITING_VAR(struct ic_data * var_data);
     struct event handle_GET_ADDR_REG(struct ic_data * var_data);
     void handle_START_INSRUCTION(set<reg_index> * regs_unaccessible);
     void handle_END_INSTRUCTION();
@@ -503,12 +352,11 @@ private:
     void handle_SAVE_REGS_WHEN_CALLING_FUNC();
     void handle_SAVE_REGS_WHEN_CALLING_ABI_FUNC();
     void handle_PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_FUNC(list<struct ic_data * > * r_params);
+    void handle_PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_ABI_FUNC(list<struct ic_data * > * r_params,list<reg_index> * r_param_regs);
     void handle_RET_FROM_CALLED_FUNC(struct ic_data * return_value,reg_index return_reg);
     void handle_RET_FROM_CALLED_ABI_FUNC(struct ic_data * return_value,reg_index return_reg);
-    struct event handle_CHECK_VAR_OWN_VALUE_REG(struct ic_data * var);
-    struct event handle_CHECK_CONST_INT_OWN_VALUE_REG(int const_int);
-    struct event handle_GET_VAR_S_VALUE_REG(struct ic_data * var);
-    struct event handle_GET_CONST_INT_S_VALUE_REG(int const_int);
+    struct event handle_CHECK_CONST_VALUE_OWN_CPU_REG(OAA const_value);
+    struct event handle_GET_CONST_VALUE_S_CPU_REG(OAA const_value);
     struct event handle_GET_R0_REG();
     struct event handle_GET_R1_REG();
     struct event handle_GET_S0_REG();
@@ -517,6 +365,9 @@ private:
     struct event handle_GET_VAR_CARED_FLAG();
     struct event handle_ALLOCATE_IDLE_CPU_REG();
     void handle_ATTACH_CONST_TO_REG(OAA const_data,reg_index reg);
+    void handle_ATTACH_VAR_VALUE_TO_REG(struct ic_data * var_data,reg_index reg);
+    void handle_ATTACH_VAR_VALUE_TO_REG_THEN_SET_DIRTY(struct ic_data * var_data,reg_index reg);
+    void handle_UNATTACH_REG_S_ALL_DATA(reg_index reg);
 
 public:
     //构造函数

@@ -37,12 +37,14 @@ private:
         list<pair<stack_pos,struct ic_data * > > local_vars;
         list<pair<stack_pos,struct ic_data * > > temp_vars;
         list<pair<stack_pos,struct ic_data * > > f_params_passed_by_stack_as_caller;
+        size_t padding_bytes;
         stack_pos stack_pointer,frame_pointer;
 
         void clear()
         {
             stack_pointer=0;
             frame_pointer=0;
+            padding_bytes=0;
             f_params_passed_by_cpu_regs_as_callee.clear();
             context_saved_cpu_regs_as_callee.clear();
             context_saved_vfp_regs_as_callee.clear();
