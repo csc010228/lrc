@@ -1,5 +1,7 @@
 
 const int a = 10;
 int main(){
-    return a + 5;
+    int b;
+    b = 2;
+    return b - a;
 }

@@ -23,7 +23,13 @@ main:
 	push	{fp,lr}
 	nop
 	add	fp,sp,#8
-	movw	r0,#15
+	sub	sp,sp,#4
+	movw	r0,#2
+	sub	r1,r0,#10
+	add	r2,sp,#0
+	str	r0,[r2]
+	mov	r0,r1
+	add	sp,sp,#4
 	nop
 	pop	{fp,pc}
 	.size	main, .-main
