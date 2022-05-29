@@ -156,13 +156,8 @@ void Pre_processor::macro_var_replace(string macro_source)
 */
 void Pre_processor::inner_macro_var_replace(string macro_source)
 {
-    //string macro_destination;
-    //stringstream ss;
-
     if(macro_source=="__LINE__")
     {
-        //ss << current_line_;
-        //ss >> macro_destination;
         macro_bufs_.push(make_pair(0,to_string(current_line_)));
     }
 }
