@@ -9,6 +9,9 @@
 #include "semantic_rules.h"
 #include<iostream>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsequenced"
+
 //在中间代码中输出的临时变量编号前缀
 #define TMP_PREFIX "@"
 
@@ -1043,7 +1046,7 @@ long const_array_init_assignment(vector<OAA> * init_value,stack<list<pair<bool,v
     Symbol_table * symbol_table=Symbol_table::get_instance();
     if(init_values_stack.empty() || init_values_stack.top()->size()==0 || (init_values_stack.top()->front().first==false && init_values_stack.top()->front().second==nullptr))
     {
-        if(!init_values_stack.empty() && !init_values_stack.top()->size()==0 && (init_values_stack.top()->front().first==false && init_values_stack.top()->front().second==nullptr))
+        if(!init_values_stack.empty() && !init_values_stack.top()->empty() && (init_values_stack.top()->front().first==false && init_values_stack.top()->front().second==nullptr))
         {
             init_values_stack.top()->pop_front();
         }
@@ -1058,7 +1061,7 @@ long const_array_init_assignment(vector<OAA> * init_value,stack<list<pair<bool,v
     }
     else if(dimensions_len_pointer==dimensions_len->end())
     {
-        while(push_times>=0 && init_values_stack.top()->size()!=0)
+        while(push_times>=0 && !init_values_stack.top()->empty())
         {
             if(init_values_stack.top()->front().first)
             {
@@ -1505,7 +1508,7 @@ long array_init_assignment(vector<struct ic_data * > * init_value,stack<list<pai
     Symbol_table * symbol_table=Symbol_table::get_instance();
     if(init_values_stack.empty() || init_values_stack.top()->size()==0 || (init_values_stack.top()->front().first==false && init_values_stack.top()->front().second==nullptr))
     {
-        if(!init_values_stack.empty() && !init_values_stack.top()->size()==0 && (init_values_stack.top()->front().first==false && init_values_stack.top()->front().second==nullptr))
+        if(!init_values_stack.empty() && !init_values_stack.top()->empty() && (init_values_stack.top()->front().first==false && init_values_stack.top()->front().second==nullptr))
         {
             init_values_stack.top()->pop_front();
         }
@@ -1520,7 +1523,7 @@ long array_init_assignment(vector<struct ic_data * > * init_value,stack<list<pai
     }
     else if(dimensions_len_pointer==dimensions_len->end())
     {
-        while(push_times>=0 && init_values_stack.top()->size()!=0)
+        while(push_times>=0 && !init_values_stack.top()->empty())
         {
             if(init_values_stack.top()->front().first)
             {
@@ -3249,3 +3252,5 @@ map<string,semantic_rule> semantic_rules={
     semantic_rules_entry(___L_OR_EXP_3___),
     semantic_rules_entry(___CONST_EXP___),
 };
+
+#pragma clang diagnostic pop
