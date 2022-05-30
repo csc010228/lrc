@@ -769,7 +769,7 @@ public:
     };
 
     //MOVW,MOVT的构造函数
-    Arm_cpu_data_process_instruction(enum arm_op op,enum arm_condition cond,reg_index Rd,struct immed_16r immed_16r):Arm_cpu_instruction(op,cond,arm_registers(1,Rd),arm_registers()),immed_16r_(immed_16r),data_type_(arm_data_process_instruction_data_type::IMMED_16R)
+    Arm_cpu_data_process_instruction(enum arm_op op,enum arm_condition cond,reg_index Rd,struct immed_16r immed_16r):Arm_cpu_instruction(op,cond,arm_registers(1,Rd),arm_registers()),immed_16r_(immed_16r),data_type_(arm_data_process_instruction_data_type::IMMED_16R),update_flags_(false)
     {
 
     };
