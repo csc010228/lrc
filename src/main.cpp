@@ -127,9 +127,10 @@ bool lrc(string source_program_filename,string target_filename,bool optimize,boo
 
 out:
     //释放内存并退出
-    Symbol_table::delete_instance();
+    //Symbol_table::delete_instance();
     
-    return res;
+    //return res;
+    return 0;
 }
 
 int main(int argc,char * argv[])
