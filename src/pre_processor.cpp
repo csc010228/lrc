@@ -183,27 +183,30 @@ bool Pre_processor::add_inner_header_files(size_t file_num,...)
     bool res=true;
     va_list argptr;
 	va_start(argptr,file_num);
-	for(size_t i=0;i<file_num;i++)
-	{
-		filename=va_arg(argptr,const char *);
-        //打开文件
-        inFile.open(filename);
-        if(!inFile)
-        {
-            cout<<"Open file "<<filename<<" error!"<<endl;
-            return false;
-        }
+	// for(size_t i=0;i<file_num;i++)
+	// {
+	// 	filename=va_arg(argptr,const char *);
+    //     //打开文件
+    //     inFile.open(filename);
+    //     if(!inFile)
+    //     {
+    //         cout<<"Open file "<<filename<<" error!"<<endl;
+    //         return false;
+    //     }
 
-        //预处理，这里主要是为了处理头文件中的#define语句
-        if(!pre_process(filename,nullptr))
-        {
-            cout<<"Inner header file "<<filename<<" format error!"<<endl;
-            res=false;
-        }
+    //     //预处理，这里主要是为了处理头文件中的#define语句
+    //     if(!pre_process(filename,nullptr))
+    //     {
+    //         cout<<"Inner header file "<<filename<<" format error!"<<endl;
+    //         res=false;
+    //     }
 
-        //关闭文件
-        inFile.close();
-	}
+    //     //关闭文件
+    //     inFile.close();
+	// }
+    add_macro_var("_SYSY_N","1024");
+    add_macro_func("starttime",list<string>(),"_sysy_starttime(__LINE__)");
+    add_macro_func("stoptime",list<string>(),"_sysy_stoptime(__LINE__)");
     va_end(argptr);
     return res;
 }
@@ -727,10 +730,11 @@ void Pre_processor::write_char(char ch)
 */
 void Pre_processor::write_buf_to_file()
 {
-    if(source_program_after_pre_proces_.is_open())
-    {
-        source_program_after_pre_proces_<<write_buf_;
-    }
+    // if(source_program_after_pre_proces_.is_open())
+    // {
+    //     source_program_after_pre_proces_<<write_buf_;
+    // }
+    source_program_after_pre_proces_<<write_buf_;
     write_buf_.clear();
 }
 
@@ -747,31 +751,32 @@ Return
 ------
 如果预处理成功返回true，否则返回false
 */
-bool Pre_processor::pre_process(const char * source_program_filename,const char * source_program_after_pre_processor_filename)
+string Pre_processor::pre_process(const char * source_program_filename,const char * source_program_after_pre_processor_filename)
 {
     char ch1,ch2;
     bool singleline_comment=false,multiline_comment=false;
     current_line_=1;
+    string res;
 
     //打开读文件
     source_program_.open(source_program_filename);
 	if (!source_program_)
     {
         cout<<"File "<<source_program_filename<<" open error!"<<endl;
-        return false;
+        return res;
 	}
 
     //打开写文件
-	if(source_program_after_pre_processor_filename)
-    {
-        source_program_after_pre_proces_.open(source_program_after_pre_processor_filename,ios::out);
-        if(!source_program_after_pre_proces_)
-        {
-            cout<<"File "<<source_program_after_pre_processor_filename<<" open error!"<<endl;
-            source_program_.close();
-            return false;
-        }
-    }
+	// if(source_program_after_pre_processor_filename)
+    // {
+    //     source_program_after_pre_proces_.open(source_program_after_pre_processor_filename,ios::out);
+    //     if(!source_program_after_pre_proces_)
+    //     {
+    //         cout<<"File "<<source_program_after_pre_processor_filename<<" open error!"<<endl;
+    //         source_program_.close();
+    //         return false;
+    //     }
+    // }
 
     //获取下一个字符，进行注释的删除
     while((ch1=read_char())!=EOF)
@@ -943,9 +948,11 @@ out:
 
     //关闭文件
     source_program_.close();
-    if(source_program_after_pre_proces_.is_open())
-    {
-        source_program_after_pre_proces_.close();
-    }
-    return true;
+    // if(source_program_after_pre_proces_.is_open())
+    // {
+    //     source_program_after_pre_proces_.close();
+    // }
+    res=source_program_after_pre_proces_.str();
+    source_program_after_pre_proces_.clear();
+    return res;
 }

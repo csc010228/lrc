@@ -11,6 +11,7 @@
 
 #include<iostream>
 #include<fstream>
+#include<sstream>
 #include<map>
 #include<string>
 #include<list>
@@ -46,7 +47,8 @@ private:
     ifstream source_program_;
 
     //预处理之后的源程序文件
-    ofstream source_program_after_pre_proces_;
+    //ofstream source_program_after_pre_proces_;
+    ostringstream source_program_after_pre_proces_;
 
     //处理的程序文件目前处理到的行数
     size_t current_line_;
@@ -116,7 +118,7 @@ public:
     bool add_inner_header_files(size_t file_num,...);
 
     //进行预处理
-    bool pre_process(const char * source_program_filename,const char * source_program_after_pre_processor_filename);
+    string pre_process(const char * source_program_filename,const char * source_program_after_pre_processor_filename);
 };
 
 #endif //__PRE_PROCESSOR_H

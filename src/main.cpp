@@ -30,107 +30,110 @@ using namespace std;
 
 bool lrc(string source_program_filename,string target_filename,bool optimize,bool debug)
 {
-    // bool res=false;
-    // Symbol_table * symbol_table;
-    // Pre_processor pre;
-    // Lexical_analyzer lex;
-    // Syntax_directed_translator translator;
-    // Arm_asm_generator asm_generator;
-    // Ic_optimizer ic_optimizer;
-    // list<struct token * > * tokens;
-    // list<struct quaternion> * intermediate_codes;
-    // struct ic_flow_graph * intermediate_codes_flow_graph;
+    bool res=false;
+    Symbol_table * symbol_table;
+    Pre_processor pre;
+    Lexical_analyzer lex;
+    Syntax_directed_translator translator;
+    Arm_asm_generator asm_generator;
+    Ic_optimizer ic_optimizer;
+    list<struct token * > * tokens;
+    list<struct quaternion> * intermediate_codes;
+    struct ic_flow_graph * intermediate_codes_flow_graph;
+    string source_file_content_after_pre_process;
 
-    // //建立符号表
-    // symbol_table=Symbol_table::get_instance();
+    //建立符号表
+    symbol_table=Symbol_table::get_instance();
 
-    // //添加语言内置的头文件
-    // pre.add_inner_header_files(1,SYSY_INNER_HEADER_FILE_NAME);
+    //添加语言内置的头文件
+    pre.add_inner_header_files(1,SYSY_INNER_HEADER_FILE_NAME);
 
-    // //先对源程序进行预处理
-    // if(!pre.pre_process(source_program_filename.c_str(),(target_filename+PRE_PROCESS_OUTPUT_FILE_SUFFIX).c_str()))
-    // {
-    //     cout<<"Pre process error!\n"<<endl;
-    //     goto out;
-    // }
+    //先对源程序进行预处理
+    source_file_content_after_pre_process=pre.pre_process(source_program_filename.c_str(),(target_filename+PRE_PROCESS_OUTPUT_FILE_SUFFIX).c_str());
+    if(source_file_content_after_pre_process.empty())
+    {
+        cout<<"Pre process error!\n"<<endl;
+        goto out;
+    }
 
-    // //建立词法分析器
+    //建立词法分析器
     // if(!lex.init((target_filename+PRE_PROCESS_OUTPUT_FILE_SUFFIX).c_str()))
     // {
     //     cout<<"Lexical analyzer init error!"<<endl;
     //     goto out;
     // }
+    if(!lex.init(source_file_content_after_pre_process))
+    {
+        cout<<"Lexical analyzer init error!"<<endl;
+        goto out;
+    }
+    source_file_content_after_pre_process.clear();
 
-    // //进行词法分析
-    // if(debug)
-    // {
-    //     tokens=lex.tokens_scan_then_output((target_filename+TOKENS_OUTPUT_FILE_SUFFIX).c_str());
-    // }
-    // else
-    // {
-    //     tokens=lex.tokens_scan();
-    // }
+    //进行词法分析
+    if(debug)
+    {
+        tokens=lex.tokens_scan_then_output((target_filename+TOKENS_OUTPUT_FILE_SUFFIX).c_str());
+    }
+    else
+    {
+        tokens=lex.tokens_scan();
+    }
 
-    // //建立语法分析器
-    // if(!translator.init(GRAMMER_FILE,ACTION_GOTO_FILE,tokens,false))
-    // {
-    //     cout<<"Syntax directed translator init error!"<<endl;
-    //     goto out;
-    // }
+    //建立语法分析器
+    if(!translator.init(GRAMMER_FILE,ACTION_GOTO_FILE,tokens,false))
+    {
+        cout<<"Syntax directed translator init error!"<<endl;
+        goto out;
+    }
 
-    // //进行语义翻译,生成中间代码
-    // if(debug)
-    // {
-    //     if(!(intermediate_codes=translator.translate_then_output((target_filename+INTERMEDIATE_CODES_OUTPUT_FILE_SUFFIX).c_str())))
-    //     {
-    //         cout<<"Generate intermedia codes error!"<<endl;
-    //         goto out;
-    //     }
-    // }
-    // else
-    // {
-    //     if(!(intermediate_codes=translator.translate()))
-    //     {
-    //         cout<<"Generate intermedia codes error!"<<endl;
-    //         goto out;
-    //     }
-    // }
+    //进行语义翻译,生成中间代码
+    if(debug)
+    {
+        if(!(intermediate_codes=translator.translate_then_output((target_filename+INTERMEDIATE_CODES_OUTPUT_FILE_SUFFIX).c_str())))
+        {
+            cout<<"Generate intermedia codes error!"<<endl;
+            goto out;
+        }
+    }
+    else
+    {
+        if(!(intermediate_codes=translator.translate()))
+        {
+            cout<<"Generate intermedia codes error!"<<endl;
+            goto out;
+        }
+    }
 
-    // //初始化中间代码优化器
-    // ic_optimizer.init(optimize);
+    //初始化中间代码优化器
+    ic_optimizer.init(optimize);
 
-    // //中间代码优化
-    // if(debug)
-    // {
-    //     intermediate_codes_flow_graph=ic_optimizer.optimize_then_output(intermediate_codes,(target_filename+FLOW_GRAPH_OUTPUT_FILE_SUFFIX).c_str());
-    // }
-    // else
-    // {
-    //     intermediate_codes_flow_graph=ic_optimizer.optimize(intermediate_codes);
-    // }
+    //中间代码优化
+    if(debug)
+    {
+        intermediate_codes_flow_graph=ic_optimizer.optimize_then_output(intermediate_codes,(target_filename+FLOW_GRAPH_OUTPUT_FILE_SUFFIX).c_str());
+    }
+    else
+    {
+        intermediate_codes_flow_graph=ic_optimizer.optimize(intermediate_codes);
+    }
 
-    // //初始化汇编生成器
-    // if(!(asm_generator.init()))
-    // {
-    //     cout<<"Asm generator init error!"<<endl;
-    //     goto out;
-    // }
+    //初始化汇编生成器
+    if(!(asm_generator.init()))
+    {
+        cout<<"Asm generator init error!"<<endl;
+        goto out;
+    }
 
     //输出最终的汇编文件
-    // asm_generator.generate_asm_then_output(intermediate_codes_flow_graph,(target_filename+ASM_CODES_OUTPUT_FILE_SUFFIX).c_str());
-    // delete intermediate_codes_flow_graph;
-    // res=true;
-    ofstream outFile;
-	outFile.open(target_filename+ASM_CODES_OUTPUT_FILE_SUFFIX,ios::out);
-    outFile<<"JUST FOR TEST!"<<endl;
-    outFile.close();
+    asm_generator.generate_asm_then_output(intermediate_codes_flow_graph,(target_filename+ASM_CODES_OUTPUT_FILE_SUFFIX).c_str());
+    delete intermediate_codes_flow_graph;
+    res=true;
 
 out:
     //释放内存并退出
-    //Symbol_table::delete_instance();
+    Symbol_table::delete_instance();
     
-    //return res;
-    return true;
+    return res;
 }
 
 int main(int argc,char * argv[])

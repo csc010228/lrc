@@ -48,7 +48,8 @@ false)))))))
 /*
 获取缓冲区中的下一个字符
 */
-#define next_char(cok,ch) ch=double_buf_[lexeme_ending_];\
+#define next_char(cok,ch) \
+ch=double_buf_[lexeme_ending_];\
 next_pos(lexeme_ending_);\
 if(ch==EOF)\
 {\
@@ -71,6 +72,10 @@ if(ch==EOF)\
         }\
         else\
         {\
+            if(cok==code_of_kind::ID)\
+            {\
+                append_to_string_buf();\
+            }\
             return get_token(cok);\
         }\
     }\
@@ -85,9 +90,44 @@ extern map<string,char> escape_char;
 /*
 词法分析器的构造函数
 */
-Lexical_analyzer::Lexical_analyzer()
+Lexical_analyzer::Lexical_analyzer():source_program_(nullptr),source_file_content_after_pre_process_(nullptr),source_file_content_size(0)
 {
     
+}
+
+/*
+词法分析器的初始化
+
+Paramters
+---------
+source_file_content_after_pre_process:预处理之后的源程序文件的内容的字符串形式
+
+Return
+------
+如果初始化成功，就返回true，否则返回false
+*/
+bool Lexical_analyzer::init(string & source_file_content_after_pre_process)
+{
+    source_file_content_after_pre_process_=const_cast<char *>(source_file_content_after_pre_process.c_str()) ;
+    source_file_content_size=source_file_content_after_pre_process.length();
+
+    line_=1;
+    string_buf_=nullptr;
+    last_error_=my_error_code::NO_ERROR;
+
+    //构建双缓冲区
+    double_buf_[BUF_SIZE-1]=EOF;
+    double_buf_[(BUF_SIZE<<1)-1]=EOF;
+    vaild_first_buf_=false;
+    vaild_second_buf_=false;
+
+    //往第两个缓冲区中读入数据
+    write_buf();
+    write_buf();
+    lexeme_begining_=0;
+    lexeme_ending_=0;
+
+    return true;
 }
 
 /*
@@ -146,7 +186,7 @@ Lexical_analyzer::~Lexical_analyzer()
 */
 bool Lexical_analyzer::is_init_success()
 {
-    return (source_program_!=nullptr);
+    return (source_program_!=nullptr || source_file_content_after_pre_process_!=nullptr);
 }
 
 /*
@@ -162,7 +202,12 @@ bool Lexical_analyzer::write_buf()
     int read_length;
     if(!vaild_first_buf_)
     {
-        read_length=fread(double_buf_,1,(BUF_SIZE-1),source_program_);
+        // read_length=fread(double_buf_,1,(BUF_SIZE-1),source_program_);
+        read_length=source_file_content_size>(BUF_SIZE-1)?(BUF_SIZE-1):source_file_content_size;
+        strncpy(double_buf_,source_file_content_after_pre_process_,read_length);
+        source_file_content_after_pre_process_+=read_length;
+        source_file_content_size-=read_length;
+
         if(read_length!=(BUF_SIZE-1))
         {
             double_buf_[read_length]=EOF;
@@ -171,7 +216,12 @@ bool Lexical_analyzer::write_buf()
     }
     else if(!vaild_second_buf_)
     {
-        read_length=fread(double_buf_+BUF_SIZE,1,(BUF_SIZE-1),source_program_);
+        // read_length=fread(double_buf_+BUF_SIZE,1,(BUF_SIZE-1),source_program_);
+        read_length=source_file_content_size>(BUF_SIZE-1)?(BUF_SIZE-1):source_file_content_size;
+        strncpy(double_buf_+BUF_SIZE,source_file_content_after_pre_process_,read_length);
+        source_file_content_after_pre_process_+=read_length;
+        source_file_content_size-=read_length;
+
         if(read_length!=(BUF_SIZE-1))
         {
             double_buf_[BUF_SIZE+read_length]=EOF;
@@ -328,7 +378,7 @@ void Lexical_analyzer::append_to_string_buf()
     {
         string_buf_=new string(string_tmp);
     }
-    else 
+    else
     {
         string_buf_->append(string_tmp);
     }
@@ -364,7 +414,7 @@ struct token * Lexical_analyzer::get_token(enum code_of_kind cok)
     {
         token_string=get_token_string();
     }
-
+    
     switch(cok)
     {
         case code_of_kind::ID:
@@ -1194,13 +1244,11 @@ list<struct token * > * Lexical_analyzer::tokens_scan()
 {
     list<struct token * > * result=new list<struct token * >;
     struct token * t=token_scan();
-
     while(t)
     {
         result->push_back(t);
         t=token_scan();
     }
-
     return result;
 }
 

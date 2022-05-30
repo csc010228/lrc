@@ -48,7 +48,7 @@ struct token
 {
     ~token()
     {
-        if(code_of_kind==code_of_kind::ID)
+        if(code_of_kind==code_of_kind::ID || code_of_kind==code_of_kind::CONST_STRING)
         {
             delete attribute_value.p_string_value;
         }
@@ -72,6 +72,11 @@ class Lexical_analyzer
 private:
     //源程序文件结构体
     FILE * source_program_;
+
+    //源程序文件内容
+    //string source_file_content_after_pre_process_;
+    char * source_file_content_after_pre_process_;
+    size_t source_file_content_size;
 
     //此时读取到的源程序文件的行数(用于错误分析的时候进行定位)
     int line_;
@@ -132,6 +137,9 @@ private:
 public:
     //构造函数
     Lexical_analyzer();
+
+    //将词法分析器进行初始化
+    bool init(string & source_file_content_after_pre_process);
 
     //将词法分析器进行初始化
     bool init(const char * filename);

@@ -25,6 +25,16 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "__node_handle": "cpp",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "concepts": "cpp",
+        "ios": "cpp",
+        "istream": "cpp",
+        "locale": "cpp",
+        "numeric": "cpp",
+        "random": "cpp",
+        "fstream": "cpp",
+        "sstream": "cpp",
+        "stop_token": "cpp",
+        "iosfwd": "cpp"
     }
 }
