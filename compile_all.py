@@ -24,7 +24,7 @@ def files_name_with_suffix(file_dir,suffix):
 
 #编译某一个sy文件
 def complie_file(source_file,target_file):
-    return_value=os.system(LRC_EXE_FILE+' -S -o '+target_file+'.s '+source_file+' -O1')
+    return_value=os.system(LRC_EXE_FILE+' -S -o '+target_file+'.s '+source_file)
     if return_value!=0:
         return False
     else:
