@@ -26,7 +26,7 @@ using namespace std;
 #define DEBUG_FLAG "-debug"
 #define GENERATE_ASM_FLAG "-S"
 #define SPECIFY_TARGET_FLAG "-o"
-#define OPTIMIZATION_FLAG "-O1"
+#define OPTIMIZATION_FLAG "-O2"
 
 bool lrc(string source_program_filename,string target_filename,bool optimize,bool debug)
 {
@@ -249,5 +249,5 @@ int main(int argc,char * argv[])
             break;
     }
 
-    return lrc(source_program_filename,target_filename,true,debug)?0:-1;
+    return lrc(source_program_filename,target_filename,optimize,debug)?0:-1;
 }
