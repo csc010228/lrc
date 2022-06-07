@@ -249,5 +249,5 @@ int main(int argc,char * argv[])
             break;
     }
 
-    return lrc(source_program_filename,target_filename,optimize,debug)?0:-1;
+    return lrc(source_program_filename,target_filename,true,debug)?0:-1;
 }
