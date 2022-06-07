@@ -35,6 +35,9 @@
         "fstream": "cpp",
         "sstream": "cpp",
         "stop_token": "cpp",
-        "iosfwd": "cpp"
+        "iosfwd": "cpp",
+        "queue": "cpp",
+        "stack": "cpp",
+        "__string": "cpp"
     }
 }

@@ -103,6 +103,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::UNATTACH_REG_S_ALL_DATA:
             case event_type::IS_CPU_REG:
             case event_type::IS_VFP_REG:
+            case event_type::BEFORE_CALL_FUNC:
                 res=register_manager_->handler(event);
                 break;
             case event_type::FUNC_DEFINE:

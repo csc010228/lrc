@@ -87,7 +87,7 @@
             static map<struct ic_label *,struct ic_basic_block *> ic_label_basic_block_map;
             static struct ic_basic_block * current_basic_block=nullptr;
             static bool previous_ic_is_jump=false;
-            struct quaternion_with_def_use_info current_ic_with_def_use_info;
+            struct quaternion_with_info current_ic_with_def_use_info;
             size_t current_ic_with_def_use_info_pos;
             unsigned short new_basic_block_tag=0;
             bool func_end=false;
@@ -218,7 +218,7 @@
         //往当前基本块中加入一条中间代码
         void add_ic(struct quaternion ic)
         {
-            struct quaternion_with_def_use_info ic_with_def_use_info(ic);
+            struct quaternion_with_info ic_with_def_use_info(ic);
             //size_t current_pos;
             ic_sequence.push_back(ic_with_def_use_info);
             //current_pos=get_last_ic_pos();
@@ -227,7 +227,7 @@
         };
     
         //基本块中的中间代码序列
-        vector<struct quaternion_with_def_use_info> ic_sequence;
+        vector<struct quaternion_with_info> ic_sequence;
         //该基本块的后续基本块
         struct ic_basic_block * sequential_next,* jump_next;
     };
@@ -238,7 +238,7 @@
     *   jump_next指向了该基本块经过跳转之后的可能会跳转到的基本块，可能为nullptr
     *   可以增加该结构体的成员来存储一些基本块的信息
 
-## struct quaternion_with_def_use_info
+## struct quaternion_with_info
 
 *   该结构体定义了中间代码，及其信息
 
@@ -246,14 +246,14 @@
 
     ```c
     //带有变量定义和使用信息的中间代码
-    struct quaternion_with_def_use_info
+    struct quaternion_with_info
     {
-        quaternion_with_def_use_info()
+        quaternion_with_info()
         {
     
         };
     
-        quaternion_with_def_use_info(struct quaternion ic):intermediate_code(ic)
+        quaternion_with_info(struct quaternion ic):intermediate_code(ic)
         {
             
         };

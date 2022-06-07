@@ -1221,7 +1221,7 @@ void Arm_instruction_generator::var_define_ic_to_arm_asm(struct ic_data * result
                 for(auto i:(*((vector<OAA> *)result->get_value().pointer_data)))
                 {
                     event_data_2->first=symbol_table->const_entry(result->data_type,i);
-                    event_data_2->second=symbol_table->array_member_entry(result,result->dimensions_len->size(),symbol_table->const_entry(language_data_type::INT,OAA((int)array_member_offset)));
+                    event_data_2->second=symbol_table->array_member_not_array_var_entry(result,symbol_table->const_entry(language_data_type::INT,OAA((int)array_member_offset)));
                     notify(event(event_type::ASSIGN_VAR,(void *)event_data_2));
                     array_member_offset++;
                 }
@@ -1502,7 +1502,7 @@ void Arm_instruction_generator::handle_STORE_VAR_TO_MEM(struct ic_data * var,reg
     set<reg_index> * regs_unaccessible;
     pair<reg_index,reg_index> * event_data_1;
     pair<struct ic_data * ,reg_index> * event_data_2;
-    
+
     if(var->is_const() || var->is_tmp_var() || (var->is_array_var() && !var->is_f_param()) || (var->is_array_member() && var->is_array_var()))
     {
         //常量数据和临时变量不需要写回
@@ -1510,7 +1510,7 @@ void Arm_instruction_generator::handle_STORE_VAR_TO_MEM(struct ic_data * var,reg
         //如果一个变量即是数组，又是数组取元素，那么就意味着这个变量其实是一个数组取元素，只不过没有全部维度都用于取元素，这种变量也是不能写回的
         return;
     }
-
+    
     regs_unaccessible=new set<reg_index>;
     regs_unaccessible->insert(reg);
     notify(event(event_type::START_INSTRUCTION,(void *)regs_unaccessible));
@@ -1573,6 +1573,7 @@ void Arm_instruction_generator::handle_LOAD_VAR_TO_REG(struct ic_data * var,reg_
     pair<reg_index,reg_index> * event_data_1;
     pair<struct ic_data * ,reg_index> * event_data_2;
     set<reg_index> * regs_unaccessible;
+    struct flexoffset offset;
     
     notify(event(event_type::START_INSTRUCTION,nullptr));
     if(var->is_array_var())
@@ -1658,12 +1659,13 @@ void Arm_instruction_generator::handle_LOAD_VAR_TO_REG(struct ic_data * var,reg_
                 }
                 else
                 {
-                    new_reg=(reg_index)notify(event(event_type::ALLOCATE_IDLE_CPU_REG,nullptr)).int_data;
                     regs_unaccessible=new set<reg_index>;
                     regs_unaccessible->insert(reg);
                     notify(event(event_type::START_INSTRUCTION,(void *)regs_unaccessible));
                     delete regs_unaccessible;
-                    push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::LDR,arm_condition::NONE,arm_data_type::W,new_reg,addr_reg,get_flexoffset((var->get_offset()),flexoffset_shift_op::LSL_N,2,false),false));
+                    offset=get_flexoffset((var->get_offset()),flexoffset_shift_op::LSL_N,2,false);
+                    new_reg=(reg_index)notify(event(event_type::ALLOCATE_IDLE_CPU_REG,nullptr)).int_data;
+                    push_instruction(new Arm_cpu_single_register_load_and_store_instruction(arm_op::LDR,arm_condition::NONE,arm_data_type::W,new_reg,addr_reg,offset,false));
                     notify(event(event_type::END_INSTRUCTION,nullptr));
                     event_data_2=new pair<struct ic_data *,reg_index>(var,new_reg);
                     notify(event(event_type::ATTACH_VAR_VALUE_TO_REG,(void *)event_data_2));
@@ -1826,6 +1828,8 @@ void Arm_instruction_generator::handle_CALL_FUNC(string func_name,list<struct ic
     }
     //再把需要存放在寄存器中的参数放入寄存器
     notify(event(event_type::PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_FUNC,(void *)r_params));
+    //在真正执行函数跳转之前还需要对返回值进行检查，检查此时是否有和返回值相关的脏值数据需要先写回内存的
+    notify(event(event_type::BEFORE_CALL_FUNC,(void *)return_value));
     //执行函数跳转
     push_instruction(new Arm_cpu_branch_instruction(arm_op::BL,arm_condition::NONE,func_name));
     //如果函数有返回值，通知寄存器管理器：寄存器r0已经被相应的返回值占用了
@@ -1898,6 +1902,8 @@ void Arm_instruction_generator::handle_CALL_ABI_FUNC(string func_name,list<struc
     event_data_2=new pair<list<struct ic_data * > *,list<reg_index> *>(r_params,r_param_regs);
     notify(event(event_type::PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_ABI_FUNC,(void *)event_data_2));
     delete event_data_2;
+    //在真正执行函数跳转之前还需要对返回值进行检查，检查此时是否有和返回值相关的脏值数据需要先写回内存的
+    notify(event(event_type::BEFORE_CALL_FUNC,(void *)return_value));
     //执行函数跳转
     push_instruction(new Arm_cpu_branch_instruction(arm_op::BL,arm_condition::NONE,func_name));
     //如果函数有返回值，通知寄存器管理器：寄存器r0已经被相应的返回值占用了

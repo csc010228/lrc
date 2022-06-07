@@ -444,7 +444,6 @@ map<string,map<string,vector<int> > > syntax_symbol_offset_from_stack_top_map;
 
 /*
 在一元运算中计算结果的值
-（目前只实现了int类型的运算）
 
 Parameters
 ----------
@@ -461,7 +460,7 @@ struct ic_data * unary_compute(ic_op op,struct ic_data * arg)
     struct ic_data * res=nullptr;
     OAA value;
     enum language_data_type data_type;
-    if(!arg->is_const())
+    if(!arg || !arg->is_const())
     {
         return res;
     }
@@ -508,7 +507,6 @@ struct ic_data * unary_compute(ic_op op,struct ic_data * arg)
 
 /*
 在二元运算中计算结果的值
-（目前只实现了int类型的运算）
 
 Parameters
 ----------
@@ -526,7 +524,7 @@ struct ic_data * binary_compute(ic_op op,struct ic_data * arg1,struct ic_data * 
     enum language_data_type arg1_data_type,arg2_data_type;
     OAA arg1_value,arg2_value;
     Symbol_table * symbol_table=Symbol_table::get_instance();
-    if(!arg1->is_const() || !arg2->is_const())
+    if(!arg1 || !arg2 || !arg1->is_const() || !arg2->is_const())
     {
         return res;
     }
@@ -614,60 +612,6 @@ struct ic_data * binary_compute(ic_op op,struct ic_data * arg1,struct ic_data * 
                 res=def_const(language_data_type::INT,((int)arg1_value.int_data%arg2_value.int_data));
             }
             break;
-        /*case ic_op::AND:
-            if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
-            {
-                res=def_const(language_data_type::INT,arg1_value.int_data&&arg2_value.int_data);
-            }
-            else if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::FLOAT)
-            {
-                res=def_const(language_data_type::FLOAT,arg1_value.int_data&&arg2_value.float_data);
-            }
-            else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::INT)
-            {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data&&arg2_value.int_data);
-            }
-            else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::FLOAT)
-            {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data&&arg2_value.float_data);
-            }
-            break;
-        case ic_op::OR:
-            if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
-            {
-                res=def_const(language_data_type::INT,arg1_value.int_data||arg2_value.int_data);
-            }
-            else if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::FLOAT)
-            {
-                res=def_const(language_data_type::FLOAT,arg1_value.int_data||arg2_value.float_data);
-            }
-            else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::INT)
-            {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data||arg2_value.int_data);
-            }
-            else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::FLOAT)
-            {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data||arg2_value.float_data);
-            }
-            break;
-        case ic_op::XOR:
-            if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
-            {
-                res=def_const(language_data_type::INT,arg1_value.int_data^arg2_value.int_data);
-            }
-            else if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::FLOAT)
-            {
-                res=def_const(language_data_type::FLOAT,arg1_value.int_data^arg2_value.float_data);
-            }
-            else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::INT)
-            {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data^arg2_value.int_data);
-            }
-            else if(arg1_data_type==language_data_type::FLOAT && arg2_data_type==language_data_type::FLOAT)
-            {
-                res=def_const(language_data_type::FLOAT,arg1_value.float_data^arg2_value.float_data);
-            }
-            break;*/
         case ic_op::EQ:
             if(arg1_data_type==language_data_type::INT && arg2_data_type==language_data_type::INT)
             {

@@ -15,21 +15,23 @@ regs_info::regs_info()
     ;
 }
 
-regs_info::regs_info(set<struct reg> regs,struct flag_reg flag_reg):available_CPU_regs_num(0),available_VFP_regs_num(0),flag_reg(flag_reg)
+regs_info::regs_info(set<struct reg> regs,struct flag_reg flag_reg):flag_reg(flag_reg)
 {
     for(auto reg:regs)
     {
         if(reg.processor==reg_processor::CPU && reg.writable==true && (reg.attr==reg_attr::ARGUMENT || reg.attr==reg_attr::TEMP))
         {
-            available_CPU_regs_num++;
+            available_CPU_regs.push_back(reg.index);
         }
         else if(reg.processor==reg_processor::VFP && reg.writable==true && (reg.attr==reg_attr::ARGUMENT || reg.attr==reg_attr::TEMP))
         {
-            available_VFP_regs_num++;
+            available_VFP_regs.push_back(reg.index);
         }
         reg_indexs.insert(make_pair(reg.index,reg));
         reg_names.insert(make_pair(reg.name,reg.index));
     }
+    current_CPU_reg=available_CPU_regs.begin();
+    current_VFP_reg=available_VFP_regs.begin();
 }
 
 void regs_info::clear()
@@ -43,11 +45,14 @@ void regs_info::clear()
     }
     flag_reg.related_data.first=nullptr;
     current_instructions_involved_regs.clear();
+    current_CPU_reg=available_CPU_regs.begin();
+    current_VFP_reg=available_VFP_regs.begin();
 }
 
 void regs_info::attach_value_to_reg(struct ic_data * var,reg_index reg)
 {
     struct reg & designated_reg=reg_indexs.at(reg);
+    unattach_reg_s_all_addr(reg);
     if(var_value_regs_map.find(var)==var_value_regs_map.end())
     {
         var_value_regs_map.insert(make_pair(var,set<reg_index>()));
@@ -62,6 +67,7 @@ void regs_info::attach_value_to_reg(struct ic_data * var,reg_index reg)
 void regs_info::attach_value_to_reg(OAA const_value,reg_index reg)
 {
     struct reg & designated_reg=reg_indexs.at(reg);
+    unattach_reg_s_all_addr(reg);
     if(const_value_regs_map.find(const_value)==const_value_regs_map.end())
     {
         const_value_regs_map.insert(make_pair(const_value,set<reg_index>()));
@@ -76,6 +82,7 @@ void regs_info::attach_value_to_reg(OAA const_value,reg_index reg)
 void regs_info::attach_addr_to_reg(struct ic_data * var,reg_index reg)
 {
     struct reg & designated_reg=reg_indexs.at(reg);
+    unattach_reg_s_all_addr(reg);
     if(var_addr_regs_map.find(var)==var_addr_regs_map.end())
     {
         var_addr_regs_map.insert(make_pair(var,set<reg_index>()));
@@ -136,6 +143,20 @@ void regs_info::unattach_addr_to_reg(struct ic_data * var,reg_index reg)
         }
     }
     designated_reg.remove_addr(var);
+}
+
+void regs_info::unattach_reg_s_all_addr(reg_index reg)
+{
+    map<struct ic_data *,enum reg_var_state> backup;
+    struct reg & designated_reg=reg_indexs.at(reg);
+    backup=designated_reg.var_datas;
+    for(auto var_data:backup)
+    {
+        if(var_data.second==reg_var_state::ADDR)
+        {
+            unattach_addr_to_reg(var_data.first,reg);
+        }
+    }
 }
 
 void regs_info::unattach_reg_s_all_data(reg_index reg)
@@ -209,6 +230,28 @@ set<reg_index> regs_info::get_var_owned_addr_regs(struct ic_data * var)
         return var_addr_regs_map.at(var);
     }
     return set<reg_index>();
+}
+
+reg_index regs_info::next_available_CPU_reg()
+{
+    reg_index res=(*current_CPU_reg);
+    current_CPU_reg++;
+    if(current_CPU_reg==available_CPU_regs.end())
+    {
+        current_CPU_reg=available_CPU_regs.end();
+    }
+    return res;
+}
+
+reg_index regs_info::next_available_VFP_reg()
+{
+    reg_index res=(*current_VFP_reg);
+    current_VFP_reg++;
+    if(current_VFP_reg==available_VFP_regs.end())
+    {
+        current_VFP_reg=available_VFP_regs.end();
+    }
+    return res;
 }
 
 //==========================================================================//
@@ -328,9 +371,26 @@ Return
 */
 reg_index Register_manager::allocate_idle_reg(reg_processor processor)
 {
-    static uint8_t next_CPU_reg_index=0;
-    static uint8_t next_VFP_reg_index=0;
     reg_index res;
+    // switch(processor)
+    // {
+    //     case reg_processor::CPU:
+    //         do
+    //         {
+    //             res=regs_info_.next_available_CPU_reg();
+    //         }while(!allocate_designated_reg(res));
+    //         break;
+    //     case reg_processor::VFP:
+    //         do
+    //         {
+    //             res=regs_info_.next_available_VFP_reg();
+    //         }while(!allocate_designated_reg(res));
+    //         break;
+    //     default:
+    //         break;
+    // }
+
+    
     for(auto reg:regs_info_.reg_indexs)
     {
         if(reg.second.processor==processor && reg.second.writable && allocate_designated_reg(reg.first))
@@ -513,6 +573,61 @@ end:
 }
 
 /*
+在把某一个变量写入寄存器并设置为脏值之前将和它关联的所有脏值写回
+
+Parameters
+----------
+var:要写入寄存器的变量
+*/
+void Register_manager::store_DIRTY_values_before_writing_var(struct ic_data * var)
+{
+    set<reg_index> suspicious_regs;
+    pair<struct ic_data *,reg_index> * event_data;
+    map<struct ic_data * ,enum reg_var_state> temp;
+    set<struct ic_data * > written_back_vars;
+    bool is_var_array_member;
+    struct ic_data * array,* temp_var;
+    //在对某一个变量进行更改之前，需要遍历此时所有的寄存器中的所有脏值，查看其中的变量值是否和当前要更改的变量有关，如果有关的话，需要将其写回内存，并且和寄存器解除关联
+    //例如有一个二维数组是a[b][]，这在函数形参中是被允许的
+    //那么此时假设要更改的变量是b，而此时的某一个DIRTY_VALUE寄存器中存放着a[2][4]
+    //那么当b被更改完之后，a[2][4]可能就不再指向原本的值了，因此在b更改之前必须先将其写回
+    //同时，如果这个变量是一个数组取元素，那么就需要遍历此时所有的寄存器中的所有脏值，查看其中和该变量属于同一个数组的数组取元素是否有可能与其冲突，如果有可能的话，必须先将其写回
+    //假设此时有一个变量a[b]要写入寄存器，同时此时还有一个脏值变量a[c]在另一个寄存器中
+    //那么此时需要先把a[c]写回，再把a[b]写入寄存器
+    //如果不这样做的话，那么在程序运行的过程中可能会出现b==c的情况，此时a[b]和a[c]其实指向的是同一块内存
+    //就会出现a[b]和a[c]都是脏值的情况
+    //那么最终到底是哪一个脏值先写回内存呢？这就不好判断了
+    is_var_array_member=(var->is_array_member() && !var->is_array_var());
+    if(is_var_array_member)
+    {
+        array=var->get_belong_array();
+    }
+    for(auto reg_info:regs_info_.reg_indexs)
+    {
+        if(reg_info.second.state==reg_state::USED && !reg_info.second.var_datas.empty())
+        {
+            temp=reg_info.second.var_datas;
+            for(auto var_data:temp)
+            {
+                temp_var=var_data.first;
+                if(var_data.second==reg_var_state::DIRTY && temp_var!=var && (temp_var->check_ic_data_related(var) || (is_var_array_member && (temp_var->is_array_member() && !temp_var->is_array_var()) && temp_var->get_belong_array()==array && !(var->get_offset()->is_const() && temp_var->get_offset()->is_const() && var->get_offset()->get_value().int_data!=temp_var->get_offset()->get_value().int_data))))
+                {
+                    if(written_back_vars.find(var_data.first)==written_back_vars.end())
+                    {
+                        regs_info_.reg_indexs.at(reg_info.first).set_value_NOT_DIRTY(var_data.first);
+                        event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg_info.first);
+                        notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
+                        delete event_data;
+                        written_back_vars.insert(var_data.first);
+                    }
+                    regs_info_.unattach_value_to_reg(var_data.first,reg_info.first);
+                }
+            }
+        }
+    }
+}
+
+/*
 为了写某一个变量而获取一个寄存器
 
 Parameters
@@ -528,41 +643,13 @@ reg_index Register_manager::get_reg_for_writing_var(struct ic_data * var,enum re
     reg_index reg;
     bool tag=false;
     set<reg_index> suspicious_regs;
-    pair<struct ic_data *,reg_index> * event_data;
-    map<struct ic_data * ,enum reg_var_state> temp;
-    set<struct ic_data * > written_back_vars;
 
     if(var->is_const() && !var->is_array_var())
     {
         return get_reg_for_const(var->get_value(),processor);
     }
     
-    //在对某一个变量进行更改之前，需要遍历此时所有的寄存器中的所有脏值，查看其中的变量值是否和当前要更改的变量有关，如果有关的话，需要将其写回内存，并且和寄存器解除关联
-    //例如有一个二维数组是a[b][]，这在函数形参中是被允许的
-    //那么此时假设要更改的变量是b，而此时的某一个DIRTY_VALUE寄存器中存放着a[2][4]
-    //那么当b被更改完之后，a[2][4]可能就不再指向原本的值了，因此在b更改之前必须先将其写回
-    for(auto reg_info:regs_info_.reg_indexs)
-    {
-        if(reg_info.second.state==reg_state::USED && !reg_info.second.var_datas.empty())
-        {
-            temp=reg_info.second.var_datas;
-            for(auto var_data:temp)
-            {
-                if(var_data.second==reg_var_state::DIRTY && var_data.first->check_ic_data_related(var) && var_data.first!=var)
-                {
-                    if(written_back_vars.find(var_data.first)==written_back_vars.end())
-                    {
-                        regs_info_.reg_indexs.at(reg_info.first).set_value_NOT_DIRTY(var_data.first);
-                        event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg_info.first);
-                        notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-                        delete event_data;
-                        written_back_vars.insert(var_data.first);
-                    }
-                    regs_info_.unattach_value_to_reg(var_data.first,reg_info.first);
-                }
-            }
-        }
-    }
+    store_DIRTY_values_before_writing_var(var);
 
     suspicious_regs=regs_info_.get_var_owned_value_regs(var);
     //查看此时是否有寄存器已经存放了该变量的值
@@ -783,41 +870,13 @@ void Register_manager::get_designated_reg_for_writing_var(reg_index reg,struct i
 {
     struct reg & designated_reg=regs_info_.reg_indexs.at(reg);
     set<reg_index> suspicious_regs;
-    pair<struct ic_data *,reg_index> * event_data;
-    map<struct ic_data * ,enum reg_var_state> temp;
-    set<struct ic_data * > written_back_vars;
 
     if(var->is_const() && !var->is_array_var())
     {
         return get_designated_reg_for_const(reg,var->get_value());
     }
     
-    //在对某一个变量进行更改之前，需要遍历此时所有的寄存器中的所有脏值，查看其中的变量值是否和当前要更改的变量有关，如果有关的话，需要将其写回内存，并且和寄存器解除关联
-    //例如有一个二维数组是a[b][]，这在函数形参中是被允许的
-    //那么此时假设要更改的变量是b，而此时的某一个DIRTY_VALUE寄存器中存放着a[2][4]
-    //那么当b被更改完之后，a[2][4]可能就不再指向原本的值了，因此在b更改之前必须先将其写回
-    for(auto reg_info:regs_info_.reg_indexs)
-    {
-        if(reg_info.second.state==reg_state::USED && !reg_info.second.var_datas.empty())
-        {
-            temp=reg_info.second.var_datas;
-            for(auto var_data:temp)
-            {
-                if(var_data.second==reg_var_state::DIRTY && var_data.first->check_ic_data_related(var) && var_data.first!=var)
-                {
-                    if(written_back_vars.find(var_data.first)==written_back_vars.end())
-                    {
-                        regs_info_.reg_indexs.at(reg_info.first).set_value_NOT_DIRTY(var_data.first);
-                        event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg_info.first);
-                        notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-                        delete event_data;
-                        written_back_vars.insert(var_data.first);
-                    }
-                    regs_info_.unattach_value_to_reg(var_data.first,reg_info.first);
-                }
-            }
-        }
-    }
+    store_DIRTY_values_before_writing_var(var);
 
     suspicious_regs=regs_info_.get_var_owned_value_regs(var);
     //查看此时是否有寄存器存放了该变量的值
@@ -1350,6 +1409,14 @@ void Register_manager::handle_PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_ABI_FUNC(list<
     delete unaccessible_regs;
 }
 
+void Register_manager::handle_BEFORE_CALL_FUNC(struct ic_data * return_value)
+{
+    if(return_value)
+    {
+        store_DIRTY_values_before_writing_var(return_value);
+    }
+}
+
 void Register_manager::handle_RET_FROM_CALLED_FUNC(struct ic_data * return_value,reg_index return_reg)
 {
     for(auto reg:regs_info_.reg_indexs)
@@ -1485,15 +1552,19 @@ void Register_manager::handle_ATTACH_VAR_VALUE_TO_REG(struct ic_data * var_data,
     regs_info_.attach_value_to_reg(var_data,reg);
 }
 
-void Register_manager::handle_ATTACH_VAR_VALUE_TO_REG_THEN_SET_DIRTY(struct ic_data * var_data,reg_index reg)
+void Register_manager::handle_ATTACH_VAR_VALUE_TO_REG_THEN_SET_DIRTY(struct ic_data * var,reg_index reg)
 {
-    set<reg_index> suspicious_regs=regs_info_.get_var_owned_value_regs(var_data);
+    set<reg_index> suspicious_regs;
+
+    store_DIRTY_values_before_writing_var(var);
+
+    suspicious_regs=regs_info_.get_var_owned_value_regs(var);
     for(auto suspicious_reg:suspicious_regs)
     {
-        regs_info_.unattach_value_to_reg(var_data,suspicious_reg);
+        regs_info_.unattach_value_to_reg(var,suspicious_reg);
     }
-    regs_info_.attach_value_to_reg(var_data,reg);
-    regs_info_.reg_indexs.at(reg).set_value_DIRTY(var_data);
+    regs_info_.attach_value_to_reg(var,reg);
+    regs_info_.reg_indexs.at(reg).set_value_DIRTY(var);
 }
 
 void Register_manager::handle_UNATTACH_REG_S_ALL_DATA(reg_index reg)
@@ -1622,6 +1693,9 @@ struct event Register_manager::handler(struct event event)
             break;
         case event_type::PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_ABI_FUNC:
             handle_PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_ABI_FUNC(((pair<list<struct ic_data * > *,list<reg_index> *> *)event.pointer_data)->first,((pair<list<struct ic_data * > *,list<reg_index> *> *)event.pointer_data)->second);
+            break;
+        case event_type::BEFORE_CALL_FUNC:
+            handle_BEFORE_CALL_FUNC((struct ic_data *)event.pointer_data);
             break;
         case event_type::RET_FROM_CALLED_FUNC:
             handle_RET_FROM_CALLED_FUNC(((pair<struct ic_data *,reg_index> *)event.pointer_data)->first,((pair<struct ic_data *,reg_index> *)event.pointer_data)->second);

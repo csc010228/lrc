@@ -91,7 +91,7 @@ struct event Intermediate_code_manager::handle_IS_VAR_STILL_ALIVE(struct ic_data
     {
         //暂时认为临时变量的作用域不会超过一个基本块
         res.bool_data=false;
-        for(vector<struct quaternion_with_def_use_info>::iterator ic_with_info=current_ic_with_info_pos_-2;ic_with_info!=(*current_basic_block_pos_)->ic_sequence.end();ic_with_info++)
+        for(vector<struct quaternion_with_info>::iterator ic_with_info=current_ic_with_info_pos_-2;ic_with_info!=(*current_basic_block_pos_)->ic_sequence.end();ic_with_info++)
         {
             if((*ic_with_info).uses.find(var)!=(*ic_with_info).uses.end())
             {

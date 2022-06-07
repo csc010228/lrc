@@ -333,5 +333,11 @@ cout<<error_info<<endl;\
 error_tag=true;\
 goto error_out
 
+//一元常数运算
+struct ic_data * unary_compute(ic_op op,struct ic_data * arg);
+
+//二元常数运算
+struct ic_data * binary_compute(ic_op op,struct ic_data * arg1,struct ic_data * arg2);
+
 
 #endif  //__SEMANTIC_RULES_H

@@ -320,6 +320,9 @@ public:
     //获取符号表中的某一个数组取元素
     struct ic_data * array_member_entry(struct ic_data * array_var,size_t offset_dimension_lens,struct ic_data * offset);
 
+    //获取符号表中的某一个数组取元素（不是数组）
+    struct ic_data * array_member_not_array_var_entry(struct ic_data * array_var,struct ic_data * offset);
+
     //增加一个函数会更改的全局变量和数组形参
     void add_func_def_global_vars_and_array_f_params(struct ic_func * func,struct ic_data * data);
 
@@ -331,7 +334,6 @@ public:
 
     //获取一个函数会使用的所有全局变量和数组形参
     set<struct ic_data * > get_func_use_global_vars_and_array_f_params(struct ic_func * func);
-    
 };
 
 

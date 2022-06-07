@@ -243,8 +243,10 @@ struct regs_info
 
     list<set<reg_index> > current_instructions_involved_regs;             //存储当前的指令所用到的寄存器
 
-    uint8_t available_CPU_regs_num;                 //可用的CPU寄存器个数
-    uint8_t available_VFP_regs_num;                 //可用的VFP寄存器个数
+    list<reg_index> available_CPU_regs;             //所有可用的（即临时或者参数）CPU寄存器
+    list<reg_index>::iterator current_CPU_reg;
+    list<reg_index> available_VFP_regs;             //所有可用的（即临时或者参数）VFP寄存器
+    list<reg_index>::iterator current_VFP_reg;
 
     //构造函数
     regs_info();
@@ -263,6 +265,8 @@ struct regs_info
     void unattach_value_to_reg(OAA const_value,reg_index reg);
     //把一个变量的地址和一个寄存器解除关联
     void unattach_addr_to_reg(struct ic_data * var,reg_index reg);
+    //把一个寄存器中的所有变量地址全部和该寄存器解除关联（一般也就只有一个）
+    void unattach_reg_s_all_addr(reg_index reg);
     //把一个寄存器上的所有数据和该寄存器解除关联
     void unattach_reg_s_all_data(reg_index reg);
     //获取存放着某一个常数值的所有寄存器
@@ -271,6 +275,10 @@ struct regs_info
     set<reg_index> get_var_owned_value_regs(struct ic_data * var);
     //获取存放着某一个变量地址的所有寄存器
     set<reg_index> get_var_owned_addr_regs(struct ic_data * var);
+    //获取下一个可用的CPU寄存器
+    reg_index next_available_CPU_reg();
+    //获取下一个可用的CPU寄存器
+    reg_index next_available_VFP_reg();
 };
 
 //寄存器管理器
@@ -301,6 +309,9 @@ private:
 
     //为了读取某一个变量而获取一个寄存器
     reg_index get_reg_for_reading_var(struct ic_data * var,enum reg_processor processor);
+
+    //在把某一个变量写入寄存器并设置为脏值之前将和它关联的所有脏值写回
+    void store_DIRTY_values_before_writing_var(struct ic_data * var);
 
     //为了写某一个变量而获取一个寄存器
     reg_index get_reg_for_writing_var(struct ic_data * var,enum reg_processor processor);
@@ -353,6 +364,7 @@ private:
     void handle_SAVE_REGS_WHEN_CALLING_ABI_FUNC();
     void handle_PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_FUNC(list<struct ic_data * > * r_params);
     void handle_PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_ABI_FUNC(list<struct ic_data * > * r_params,list<reg_index> * r_param_regs);
+    void handle_BEFORE_CALL_FUNC(struct ic_data * return_value);
     void handle_RET_FROM_CALLED_FUNC(struct ic_data * return_value,reg_index return_reg);
     void handle_RET_FROM_CALLED_ABI_FUNC(struct ic_data * return_value,reg_index return_reg);
     struct event handle_CHECK_CONST_VALUE_OWN_CPU_REG(OAA const_value);

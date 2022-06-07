@@ -622,6 +622,7 @@ struct ic_data * Symbol_table::const_entry(enum language_data_type data_type,OAA
 Parameters
 ----------
 array_var:数组变量
+offset_dimension_lens:数组取元素的维度长度
 offsets:取元素的维度偏移
 
 Return
@@ -643,6 +644,23 @@ struct ic_data * Symbol_table::array_member_entry(struct ic_data * array_var,siz
         array_members_.insert(make_pair(index,new struct ic_data(array_var,offset_dimension_lens,offset)));
     }
     return array_members_.at(index);
+}
+
+/*
+获取符号表中的某一个数组取元素（不是数组）
+
+Parameters
+----------
+array_var:数组变量
+offsets:取元素的维度偏移
+
+Return
+------
+要获取的表项
+*/
+struct ic_data * Symbol_table::array_member_not_array_var_entry(struct ic_data * array_var,struct ic_data * offset)
+{
+    return array_member_entry(array_var,array_var->dimensions_len->size(),offset);
 }
 
 /*

@@ -1,0 +1,144 @@
+const float RADIUS = 5.500000
+const float PI = 3.141593
+const float EPS = 0.000001
+const float PI_HEX = 3.141593
+const float HEX2 = 0.078125
+const float FACT = -33000.000000
+const float EVAL1 = 95.033188
+const float EVAL2 = 34.557522
+const float EVAL3 = 34.557522
+const float CONV1 = 233.000000
+const float CONV2 = 4095.000000
+const int MAX = 1000000000
+const int TWO = 2
+const int THREE = 3
+const int FIVE = 5
+float float_abs ( float float_abs::x )  : 
+	LT		float_abs::x , 0.000000 --> (float)@0
+	IF_NOT_JMP		@0 --> .0
+	SUB		0.000000 , float_abs::x --> (float)@1
+	RET		@1
+.0 : 
+	RET		float_abs::x
+
+float circle_area ( int circle_area::radius )  : 
+	ASSIGN		circle_area::radius --> (float)@2
+	MUL		PI , @2 --> (float)@3
+	ASSIGN		circle_area::radius --> (float)@4
+	MUL		@3 , @4 --> (float)@5
+	MUL		circle_area::radius , circle_area::radius --> (int)@6
+	ASSIGN		@6 --> (float)@7
+	MUL		@7 , PI --> (float)@8
+	ADD		@5 , @8 --> (float)@9
+	DIV		@9 , 2.000000 --> (float)@10
+	RET		@10
+
+int float_eq ( float float_eq::a , float float_eq::b )  : 
+	SUB		float_eq::a , float_eq::b --> (float)@11
+	CALL		float_abs ( @11 )  --> (float)@12
+	LT		@12 , EPS --> (float)@13
+	IF_NOT_JMP		@13 --> .1
+	RET		1
+	JMP		.2
+.1 : 
+	RET		0
+.2 : 
+
+void error (  )  : 
+	CALL		putch ( 101 ) 
+	CALL		putch ( 114 ) 
+	CALL		putch ( 114 ) 
+	CALL		putch ( 111 ) 
+	CALL		putch ( 114 ) 
+	CALL		putch ( 10 ) 
+	RET
+
+void ok (  )  : 
+	CALL		putch ( 111 ) 
+	CALL		putch ( 107 ) 
+	CALL		putch ( 10 ) 
+	RET
+
+void assert ( int assert::cond )  : 
+	NOT		assert::cond --> (int)@14
+	IF_NOT_JMP		@14 --> .3
+	CALL		error (  ) 
+	JMP		.4
+.3 : 
+	CALL		ok (  ) 
+.4 : 
+	RET
+
+int main (  )  : 
+	CALL		float_eq ( HEX2 , FACT )  --> (int)@15
+	NOT		@15 --> (int)@16
+	CALL		assert ( @16 ) 
+	CALL		float_eq ( EVAL1 , EVAL2 )  --> (int)@17
+	NOT		@17 --> (int)@18
+	CALL		assert ( @18 ) 
+	CALL		float_eq ( EVAL2 , EVAL3 )  --> (int)@19
+	CALL		assert ( @19 ) 
+	CALL		circle_area ( 5 )  --> (float)@20
+	CALL		circle_area ( FIVE )  --> (float)@21
+	CALL		float_eq ( @20 , @21 )  --> (int)@22
+	CALL		assert ( @22 ) 
+	CALL		float_eq ( CONV1 , CONV2 )  --> (int)@23
+	NOT		@23 --> (int)@24
+	CALL		assert ( @24 ) 
+	CALL		ok (  ) 
+.5 : 
+	CALL		ok (  ) 
+.6 : 
+	JMP		.7
+	CALL		error (  ) 
+.7 : 
+	JMP		.8
+	JMP		.9
+.8 : 
+	CALL		ok (  ) 
+.9 : 
+	int main::i
+	ASSIGN		1 --> main::i
+	int main::p
+	ASSIGN		0 --> main::p
+	float main::arr[10] = { 0 , ...... } 
+	ASSIGN		1.000000 --> main::arr[0]
+	ASSIGN		2.000000 --> main::arr[1]
+	CALL		getfarray ( main::arr )  --> (int)@25
+	int main::len
+	ASSIGN		@25 --> main::len
+.10 : 
+	LT		main::i , MAX --> (int)@26
+	IF_NOT_JMP		@26 --> .11
+	CALL		getfloat (  )  --> (float)@27
+	float main::while_0::input
+	ASSIGN		@27 --> main::while_0::input
+	MUL		PI , main::while_0::input --> (float)@28
+	MUL		@28 , main::while_0::input --> (float)@29
+	ASSIGN		main::while_0::input --> (int)@30
+	CALL		circle_area ( @30 )  --> (float)@31
+	float main::while_0::area
+	ASSIGN		@29 --> main::while_0::area
+	float main::while_0::area_trunc
+	ASSIGN		@31 --> main::while_0::area_trunc
+	MUL		main::p , 1 --> (int)@32
+	ADD		@32 , 0 --> (int)@33
+	MUL		main::p , 1 --> (int)@34
+	ADD		@34 , 0 --> (int)@35
+	ADD		main::arr[@35] , main::while_0::input --> (float)@36
+	ASSIGN		@36 --> main::arr[@33]
+	CALL		putfloat ( main::while_0::area ) 
+	CALL		putch ( 32 ) 
+	ASSIGN		main::while_0::area_trunc --> (int)@37
+	CALL		putint ( @37 ) 
+	CALL		putch ( 10 ) 
+	ASSIGN		main::i --> (float)@38
+	MUL		@38 , 10.000000 --> (float)@39
+	ASSIGN		@39 --> main::i
+	ADD		main::p , 1 --> (int)@40
+	ASSIGN		@40 --> main::p
+	JMP		.10
+.11 : 
+	CALL		putfarray ( main::len , main::arr ) 
+	RET		0
+

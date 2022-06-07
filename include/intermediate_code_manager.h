@@ -26,10 +26,10 @@ protected:
     list<struct ic_basic_block * >::iterator current_basic_block_pos_;
 
     //当前正在转换成汇编的中间代码的位置
-    vector<struct quaternion_with_def_use_info>::iterator current_ic_with_info_pos_;
+    vector<struct quaternion_with_info>::iterator current_ic_with_info_pos_;
 
     //当前正在转换成汇编的中间代码
-    struct quaternion_with_def_use_info current_ic_woth_info_;
+    struct quaternion_with_info current_ic_woth_info_;
 
     //事件处理函数
     struct event handle_NEXT_IC();

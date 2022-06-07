@@ -54,11 +54,11 @@ typedef struct ic_pos
 } ic_pos;
 
 //带有变量定义和使用信息的中间代码
-struct quaternion_with_def_use_info
+struct quaternion_with_info
 {
-    quaternion_with_def_use_info();
+    quaternion_with_info();
 
-    quaternion_with_def_use_info(struct quaternion ic);
+    quaternion_with_info(struct quaternion ic);
 
     //根据中间代码建立信息
     void build_info(bool clear_data_flow_analysis_info=true);
@@ -114,6 +114,9 @@ struct ic_basic_block
     //往当前基本块中加入一条中间代码
     void add_ic(struct quaternion ic);
 
+    //清空当前的中间代码序列
+    void clear_ic_sequence();
+
     //获取一个基本块的所有前驱基本块
     set<struct ic_basic_block * > get_precursors();
 
@@ -121,7 +124,7 @@ struct ic_basic_block
     set<struct ic_basic_block * > get_successors();
 
     //基本块中的中间代码序列
-    vector<struct quaternion_with_def_use_info> ic_sequence;
+    vector<struct quaternion_with_info> ic_sequence;
     //该基本块的后续基本块
     struct ic_basic_block * sequential_next,* jump_next;
     //该基本块的所属函数
@@ -153,7 +156,7 @@ struct ic_func_flow_graph
     void add_ic(struct quaternion ic);
 
     //获取指定位置的中间代码及其信息
-    static struct quaternion_with_def_use_info get_ic_with_info(ic_pos pos);
+    static struct quaternion_with_info get_ic_with_info(ic_pos pos);
 
     //对应的函数在符号表中的指针
     struct ic_func * func;
