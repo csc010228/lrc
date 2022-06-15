@@ -2183,44 +2183,9 @@ define_semantic_rule(___WHILE_STMT_2___)
 end_define_semantic_rule
 
 /*
-if语句中只有if的语句
-*/
-define_semantic_rule(___IF_STMT_1___)
-    vector<list<struct quaternion>::iterator> * backpatching_codes;
-    struct ic_label * label;
-    struct ic_scope * block_scope;
-    //生成并定义一个新的标签
-    label=def_label();
-    gen_zero_operand_code(ic_op::LABEL_DEFINE,ic_operand::LABEL,label);
-    if(check_syntax_symbol_attribute(COND,backpatching_codes))
-    {
-        backpatching_codes=(vector<list<struct quaternion>::iterator> *)get_syntax_symbol_attribute(COND,backpatching_codes,pointer);
-    }
-    else
-    {
-        print_error("___IF_STMT_1___ error!");
-    }
-    //进行回填
-    for(vector<list<struct quaternion>::iterator>::iterator i=backpatching_codes->begin();i!=backpatching_codes->end();i++)
-    {
-        (*(*i)).result.second=(void *)label;
-    }
-    delete backpatching_codes;
-    //把作用域设置为if作用域
-    if(check_syntax_symbol_attribute(STMT,block_scope))
-    {
-        block_scope=(struct ic_scope * )get_syntax_symbol_attribute(STMT,block_scope,pointer);
-        block_scope->set_scope_type(ic_scope_type::IF);
-        delete_syntax_symbol_attribute(STMT,block_scope);
-    }
-    //把STMT的语义属性复制一份给IF_STMT，这里主要是为了复制需要进行回填的中间代码(continue和break)以及在该if语句块中定义的变量
-    copy_syntax_symbol_attributes(IF_STMT,STMT);
-end_define_semantic_rule
-
-/*
 if语句中的if-else语句
 */
-define_semantic_rule(___IF_STMT_2___)
+define_semantic_rule(___IF_STMT_1___)
     vector<list<struct quaternion>::iterator> * backpatching_codes;
     list<struct quaternion>::iterator ic_generated;
     struct ic_label * false_label;
@@ -2261,7 +2226,7 @@ end_define_semantic_rule
 /*
 if语句中的if-else语句
 */
-define_semantic_rule(___IF_STMT_3___)
+define_semantic_rule(___IF_STMT_2___)
     vector<list<struct quaternion>::iterator> * backpatching_codes,* continue_backpatching_codes,* break_backpatching_codes,* tmp_backpatching_codes;
     struct ic_label * true_label;
     struct ic_scope * block_scope;
@@ -2336,6 +2301,41 @@ define_semantic_rule(___IF_STMT_3___)
         block_scope=(struct ic_scope * )get_syntax_symbol_attribute_by_index(STMT,block_scope,pointer,1);
         block_scope->set_scope_type(ic_scope_type::ELSE);
     }
+end_define_semantic_rule
+
+/*
+if语句中只有if的语句
+*/
+define_semantic_rule(___IF_STMT_3___)
+    vector<list<struct quaternion>::iterator> * backpatching_codes;
+    struct ic_label * label;
+    struct ic_scope * block_scope;
+    //生成并定义一个新的标签
+    label=def_label();
+    gen_zero_operand_code(ic_op::LABEL_DEFINE,ic_operand::LABEL,label);
+    if(check_syntax_symbol_attribute(COND,backpatching_codes))
+    {
+        backpatching_codes=(vector<list<struct quaternion>::iterator> *)get_syntax_symbol_attribute(COND,backpatching_codes,pointer);
+    }
+    else
+    {
+        print_error("___IF_STMT_1___ error!");
+    }
+    //进行回填
+    for(vector<list<struct quaternion>::iterator>::iterator i=backpatching_codes->begin();i!=backpatching_codes->end();i++)
+    {
+        (*(*i)).result.second=(void *)label;
+    }
+    delete backpatching_codes;
+    //把作用域设置为if作用域
+    if(check_syntax_symbol_attribute(STMT,block_scope))
+    {
+        block_scope=(struct ic_scope * )get_syntax_symbol_attribute(STMT,block_scope,pointer);
+        block_scope->set_scope_type(ic_scope_type::IF);
+        delete_syntax_symbol_attribute(STMT,block_scope);
+    }
+    //把STMT的语义属性复制一份给IF_STMT，这里主要是为了复制需要进行回填的中间代码(continue和break)以及在该if语句块中定义的变量
+    copy_syntax_symbol_attributes(IF_STMT,STMT);
 end_define_semantic_rule
 
 /*
