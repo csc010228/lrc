@@ -92,21 +92,17 @@ struct DAG_node
 class DAG
 {
 private:
+    //该DAG对应的基本块
+    struct ic_basic_block * basic_block_;
+
     //所有的DAG节点
     set<struct DAG_node * > all_nodes_;
 
     //存储数据到DAG节点的映射，只有数据到最后一个DAG节点的映射是目前有效的，如果最后一个DAG节点是nullptr，那么就说明这个数据目前没有节点与之映射
-    //map<struct ic_data *,list<struct DAG_node * > > data_to_nodes_map_;
     map<struct ic_data *,struct DAG_node * > data_to_node_;
 
     //还原成DAG节点的时候的顺序
     list<struct DAG_node * > nodes_order_;
-
-    //存储数组到数组取元素的映射
-    map<struct ic_data *,set<struct ic_data * > > array_to_array_member_map_;
-
-    //存储数组取元素的偏移量到数组取元素的映射
-    map<struct ic_data *,set<struct ic_data * > > offset_to_array_member_map_;
 
     //基本块中的变量定义
     list<struct quaternion> var_defs_;

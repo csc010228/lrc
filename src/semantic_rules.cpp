@@ -23,6 +23,7 @@ map<enum ic_scope_type,string> scope_type_output_map={
     {ic_scope_type::ELSE,"else"},
     {ic_scope_type::WHILE,"while"},
     {ic_scope_type::ANONYMOUS,""},
+    {ic_scope_type::INLINE_FUNC,"<inline>"},
 };
 
 //变量类型的输出信息
@@ -107,6 +108,10 @@ string output_ic_scope(struct ic_scope * scope)
         if(tmp_scope->is_func())
         {
             res=(tmp_scope->func->name+"::"+res);
+        }
+        else if(tmp_scope->is_inline_func())
+        {
+            res=(scope_type_output_map.at(tmp_scope->type)+tmp_scope->func->name+"::"+res);
         }
         else
         {

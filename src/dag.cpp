@@ -110,12 +110,12 @@ enum language_data_type DAG_node::get_related_data_type()
 
 //===================================== class DAG =====================================//
 
-DAG::DAG()
+DAG::DAG():basic_block_(nullptr)
 {
 
 }
 
-DAG::DAG(struct ic_basic_block * basic_block)
+DAG::DAG(struct ic_basic_block * basic_block):basic_block_(basic_block)
 {
     struct DAG_node * current_node;
     enum ic_op op;
@@ -229,30 +229,29 @@ void DAG::attach_data_to_node(struct ic_data * data,struct DAG_node * node)
             offset=data->get_offset();
             offset_is_const=offset->is_const();
             array=data->get_belong_array();
-            if(array_to_array_member_map_.find(array)!=array_to_array_member_map_.end())
+            if(basic_block_->array_to_array_member_map.find(array)!=basic_block_->array_to_array_member_map.end())
             {
-                for(auto array_member:array_to_array_member_map_.at(array))
+                for(auto array_member:basic_block_->array_to_array_member_map.at(array))
                 {
-                    if(!(offset_is_const && array_member->get_offset()->is_const() && offset->get_value().int_data!=array_member->get_offset()->get_value().int_data))
+                    if(!(offset_is_const && array_member->get_offset()->is_const() && offset->get_value().int_data!=array_member->get_offset()->get_value().int_data) && !array_member->is_array_var())
                     {
                         unattach_data_s_current_node(array_member);
                     }
                 }
             }
         }
-        if(offset_to_array_member_map_.find(data)!=offset_to_array_member_map_.end())
+        if(basic_block_->offset_to_array_member_map.find(data)!=basic_block_->offset_to_array_member_map.end())
         {
-            for(auto array_member:offset_to_array_member_map_.at(data))
+            for(auto array_member:basic_block_->offset_to_array_member_map.at(data))
             {
-                unattach_data_s_current_node(array_member);
+                if(!array_member->is_array_var())
+                {
+                    unattach_data_s_current_node(array_member);   
+                }
             }
         }
     }
     //如果DAG节点中没有这个变量，就将其添加进去
-    // if(node->related_datas.find(data)==node->related_datas.end())
-    // {
-    //     node->related_datas.insert(data);
-    // }
     node->add_data(data);
     //在映射表data_to_node_建立变量和节点之间的关联
     if(data_to_node_.find(data)==data_to_node_.end())
@@ -262,26 +261,6 @@ void DAG::attach_data_to_node(struct ic_data * data,struct DAG_node * node)
     else
     {
         data_to_node_.at(data)=node;
-    }
-    //如果该变量是数组元素，那么就记录这个数组取元素的偏移量和所属数组信息
-    if(data->is_array_member() && !data->is_array_var())
-    {
-        if(array_to_array_member_map_.find(data->get_belong_array())==array_to_array_member_map_.end())
-        {
-            array_to_array_member_map_.insert(make_pair(data->get_belong_array(),set<struct ic_data * >()));
-        }
-        if(array_to_array_member_map_.at(data->get_belong_array()).find(data)==array_to_array_member_map_.at(data->get_belong_array()).end())
-        {
-            array_to_array_member_map_.at(data->get_belong_array()).insert(data);
-        }
-        if(offset_to_array_member_map_.find(data->get_offset())==offset_to_array_member_map_.end())
-        {
-            offset_to_array_member_map_.insert(make_pair(data->get_offset(),set<struct ic_data * >()));
-        }
-        if(offset_to_array_member_map_.at(data->get_offset()).find(data)==offset_to_array_member_map_.at(data->get_offset()).end())
-        {
-            offset_to_array_member_map_.at(data->get_offset()).insert(data);
-        }
     }
 }
 
@@ -407,32 +386,12 @@ struct ic_data * DAG::copy_progagation(struct ic_data * data,bool stop_when_arra
                 }
             }
         }
-        // if(child && check_leaf_node_available(child) && child->get_first_data()->get_data_type()==data->get_data_type())
-        // {
-        //     res=child->get_leaf_node_s_only_data();
-        //     if(!(stop_when_array_member && res->is_array_member()))
-        //     {
-        //         return res;
-        //     }
-        // }
     }
     return data;
 }
 
 void DAG::generate_ASSIGN_in_DAG(struct ic_data * to,struct ic_data * from)
 {
-    // struct DAG_node * from_s_DAG_node;
-    // from=copy_progagation(from);
-    // from_s_DAG_node=get_DAG_node(from);
-    // for(auto father:from_s_DAG_node->fathers)
-    // {
-    //     if(father->related_op==ic_op::ASSIGN && father->get_related_data_type()==to->get_data_type())
-    //     {
-    //         attach_data_to_node(to,father);
-    //         return;
-    //     }
-    // }
-    // new_DAG_node(ic_op::ASSIGN,to,1,from);
     new_DAG_node(ic_op::ASSIGN,to,1,copy_progagation(from));
 }
 
@@ -448,7 +407,7 @@ void DAG::generate_CALL_in_DAG(struct ic_func * func,struct ic_data * ret,list<s
 {
     Symbol_table * symbol_table=Symbol_table::get_instance();
     size_t f_param_pos=0;
-    set<struct ic_data * > func_def_global_vars_and_array_f_params;
+    set<struct ic_data * > func_def_globals_and_f_params;
     struct ic_data * array;
     for(list<struct ic_data * >::iterator r_param=r_params->begin();r_param!=r_params->end();r_param++)
     {
@@ -460,8 +419,8 @@ void DAG::generate_CALL_in_DAG(struct ic_func * func,struct ic_data * ret,list<s
     //数组形参对应的实参
     //和上述两类数据相关的数据
     //将这三类可能会被改变的数据和它们对应的DAG节点解除关联
-    func_def_global_vars_and_array_f_params=symbol_table->get_func_def_global_vars_and_array_f_params(func);
-    for(auto data:func_def_global_vars_and_array_f_params)
+    func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_f_params(func);
+    for(auto data:func_def_globals_and_f_params)
     {
         if(data->is_array_var())
         {
@@ -493,21 +452,27 @@ void DAG::generate_CALL_in_DAG(struct ic_func * func,struct ic_data * ret,list<s
             {
                 array=data;
             }
-            if(array_to_array_member_map_.find(array)!=array_to_array_member_map_.end())
+            if(basic_block_->array_to_array_member_map.find(array)!=basic_block_->array_to_array_member_map.end())
             {
-                for(auto array_member:array_to_array_member_map_.at(array))
+                for(auto array_member:basic_block_->array_to_array_member_map.at(array))
                 {
-                    unattach_data_s_current_node(array_member);
+                    if(!array_member->is_array_var())
+                    {
+                        unattach_data_s_current_node(array_member);
+                    }
                 }
             }
         }
-        else
+        else if(data->is_global())
         {
-            if(offset_to_array_member_map_.find(data)!=offset_to_array_member_map_.end())
+            if(basic_block_->offset_to_array_member_map.find(data)!=basic_block_->offset_to_array_member_map.end())
             {
-                for(auto array_member:offset_to_array_member_map_.at(data))
+                for(auto array_member:basic_block_->offset_to_array_member_map.at(data))
                 {
-                    unattach_data_s_current_node(array_member);
+                    if(!array_member->is_array_var())
+                    {
+                        unattach_data_s_current_node(array_member);
+                    }
                 }
             }
             unattach_data_s_current_node(data);

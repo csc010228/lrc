@@ -4,6 +4,9 @@ import os
 #测试文件夹
 TEST_DIR='../compiler2022-master/test/function'
 
+#是否开启优化
+OPTIMIZE=True
+
 #lrc编译器可执行文件名
 LRC_EXE_FILE='./lrc'
 
@@ -23,20 +26,23 @@ def files_name_with_suffix(file_dir,suffix):
     return files_name
 
 #编译某一个sy文件
-def complie_file(source_file,target_file):
-    return_value=os.system(LRC_EXE_FILE+' -S -o '+target_file+'.s '+source_file)
+def complie_file(source_file,target_file,optimize):
+    if optimize==True:
+        return_value=os.system(LRC_EXE_FILE+' -S -o '+target_file+'.s '+source_file+' -O2')
+    else:
+        return_value=os.system(LRC_EXE_FILE+' -S -o '+target_file+'.s '+source_file)
     if return_value!=0:
         return False
     else:
         return True
 
 #编译目录file_dir下的所有sy文件
-def complier_dir(dir_name):
+def complier_dir(dir_name,optimize):
     error_num=0
     success_num=0
     files_name_with_suffix_sy=files_name_with_suffix(dir_name,SOURCE_FILE_SUFFIX)
     for file in files_name_with_suffix_sy:
-        is_success=complie_file(file,os.path.splitext(file)[0])
+        is_success=complie_file(file,os.path.splitext(file)[0],optimize)
         if is_success:
             print(file+"\t\t\t\t\t\tsuccess!")
             success_num=success_num+1
@@ -53,6 +59,6 @@ def delete_specific_suffix_file(dir_name,suffix):
 
 
 if __name__ == '__main__':
-    success_num,error_num=complier_dir(TEST_DIR)
+    success_num,error_num=complier_dir(TEST_DIR,OPTIMIZE)
     print(str(success_num)+" success,"+str(error_num)+" error")
     delete_specific_suffix_file(TEST_DIR,DELETE_FILE_SUFFIX)

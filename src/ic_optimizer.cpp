@@ -8,6 +8,7 @@
 */
 #include"ic_optimizer.h"
 #include"dag.h"
+#include"data_flow_analyse.h"
 #include"symbol_table.h"
 #include<fstream>
 #include<iostream>
@@ -52,7 +53,7 @@ void quaternion_with_info::build_info(bool clear_data_flow_analysis_info)
     struct ic_data * arg1=nullptr,* arg2=nullptr,* result=nullptr;
     struct ic_func * func=nullptr;
     list<struct ic_data * > * r_params=nullptr;
-    set<struct ic_data * > func_def_global_vars_and_array_f_params;
+    set<struct ic_data * > func_def_globals_and_f_params;
     Symbol_table * symbol_table=Symbol_table::get_instance();
     explicit_def=nullptr;
     vague_defs.clear();
@@ -118,8 +119,8 @@ void quaternion_with_info::build_info(bool clear_data_flow_analysis_info)
                     add_to_vague_defs(r_param);
                 }
             }
-            func_def_global_vars_and_array_f_params=symbol_table->get_func_def_global_vars_and_array_f_params(func);
-            for(auto vague_var:func_def_global_vars_and_array_f_params)
+            func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_f_params(func);
+            for(auto vague_var:func_def_globals_and_f_params)
             {
                 if(vague_var->is_global())
                 {
@@ -668,7 +669,6 @@ void quaternion_with_info::replace_used_data(struct ic_data * source,struct ic_d
             break;
     }
     simplify();
-    build_info(false);
 }
 
 //==========================================================================//
@@ -697,24 +697,56 @@ void ic_basic_block::add_ic(struct quaternion ic)
     static Symbol_table * symbol_table=Symbol_table::get_instance();
     static bool has_next_ic=true;
     struct quaternion_with_info ic_with_def_use_info(ic);
+    set<struct ic_data * > all_datas;
     ic_sequence.push_back(ic_with_def_use_info);
     if(ic_with_def_use_info.explicit_def!=nullptr)
     {
-        symbol_table->add_func_def_global_vars_and_array_f_params(belong_func_flow_graph->func,ic_with_def_use_info.explicit_def);
+        symbol_table->add_func_def_globals_and_f_params(belong_func_flow_graph->func,ic_with_def_use_info.explicit_def);
+        all_datas.insert(ic_with_def_use_info.explicit_def);
     }
     for(auto vague_var:ic_with_def_use_info.vague_defs)
     {
-        symbol_table->add_func_def_global_vars_and_array_f_params(belong_func_flow_graph->func,vague_var);
+        symbol_table->add_func_def_globals_and_f_params(belong_func_flow_graph->func,vague_var);
+        all_datas.insert(vague_var);
     }
     for(auto use_var:ic_with_def_use_info.uses)
     {
-        symbol_table->add_func_use_global_vars_and_array_f_params(belong_func_flow_graph->func,use_var);
+        symbol_table->add_func_use_globals_and_f_params(belong_func_flow_graph->func,use_var);
+        all_datas.insert(use_var);
+    }
+    if(ic.op==ic_op::CALL)
+    {
+        symbol_table->add_func_direct_calls(belong_func_flow_graph->func,(struct ic_func *)ic.arg1.second);
+    }
+    for(auto data:all_datas)
+    {
+        if(data->is_array_member())
+        {
+            if(array_to_array_member_map.find(data->get_belong_array())==array_to_array_member_map.end())
+            {
+                array_to_array_member_map.insert(make_pair(data->get_belong_array(),set<struct ic_data * >()));
+            }
+            if(array_to_array_member_map.at(data->get_belong_array()).find(data)==array_to_array_member_map.at(data->get_belong_array()).end())
+            {
+                array_to_array_member_map.at(data->get_belong_array()).insert(data);
+            }
+            if(offset_to_array_member_map.find(data->get_offset())==offset_to_array_member_map.end())
+            {
+                offset_to_array_member_map.insert(make_pair(data->get_offset(),set<struct ic_data * >()));
+            }
+            if(offset_to_array_member_map.at(data->get_offset()).find(data)==offset_to_array_member_map.at(data->get_offset()).end())
+            {
+                offset_to_array_member_map.at(data->get_offset()).insert(data);
+            }
+        }
     }
 }
 
 void ic_basic_block::clear_ic_sequence()
 {
     ic_sequence.clear();
+    array_to_array_member_map.clear();
+    offset_to_array_member_map.clear();
 }
 
 set<struct ic_basic_block * > ic_basic_block::get_precursors()
@@ -766,12 +798,10 @@ ic_func_flow_graph::~ic_func_flow_graph()
 //往当前的函数流图中加入一条中间代码
 void ic_func_flow_graph::add_ic(struct quaternion ic)
 {
-    static map<struct ic_label *,struct ic_basic_block *> ic_label_basic_block_map;
     static struct ic_basic_block * current_basic_block=nullptr;
     static bool previous_ic_is_jump=false,basic_block_has_return=false;
     unsigned char new_basic_block_tag=0;
-    bool func_end=false,need_set_sequential_next;
-    struct ic_basic_block * pre_basic_block;
+    bool func_end=false;
     if(func_end)
     {
         return;
@@ -824,7 +854,7 @@ void ic_func_flow_graph::add_ic(struct quaternion ic)
             basic_blocks.push_back(current_basic_block);
             current_basic_block=new struct ic_basic_block(this);
             basic_block_has_return=false;
-            ic_label_basic_block_map.insert(make_pair((struct ic_label *)ic.result.second,current_basic_block));
+            label_basic_block_map.insert(make_pair((struct ic_label *)ic.result.second,current_basic_block));
             break;
         case 4:
             basic_blocks.push_back(current_basic_block);
@@ -847,37 +877,160 @@ void ic_func_flow_graph::add_ic(struct quaternion ic)
     if(func_end)
     {
         //如果该函数的流图构造完毕，那么就对各个基本块之间的跳转情况进行设置
-        need_set_sequential_next=false;
-        for(auto basic_block:basic_blocks)
+        build_jumps_between_basic_blocks();
+    }
+}
+
+//构建函数中的基本块之间的跳转关系
+void ic_func_flow_graph::build_jumps_between_basic_blocks()
+{
+    struct ic_basic_block * pre_basic_block;
+    bool need_set_sequential_next=false;
+    for(auto basic_block:basic_blocks)
+    {
+        if(need_set_sequential_next)
         {
-            if(need_set_sequential_next)
+            pre_basic_block->set_sequential_next(basic_block);
+        }
+        switch(basic_block->ic_sequence.back().intermediate_code.op)
+        {
+            case ic_op::JMP:
+                need_set_sequential_next=false;
+                basic_block->set_sequential_next(nullptr);
+                basic_block->set_jump_next(label_basic_block_map.at((struct ic_label *)(basic_block->ic_sequence.back().intermediate_code.result.second)));
+                break;
+            case ic_op::IF_JMP:
+            case ic_op::IF_NOT_JMP:
+                need_set_sequential_next=true;
+                basic_block->set_jump_next(label_basic_block_map.at((struct ic_label *)(basic_block->ic_sequence.back().intermediate_code.result.second)));
+                break;
+            case ic_op::RET:
+            case ic_op::END_FUNC_DEFINE:
+                need_set_sequential_next=false;
+                basic_block->set_sequential_next(nullptr);
+                basic_block->set_jump_next(nullptr);
+                break;
+            default:
+                need_set_sequential_next=true;
+                basic_block->set_jump_next(nullptr);
+                break;
+        }
+        pre_basic_block=basic_block;
+    }
+}
+
+//构建函数流图中的数组变量和数组元素之间的映射，以及偏移量和数组元素之间的映射
+void ic_func_flow_graph::build_array_and_offset_to_array_member_map()
+{
+    array_to_array_member_map.clear();
+    offset_to_array_member_map.clear();
+    for(auto basic_block:basic_blocks)
+    {
+        map_set_union_and_assign_to_arg1(array_to_array_member_map,basic_block->array_to_array_member_map);
+        map_set_union_and_assign_to_arg1(offset_to_array_member_map,basic_block->offset_to_array_member_map);
+    }
+}
+
+//构建函数流图中所有变量的定义点和使用点的信息
+void ic_func_flow_graph::build_vars_def_and_use_pos_info()
+{
+    size_t pos;
+    ic_pos current_pos;
+    struct ic_data * belong_array,* offset;
+    for(auto basic_block:basic_blocks)
+    {
+        pos=0;
+        for(auto ic_with_info:basic_block->ic_sequence)
+        {
+            current_pos=ic_pos(basic_block,pos);
+            //明确定义点
+            if(ic_with_info.explicit_def)
             {
-                pre_basic_block->set_sequential_next(basic_block);
+                if(ic_with_info.explicit_def->is_array_var() && ic_with_info.explicit_def->is_array_member())
+                {
+                    map_set_insert(vars_def_positions,ic_with_info.explicit_def->get_belong_array(),current_pos);
+                }
+                else
+                {
+                    map_set_insert(vars_def_positions,ic_with_info.explicit_def,current_pos);
+                }
+                if(ic_with_info.explicit_def->is_array_var())
+                {
+                    //一个数组变量（包括即是数组取元素又是数组变量）的明确定义，意味着所有所属数组是该变量的数组元素也在这里被明确定义了
+                    if(array_to_array_member_map.find(ic_with_info.explicit_def)!=array_to_array_member_map.end())
+                    {
+                        for(auto array_member:array_to_array_member_map.at(ic_with_info.explicit_def))
+                        {
+                            map_set_insert(vars_def_positions,array_member,current_pos);
+                        }
+                    }
+                }
+                else if(ic_with_info.explicit_def->is_array_member())
+                {
+                    //一个数组元素的明确定义，有两种情况
+                    //如果该数组元素的偏移量是变量的话，那么和该数组同属一个所属数组的所有数组元素都会在这里被模糊定义
+                    //如果该数组元素的偏移量是常量的话，那么和该数组同属一个所属数组的，并且偏移量是变量的数组元素都会在这里被模糊定义，偏移量等于该数组元素的偏移量的数组元素都会在这里被明确定义
+                    belong_array=ic_with_info.explicit_def->get_belong_array();
+                    offset=ic_with_info.explicit_def->get_belong_array();
+                    if(array_to_array_member_map.find(belong_array)!=array_to_array_member_map.end())
+                    {
+                        for(auto array_member:array_to_array_member_map.at(belong_array))
+                        {
+                            if(array_member==ic_with_info.explicit_def || (offset->is_const() && array_member->get_offset()->is_const() && array_member->get_offset()->get_value()!=offset->get_value()))
+                            {
+                                continue;
+                            }
+                            map_set_insert(vars_def_positions,array_member,current_pos);
+                        }
+                    }
+                }
             }
-            switch(basic_block->ic_sequence.back().intermediate_code.op)
+            //模糊定义点
+            for(auto vague_def:ic_with_info.vague_defs)
             {
-                case ic_op::JMP:
-                    need_set_sequential_next=false;
-                    basic_block->set_sequential_next(nullptr);
-                    basic_block->set_jump_next(ic_label_basic_block_map.at((struct ic_label *)(basic_block->ic_sequence.back().intermediate_code.result.second)));
-                    break;
-                case ic_op::IF_JMP:
-                case ic_op::IF_NOT_JMP:
-                    need_set_sequential_next=true;
-                    basic_block->set_jump_next(ic_label_basic_block_map.at((struct ic_label *)(basic_block->ic_sequence.back().intermediate_code.result.second)));
-                    break;
-                case ic_op::RET:
-                case ic_op::END_FUNC_DEFINE:
-                    need_set_sequential_next=false;
-                    basic_block->set_sequential_next(nullptr);
-                    basic_block->set_jump_next(nullptr);
-                    break;
-                default:
-                    need_set_sequential_next=true;
-                    basic_block->set_jump_next(nullptr);
-                    break;
+                if(vague_def->is_array_var() && vague_def->is_array_member())
+                {
+                    map_set_insert(vars_def_positions,vague_def->get_belong_array(),current_pos);
+                }
+                else
+                {
+                    map_set_insert(vars_def_positions,vague_def,current_pos);
+                }
+                if(vague_def->is_array_var())
+                {
+                    //一个数组变量的模糊定义同上的明确定义
+                    if(array_to_array_member_map.find(vague_def)!=array_to_array_member_map.end())
+                    {
+                        for(auto array_member:array_to_array_member_map.at(vague_def))
+                        {
+                            map_set_insert(vars_def_positions,array_member,current_pos);
+                        }
+                    }
+                }
+                else if(vague_def->is_array_member())
+                {
+                    //一个数组取元素的模糊定义同上的明确定义
+                    belong_array=vague_def->get_belong_array();
+                    offset=vague_def->get_belong_array();
+                    if(array_to_array_member_map.find(belong_array)!=array_to_array_member_map.end())
+                    {
+                        for(auto array_member:array_to_array_member_map.at(belong_array))
+                        {
+                            if(array_member==vague_def || (offset->is_const() && array_member->get_offset()->is_const() && array_member->get_offset()->get_value()!=offset->get_value()))
+                            {
+                                continue;
+                            }
+                            map_set_insert(vars_def_positions,array_member,current_pos);
+                        }
+                    }
+                }
             }
-            pre_basic_block=basic_block;
+            //使用点
+            for(auto use:ic_with_info.uses)
+            {
+                map_set_insert(vars_use_positions,use,current_pos);
+            }
+            pos++;
         }
     }
 }
@@ -923,6 +1076,19 @@ ic_flow_graph::~ic_flow_graph()
     }
 }
 
+//找到某一个函数对应的函数流图
+struct ic_func_flow_graph * ic_flow_graph::get_func_flow_graph(struct ic_func * func)
+{
+    for(auto func_flow_graph:func_flow_graphs)
+    {
+        if(func==func_flow_graph->func)
+        {
+            return func_flow_graph;
+        }
+    }
+    return nullptr;
+}
+
 //==========================================================================//
 
 
@@ -943,63 +1109,71 @@ void Ic_optimizer::init(bool optimize)
 }
 
 /*
-强度削弱
+函数内联
 
 Parameters
 ----------
 basic_block:要优化的基本块
 */
-void Ic_optimizer::reduction_in_strength(struct ic_basic_block * basic_block)
+void Ic_optimizer::function_inline(struct ic_basic_block * basic_block)
 {
-
+    struct ic_func * current_func,* called_func;
+    set<struct ic_func * > funcs_called_directly_by_called_func;
+    struct ic_func_flow_graph * called_func_flow_graph;
+    for(auto ic_with_info:basic_block->ic_sequence)
+    {
+        if(ic_with_info.intermediate_code.op==ic_op::CALL)
+        {
+            current_func=basic_block->belong_func_flow_graph->func;
+            called_func=(struct ic_func *)ic_with_info.intermediate_code.arg1.second;
+            funcs_called_directly_by_called_func=Symbol_table::get_instance()->get_func_direct_calls(called_func);
+            if(funcs_called_directly_by_called_func.find(called_func)==funcs_called_directly_by_called_func.end() && funcs_called_directly_by_called_func.find(current_func)==funcs_called_directly_by_called_func.end())
+            {
+                //只有当被调用的函数不是递归函数，而且也不会直接调用当前的函数的时候才能够进行函数内联
+                called_func_flow_graph=intermediate_codes_flow_graph_->get_func_flow_graph(called_func);
+                if(!called_func_flow_graph)
+                {
+                    return;
+                }
+                // TO-DO
+            }
+        }
+    }
 }
 
 /*
-常量合并
+DAG相关优化
 
 Parameters
 ----------
 basic_block:要优化的基本块
 */
-void Ic_optimizer::constant_folding(struct ic_basic_block * basic_block)
+void Ic_optimizer::DAG_optimize(struct ic_basic_block * basic_block)
 {
-    
-}
-
-/*
-复制传播
-
-Parameters
-----------
-basic_block:要优化的基本块
-*/
-void Ic_optimizer::copy_progagation(struct ic_basic_block * basic_block)
-{
-
-}
-
-/*
-局部公共子表达式删除
-
-Parameters
-----------
-basic_block:要优化的基本块
-*/
-void Ic_optimizer::local_elimination_of_common_subexpression(struct ic_basic_block * basic_block)
-{
-    
-}
-
-/*
-局部死代码消除
-
-Parameters
-----------
-basic_block:要优化的基本块
-*/
-void Ic_optimizer::local_dead_code_elimination(struct ic_basic_block * basic_block)
-{
-
+    DAG * dag;
+    list<struct quaternion> basic_block_ic_sequence;
+    //根据基本块建立DAG
+    //在建立DAG的过程中完成：
+    //强度削弱
+    //常量合并
+    //复制传播
+    //局部公共子表达式删除
+    dag=new DAG(basic_block);
+    //对建立完成的DAG进行优化
+    dag->optimize();
+    //将DAG重新转换成基本块的中间代码
+    basic_block_ic_sequence=dag->to_basic_block();
+    delete dag;
+    basic_block->clear_ic_sequence();
+    for(auto ic:basic_block_ic_sequence)
+    {
+        basic_block->add_ic(ic);
+    }
+    //同时查看基本块的跳转情况是否需要改变
+    if(basic_block_ic_sequence.back().op==ic_op::JMP && basic_block->jump_next && basic_block->sequential_next)
+    {
+        basic_block->sequential_next=nullptr;
+    }
 }
 
 /*
@@ -1007,647 +1181,22 @@ void Ic_optimizer::local_dead_code_elimination(struct ic_basic_block * basic_blo
 */
 void Ic_optimizer::local_optimize()
 {
-    DAG * dag;
-    list<struct quaternion> basic_block_ic_sequence;
+    //先进行函数内联
     for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
     {
         for(auto basic_block:func->basic_blocks)
         {
-            // //强度削弱
-            // reduction_in_strength(basic_block);
-            // //常量合并
-            // constant_folding(basic_block);
-            // //复制传播
-            // copy_progagation(basic_block);
-            // //局部公共子表达式删除
-            // local_elimination_of_common_subexpression(basic_block);
-            // //局部死代码消除
-            // local_dead_code_elimination(basic_block);
-
-            //根据基本块建立DAG
-            dag=new DAG(basic_block);
-            //对DAG进行优化
-            dag->optimize();
-            //将DAG重新转换成基本块的中间代码
-            basic_block_ic_sequence=dag->to_basic_block();
-            delete dag;
-            basic_block->clear_ic_sequence();
-            for(auto ic:basic_block_ic_sequence)
-            {
-                basic_block->add_ic(ic);
-            }
-            //同时查看基本块的跳转情况是否需要改变
-            if(basic_block_ic_sequence.back().op==ic_op::JMP && basic_block->jump_next && basic_block->sequential_next)
-            {
-                basic_block->sequential_next=nullptr;
-            }
+            function_inline(basic_block);
         }
     }
-}
-
-map<struct ic_data *,set<ic_pos> > map_set_union(map<struct ic_data *,set<ic_pos> > arg1,map<struct ic_data *,set<ic_pos> > arg2)
-{
-    map<struct ic_data *,set<ic_pos> > res=arg1;
-    for(auto map_member:arg2)
+    //再进行DAG相关优化
+    for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
     {
-        if(res.find(map_member.first)==res.end())
-        {
-            res.insert(make_pair(map_member.first,set<ic_pos>()));
-        }
-        set_union(map_member.second.begin(),map_member.second.end(),res.at(map_member.first).begin(),res.at(map_member.first).end(),inserter(res.at(map_member.first),res.at(map_member.first).begin()));
-    }
-    return res;
-}
-
-map<struct ic_data *,set<ic_pos> > map_set_difference(map<struct ic_data *,set<ic_pos> > arg1,map<struct ic_data *,set<ic_pos> > arg2)
-{
-    map<struct ic_data *,set<ic_pos> > res=arg1;
-    for(auto map_member:arg2)
-    {
-        if(res.find(map_member.first)!=res.end())
-        {
-            set_difference(map_member.second.begin(),map_member.second.end(),res.at(map_member.first).begin(),res.at(map_member.first).end(),inserter(res.at(map_member.first),res.at(map_member.first).begin()));
-        }
-    }
-    return res;
-}
-
-/*
-到达-定义分析
-
-Parameters
-----------
-func:要分析的函数流图
-*/
-void Ic_optimizer::use_define_analysis(struct ic_func_flow_graph * func)
-{
-    map<struct ic_data *,set<ic_pos> > all_defs;
-    map<struct ic_data *,set<struct ic_data *> > array_to_array_member_map,offset_to_array_member_map;
-    map<struct ic_basic_block *,map<struct ic_data *,set<ic_pos> > > gens,kills;
-    set<struct ic_basic_block * > precursors;
-    map<struct ic_data *,set<ic_pos> > oldout;
-    struct ic_data * belong_array;
-    size_t pos;
-    ic_pos current_pos;
-    bool change=true;
-    //遍历函数，获取所有的数组元素信息
-    for(auto basic_block:func->basic_blocks)
-    {
-        for(vector<struct quaternion_with_info>::iterator ic_with_info=basic_block->ic_sequence.begin();ic_with_info!=basic_block->ic_sequence.end();ic_with_info++)
-        {
-            if((*ic_with_info).explicit_def)
-            {
-                if((*ic_with_info).explicit_def->is_array_member())
-                {
-                    if(array_to_array_member_map.find((*ic_with_info).explicit_def->get_belong_array())==array_to_array_member_map.end())
-                    {
-                        array_to_array_member_map.insert(make_pair((*ic_with_info).explicit_def->get_belong_array(),set<struct ic_data *>()));
-                    }
-                    array_to_array_member_map.at((*ic_with_info).explicit_def->get_belong_array()).insert((*ic_with_info).explicit_def);
-                    if(offset_to_array_member_map.find((*ic_with_info).explicit_def->get_offset())==offset_to_array_member_map.end())
-                    {
-                        offset_to_array_member_map.insert(make_pair((*ic_with_info).explicit_def->get_offset(),set<struct ic_data *>()));
-                    }
-                    offset_to_array_member_map.at((*ic_with_info).explicit_def->get_offset()).insert((*ic_with_info).explicit_def);
-                }
-            }
-            for(auto vague_def:(*ic_with_info).vague_defs)
-            {
-                if(vague_def->is_array_member())
-                {
-                    if(array_to_array_member_map.find(vague_def->get_belong_array())==array_to_array_member_map.end())
-                    {
-                        array_to_array_member_map.insert(make_pair(vague_def->get_belong_array(),set<struct ic_data *>()));
-                    }
-                    array_to_array_member_map.at(vague_def->get_belong_array()).insert(vague_def);
-                    if(offset_to_array_member_map.find(vague_def->get_offset())==offset_to_array_member_map.end())
-                    {
-                        offset_to_array_member_map.insert(make_pair(vague_def->get_offset(),set<struct ic_data *>()));
-                    }
-                    offset_to_array_member_map.at(vague_def->get_offset()).insert(vague_def);
-                }
-            }
-        }
-    }
-    //遍历函数，获取该函数的所有变量定义点，包括明确定义和模糊定义
-    for(auto basic_block:func->basic_blocks)
-    {
-        pos=0;
-        for(vector<struct quaternion_with_info>::iterator ic_with_info=basic_block->ic_sequence.begin();ic_with_info!=basic_block->ic_sequence.end();ic_with_info++)
-        {
-            current_pos=ic_pos(basic_block,pos);
-            if((*ic_with_info).explicit_def)
-            {
-                if(all_defs.find((*ic_with_info).explicit_def)==all_defs.end())
-                {
-                    all_defs.insert(make_pair((*ic_with_info).explicit_def,set<ic_pos>()));
-                }
-                all_defs.at((*ic_with_info).explicit_def).insert(current_pos);
-                if((*ic_with_info).explicit_def->is_array_var())
-                {
-                    if(array_to_array_member_map.find((*ic_with_info).explicit_def)!=array_to_array_member_map.end())
-                    {
-                        for(auto array_member:array_to_array_member_map.at((*ic_with_info).explicit_def))
-                        {
-                            if(all_defs.find(array_member)==all_defs.end())
-                            {
-                                all_defs.insert(make_pair(array_member,set<ic_pos>()));
-                            }
-                            all_defs.at(array_member).insert(current_pos);
-                        }
-                    }
-                }
-                else if((*ic_with_info).explicit_def->is_array_member())
-                {
-                    belong_array=(*ic_with_info).explicit_def->get_belong_array();
-                    if(array_to_array_member_map.find(belong_array)!=array_to_array_member_map.end())
-                    {
-                        for(auto array_member:array_to_array_member_map.at(belong_array))
-                        {
-                            if(array_member==(*ic_with_info).explicit_def || ((*ic_with_info).explicit_def->get_offset()->is_const() && array_member->get_offset()->is_const() && array_member->get_offset()->get_value()!=(*ic_with_info).explicit_def->get_offset()->get_value()))
-                            {
-                                continue;
-                            }
-                            if(all_defs.find(array_member)==all_defs.end())
-                            {
-                                all_defs.insert(make_pair(array_member,set<ic_pos>()));
-                            }
-                            all_defs.at(array_member).insert(current_pos);
-                        }
-                    }
-                }
-            }
-            for(auto vague_def:(*ic_with_info).vague_defs)
-            {
-                if(all_defs.find(vague_def)==all_defs.end())
-                {
-                    all_defs.insert(make_pair(vague_def,set<ic_pos>()));
-                }
-                all_defs.at(vague_def).insert(current_pos);
-                if(vague_def->is_array_var())
-                {
-                    if(array_to_array_member_map.find(vague_def)!=array_to_array_member_map.end())
-                    {
-                        for(auto array_member:array_to_array_member_map.at(vague_def))
-                        {
-                            if(all_defs.find(array_member)==all_defs.end())
-                            {
-                                all_defs.insert(make_pair(array_member,set<ic_pos>()));
-                            }
-                            all_defs.at(array_member).insert(current_pos);
-                        }
-                    }
-                }
-                else if(vague_def->is_array_member())
-                {
-                    belong_array=vague_def->get_belong_array();
-                    if(array_to_array_member_map.find(belong_array)!=array_to_array_member_map.end())
-                    {
-                        for(auto array_member:array_to_array_member_map.at(belong_array))
-                        {
-                            if(array_member==vague_def || (vague_def->get_offset()->is_const() && array_member->get_offset()->is_const() && array_member->get_offset()->get_value()!=vague_def->get_offset()->get_value()))
-                            {
-                                continue;
-                            }
-                            if(all_defs.find(array_member)==all_defs.end())
-                            {
-                                all_defs.insert(make_pair(array_member,set<ic_pos>()));
-                            }
-                            all_defs.at(array_member).insert(current_pos);
-                        }
-                    }
-                }
-            }
-            pos++;
-        }
-    }
-    //构造每一个基本块的gen和kill
-    for(auto basic_block:func->basic_blocks)
-    {
-        gens.insert(make_pair(basic_block,map<struct ic_data *,set<ic_pos> >()));
-        kills.insert(make_pair(basic_block,map<struct ic_data *,set<ic_pos> >()));
-        pos=0;
-        for(vector<struct quaternion_with_info>::iterator ic_with_info=basic_block->ic_sequence.begin();ic_with_info!=basic_block->ic_sequence.end();ic_with_info++)
-        {
-            current_pos=ic_pos(basic_block,pos);
-            if((*ic_with_info).explicit_def)
-            {
-                //一个变量的明确定义会生成（gen）该变量的一次定义，同时会杀死（kill）该变量的其他所有的定义
-                if(gens.at(basic_block).find((*ic_with_info).explicit_def)==gens.at(basic_block).end())
-                {
-                    gens.at(basic_block).insert(make_pair((*ic_with_info).explicit_def,set<ic_pos>()));
-                }
-                else
-                {
-                    gens.at(basic_block).at((*ic_with_info).explicit_def).clear();
-                }
-                gens.at(basic_block).at((*ic_with_info).explicit_def).insert(current_pos);
-                if(kills.at(basic_block).find((*ic_with_info).explicit_def)==kills.at(basic_block).end())
-                {
-                    kills.at(basic_block).insert(make_pair((*ic_with_info).explicit_def,set<ic_pos>()));
-                }
-                set_union(all_defs.at((*ic_with_info).explicit_def).begin(),all_defs.at((*ic_with_info).explicit_def).end(),kills.at(basic_block).at((*ic_with_info).explicit_def).begin(),kills.at(basic_block).at((*ic_with_info).explicit_def).end(),inserter(kills.at(basic_block).at((*ic_with_info).explicit_def),kills.at(basic_block).at((*ic_with_info).explicit_def).begin()));
-                kills.at(basic_block).at((*ic_with_info).explicit_def).erase(current_pos);
-                //一个变量的明确定义会杀死（kill）所有以该变量为偏移量的数组取元素变量的定义
-                if(offset_to_array_member_map.find((*ic_with_info).explicit_def)!=offset_to_array_member_map.end())
-                {
-                    for(auto array_member:offset_to_array_member_map.at((*ic_with_info).explicit_def))
-                    {
-                        if(kills.at(basic_block).find(array_member)==kills.at(basic_block).end())
-                        {
-                            kills.at(basic_block).insert(make_pair(array_member,set<ic_pos>()));
-                        }
-                        set_union(all_defs.at(array_member).begin(),all_defs.at(array_member).end(),kills.at(basic_block).at(array_member).begin(),kills.at(basic_block).at(array_member).end(),inserter(kills.at(basic_block).at(array_member),kills.at(basic_block).at(array_member).begin()));
-                        if(gens.at(basic_block).find(array_member)!=gens.at(basic_block).end())
-                        {
-                            gens.at(basic_block).erase(array_member);
-                        }
-                    }
-                }
-                //当明确定义的变量是数组或者数组元素的时候，需要进行额外的处理
-                //这里不会出现即是数组，又是数组取元素的情况
-                if((*ic_with_info).explicit_def->is_array_var())
-                {
-                    if(array_to_array_member_map.find((*ic_with_info).explicit_def)!=array_to_array_member_map.end())
-                    {
-                        for(auto array_member:array_to_array_member_map.at((*ic_with_info).explicit_def))
-                        {
-                            //明确定义的数组会杀死（kill）所有的该数组的数组取元素的定义
-                            if(kills.at(basic_block).find(array_member)==kills.at(basic_block).end())
-                            {
-                                kills.at(basic_block).insert(make_pair(array_member,set<ic_pos>()));
-                            }
-                            set_union(all_defs.at(array_member).begin(),all_defs.at(array_member).end(),kills.at(basic_block).at(array_member).begin(),kills.at(basic_block).at(array_member).end(),inserter(kills.at(basic_block).at(array_member),kills.at(basic_block).at(array_member).begin()));
-                            if(gens.at(basic_block).find(array_member)!=gens.at(basic_block).end())
-                            {
-                                gens.at(basic_block).erase(array_member);
-                            }
-                            //同时也会在该点生成（gen）所有的该数组的数组取元素的定义
-                            if(gens.at(basic_block).find(array_member)==gens.at(basic_block).end())
-                            {
-                                gens.at(basic_block).insert(make_pair(array_member,set<ic_pos>()));
-                            }
-                            gens.at(basic_block).at(array_member).insert(current_pos);
-                        }
-                    }
-                }
-                else if((*ic_with_info).explicit_def->is_array_member())
-                {
-                    belong_array=(*ic_with_info).explicit_def->get_belong_array();
-                    if(array_to_array_member_map.find(belong_array)!=array_to_array_member_map.end())
-                    {
-                        //如果明确定义数组取元素变量的偏移量是常量的话，那么该定义会生成（gen）所有的该数组的偏移量不是常量的数组取元素变量的定义
-                        //如果明确定义数组取元素变量的偏移量不是常量的话，那么该定义会生成（gen）所有的该数组的数组取元素变量的定义
-                        for(auto array_member:array_to_array_member_map.at(belong_array))
-                        {
-                            if(array_member==(*ic_with_info).explicit_def || ((*ic_with_info).explicit_def->get_offset()->is_const() && array_member->get_offset()->is_const() && array_member->get_offset()->get_value()!=(*ic_with_info).explicit_def->get_offset()->get_value()))
-                            {
-                                continue;
-                            }
-                            if(gens.at(basic_block).find(array_member)==gens.at(basic_block).end())
-                            {
-                                gens.at(basic_block).insert(make_pair(array_member,set<ic_pos>()));
-                            }
-                            gens.at(basic_block).at(array_member).insert(current_pos);
-                        }
-                    }
-                }
-            }
-            for(auto vague_def:(*ic_with_info).vague_defs)
-            {
-                if(gens.at(basic_block).find(vague_def)==gens.at(basic_block).end())
-                {
-                    gens.at(basic_block).insert(make_pair(vague_def,set<ic_pos>()));
-                }
-                gens.at(basic_block).at(vague_def).insert(current_pos);
-                //当模糊定义的变量是数组或者数组取元素的时候，需要进行额外的处理
-                //这里不会出现即是数组，又是数组取元素的情况
-                if(vague_def->is_array_var())
-                {
-                    //模糊定义的数组会生成（gen）所有的该数组的数组取元素的定义
-                    if(array_to_array_member_map.find(vague_def)!=array_to_array_member_map.end())
-                    {
-                        for(auto array_member:array_to_array_member_map.at(vague_def))
-                        {
-                            if(gens.at(basic_block).find(array_member)==gens.at(basic_block).end())
-                            {
-                                gens.at(basic_block).insert(make_pair(array_member,set<ic_pos>()));
-                            }
-                            gens.at(basic_block).at(array_member).insert(current_pos);
-                        }
-                    }
-                }
-                else if(vague_def->is_array_member())
-                {
-                    belong_array=vague_def->get_belong_array();
-                    if(array_to_array_member_map.find(belong_array)!=array_to_array_member_map.end())
-                    {
-                        //如果模糊定义数组取元素变量的偏移量是常量的话，那么该定义会生成（gen）所有的该数组的偏移量不是常量的数组取元素变量的定义
-                        //如果模糊定义数组取元素变量的偏移量不是常量的话，那么该定义会生成（gen）所有的该数组的数组取元素变量的定义
-                        for(auto array_member:array_to_array_member_map.at(belong_array))
-                        {
-                            if(array_member==vague_def || (vague_def->get_offset()->is_const() && array_member->get_offset()->is_const() && array_member->get_offset()->get_value()!=vague_def->get_offset()->get_value()))
-                            {
-                                continue;
-                            }
-                            if(gens.at(basic_block).find(array_member)==gens.at(basic_block).end())
-                            {
-                                gens.at(basic_block).insert(make_pair(array_member,set<ic_pos>()));
-                            }
-                            gens.at(basic_block).at(array_member).insert(current_pos);
-                        }
-                    }
-                }
-            }
-            pos++;
-        }
-    }
-    //最后开始迭代计算每一个基本块的到达-定义信息
-    for(auto basic_block:func->basic_blocks)
-    {
-        basic_block->use_def_analysis_info.in.clear();
-        basic_block->use_def_analysis_info.out=gens.at(basic_block);
-    }
-    while(change)
-    {
-        change=false;
         for(auto basic_block:func->basic_blocks)
         {
-            precursors=basic_block->get_precursors();
-            basic_block->use_def_analysis_info.in.clear();
-            for(auto precursor:precursors)
-            {
-                basic_block->use_def_analysis_info.in=map_set_union(basic_block->use_def_analysis_info.in,precursor->use_def_analysis_info.out);
-            }
-            oldout=basic_block->use_def_analysis_info.out;
-            basic_block->use_def_analysis_info.out=map_set_union(gens.at(basic_block),map_set_difference(basic_block->use_def_analysis_info.in,kills.at(basic_block)));
-            if(oldout!=basic_block->use_def_analysis_info.out)
-            {
-                change=true;
-            }
+            DAG_optimize(basic_block);
         }
     }
-}
-
-/*
-构建ud-链
-
-Parameters
-----------
-func:已经完成了到达-定义分析的，要构建ud-链的函数流图
-*/
-void Ic_optimizer::build_ud_chain(struct ic_func_flow_graph * func)
-{
-    map<struct ic_data *,set<struct ic_data * > > array_to_array_member_map,offset_to_array_member_map;
-    map<struct ic_data *,set<ic_pos> > defs;
-    size_t pos;
-    ic_pos current_pos;
-    struct ic_data * belong_array;
-    for(auto basic_block:func->basic_blocks)
-    {
-        pos=0;
-        defs=basic_block->use_def_analysis_info.in;
-        for(vector<struct quaternion_with_info>::iterator ic_with_info=basic_block->ic_sequence.begin();ic_with_info!=basic_block->ic_sequence.end();ic_with_info++)
-        {
-            current_pos=ic_pos(basic_block,pos);
-            for(auto use:(*ic_with_info).uses)
-            {
-                // if(use->is_array_var())
-                // {
-                //     continue;
-                // }
-                if(defs.find(use)!=defs.end())
-                {
-                    (*ic_with_info).add_to_ud_chain(use,defs.at(use));
-                }
-            }
-            if((*ic_with_info).explicit_def)
-            {
-                //如果本条语句对某一个变量进行了明确定义，那么它会杀死（kill）该基本块中之前的所有对该变量的明确定义和模糊定义，同时在该点生成（gen）对该变量的定义
-                if(defs.find((*ic_with_info).explicit_def)==defs.end())
-                {
-                    defs.insert(make_pair((*ic_with_info).explicit_def,set<ic_pos>()));
-                }
-                else
-                {
-                    defs.at((*ic_with_info).explicit_def).clear();
-                }
-                defs.at((*ic_with_info).explicit_def).insert(current_pos);
-                //明确定义也会杀死（kill）所有以该变量作为偏移的数组取元素的定义
-                if(offset_to_array_member_map.find((*ic_with_info).explicit_def)!=offset_to_array_member_map.end())
-                {
-                    for(auto array_member:offset_to_array_member_map.at((*ic_with_info).explicit_def))
-                    {
-                        if(defs.find(array_member)!=defs.end())
-                        {
-                            defs.erase(array_member);
-                        }
-                    }
-                }
-                //如果明确定义是数组或者数组取元素，那么需要做额外的处理
-                //这里不会出现即是数组，又是数组取元素的情况
-                if((*ic_with_info).explicit_def->is_array_var())
-                {
-                    //如果明确定义是数组，那么就会杀死之前所有的该数组取元素的定义，然后再在该点生成（gen）所有的该数组取元素的定义
-                    if(array_to_array_member_map.find((*ic_with_info).explicit_def)!=array_to_array_member_map.end())
-                    {
-                        for(auto array_member:array_to_array_member_map.at((*ic_with_info).explicit_def))
-                        {
-                            if(defs.find(array_member)==defs.end())
-                            {
-                                defs.insert(make_pair(array_member,set<ic_pos>()));
-                            }
-                            else
-                            {
-                                defs.at(array_member).clear();
-                            }
-                            defs.at(array_member).insert(current_pos);
-                        }
-                    }
-                }
-                else if((*ic_with_info).explicit_def->is_array_member())
-                {
-                    //如果明确定义是数组取元素，那么就判断其偏移量是否是常量
-                    belong_array=(*ic_with_info).explicit_def->get_belong_array();
-                    if(array_to_array_member_map.find(belong_array)!=array_to_array_member_map.end())
-                    {
-                        //如果明确定义数组取元素变量的偏移量是常量的话，那么该定义会生成（gen）所有的该数组的偏移量不是常量的数组取元素变量的定义
-                        //如果明确定义数组取元素变量的偏移量不是常量的话，那么该定义会生成（gen）所有的该数组的数组取元素变量的定义
-                        for(auto array_member:array_to_array_member_map.at(belong_array))
-                        {
-                            if(array_member==(*ic_with_info).explicit_def || ((*ic_with_info).explicit_def->get_offset()->is_const() && array_member->get_offset()->is_const() && array_member->get_offset()->get_value()!=(*ic_with_info).explicit_def->get_offset()->get_value()))
-                            {
-                                continue;
-                            }
-                            if(defs.find(array_member)==defs.end())
-                            {
-                                defs.insert(make_pair(array_member,set<ic_pos>()));
-                            }
-                            defs.at(array_member).insert(current_pos);
-                        }
-                    }
-                    //然后将数组取元素的信息记录下来
-                    if(array_to_array_member_map.find((*ic_with_info).explicit_def->get_belong_array())==array_to_array_member_map.end())
-                    {
-                        array_to_array_member_map.insert(make_pair((*ic_with_info).explicit_def->get_belong_array(),set<struct ic_data * >()));
-                    }
-                    array_to_array_member_map.at((*ic_with_info).explicit_def->get_belong_array()).insert((*ic_with_info).explicit_def);
-                    if(offset_to_array_member_map.find((*ic_with_info).explicit_def->get_offset())==offset_to_array_member_map.end())
-                    {
-                        offset_to_array_member_map.insert(make_pair((*ic_with_info).explicit_def->get_offset(),set<struct ic_data * >()));
-                    }
-                    offset_to_array_member_map.at((*ic_with_info).explicit_def->get_offset()).insert((*ic_with_info).explicit_def);
-                }
-            }
-            for(auto vague_def:(*ic_with_info).vague_defs)
-            {
-                //如果本条语句对某一个变量进行了模糊定义，那么它会在该点生成（gen）对该变量的定义
-                if(defs.find(vague_def)==defs.end())
-                {
-                    defs.insert(make_pair(vague_def,set<ic_pos>()));
-                }
-                defs.at(vague_def).insert(current_pos);
-                //如果模糊定义是数组或者数组取元素，那么需要做额外的处理
-                //这里不会出现即是数组，又是数组取元素的情况
-                if(vague_def->is_array_var())
-                {
-                    //如果模糊定义是数组，那么就会在该点生成（gen）所有的该数组取元素的定义
-                    if(array_to_array_member_map.find(vague_def)!=array_to_array_member_map.end())
-                    {
-                        for(auto array_member:array_to_array_member_map.at(vague_def))
-                        {
-                            if(defs.find(array_member)==defs.end())
-                            {
-                                defs.insert(make_pair(array_member,set<ic_pos>()));
-                            }
-                            defs.at(array_member).insert(current_pos);
-                        }
-                    }
-                }
-                else if(vague_def->is_array_member())
-                {
-                    //如果模糊定义的是数组取元素，那么就判断其偏移量是否是常量
-                    belong_array=vague_def->get_belong_array();
-                    if(array_to_array_member_map.find(belong_array)!=array_to_array_member_map.end())
-                    {
-                        //如果模糊定义数组取元素变量的偏移量是常量的话，那么该定义会生成（gen）所有的该数组的偏移量不是常量的数组取元素变量的定义
-                        //如果模糊定义的数组取元素变量的偏移量不是常量的话，那么该定义会生成（gen）所有的该数组的数组取元素变量的定义
-                        for(auto array_member:array_to_array_member_map.at(belong_array))
-                        {
-                            if(array_member==vague_def || (vague_def->get_offset()->is_const() && array_member->get_offset()->is_const() && array_member->get_offset()->get_value()!=vague_def->get_offset()->get_value()))
-                            {
-                                continue;
-                            }
-                            if(defs.find(array_member)==defs.end())
-                            {
-                                defs.insert(make_pair(array_member,set<ic_pos>()));
-                            }
-                            defs.at(array_member).insert(current_pos);
-                        }
-                    }
-                    //然后将数组取元素的信息记录下来
-                    if(array_to_array_member_map.find(vague_def->get_belong_array())==array_to_array_member_map.end())
-                    {
-                        array_to_array_member_map.insert(make_pair(vague_def->get_belong_array(),set<struct ic_data * >()));
-                    }
-                    array_to_array_member_map.at(vague_def->get_belong_array()).insert(vague_def);
-                    if(offset_to_array_member_map.find(vague_def->get_offset())==offset_to_array_member_map.end())
-                    {
-                        offset_to_array_member_map.insert(make_pair(vague_def->get_offset(),set<struct ic_data * >()));
-                    }
-                    offset_to_array_member_map.at(vague_def->get_offset()).insert(vague_def);
-                }
-            }
-            pos++;
-        }
-    }
-}
-
-/*
-活跃变量分析
-
-Parameters
-----------
-func:要分析的函数流图
-*/
-void Ic_optimizer::live_variable_analysis(struct ic_func_flow_graph * func)
-{
-    map<struct ic_basic_block *,set<struct ic_data * > > uses,defs;
-    set<struct ic_data * > show_up,oldin;
-    set<struct ic_basic_block * > successors;
-    bool change=true;
-    //首先计算出每一个基本块的use和def
-    //目前没有考虑数组元素
-    for(auto basic_block:func->basic_blocks)
-    {
-        uses.insert(make_pair(basic_block,set<struct ic_data * >()));
-        defs.insert(make_pair(basic_block,set<struct ic_data * >()));
-        show_up.clear();
-        for(vector<struct quaternion_with_info>::iterator ic_with_info=basic_block->ic_sequence.begin();ic_with_info!=basic_block->ic_sequence.end();ic_with_info++)
-        {
-            for(auto use:(*ic_with_info).uses)
-            {
-                if(show_up.find(use)==show_up.end())
-                {
-                    uses.at(basic_block).insert(use);
-                    show_up.insert(use);
-                }
-            }
-            if(show_up.find((*ic_with_info).explicit_def)==show_up.end())
-            {
-                defs.at(basic_block).insert((*ic_with_info).explicit_def);
-                show_up.insert((*ic_with_info).explicit_def);
-            }
-        }
-    }
-    //然后进行迭代计算，算出活跃变量的信息
-    for(auto basic_block:func->basic_blocks)
-    {
-        basic_block->live_analysis_info.in.clear();
-    }
-    while(change)
-    {
-        change=false;
-        for(auto basic_block:func->basic_blocks)
-        {
-            successors=basic_block->get_successors();
-            for(auto successor:successors)
-            {
-                set_union(basic_block->live_analysis_info.out.begin(),basic_block->live_analysis_info.out.end(),successor->live_analysis_info.in.begin(),successor->live_analysis_info.in.end(),inserter(basic_block->live_analysis_info.out,basic_block->live_analysis_info.out.begin()));
-            }
-            oldin=basic_block->live_analysis_info.in;
-            set_difference(basic_block->live_analysis_info.out.begin(),basic_block->live_analysis_info.out.end(),defs.at(basic_block).begin(),defs.at(basic_block).end(),inserter(basic_block->live_analysis_info.in,basic_block->live_analysis_info.in.begin()));
-            set_union(basic_block->live_analysis_info.in.begin(),basic_block->live_analysis_info.in.end(),uses.at(basic_block).begin(),uses.at(basic_block).end(),inserter(basic_block->live_analysis_info.in,basic_block->live_analysis_info.in.begin()));
-            if(oldin!=basic_block->live_analysis_info.in)
-            {
-                change=true;
-            }
-        }
-    }
-}
-
-/*
-构建du-链
-
-Parameters
-----------
-func:已经完成了活跃变量分析的，要构建du-链的函数流图
-*/
-void Ic_optimizer::build_du_chain(struct ic_func_flow_graph * func)
-{
-
-}
-
-/*
-可用表达式分析
-
-Parameters
-----------
-func:要分析的函数流图
-*/
-void Ic_optimizer::available_expression_analysis(struct ic_func_flow_graph * func)
-{
-
 }
 
 /*
@@ -1657,6 +1206,8 @@ void Ic_optimizer::data_flow_analysis()
 {
     for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
     {
+        //准备进行数据流分析
+        prepare_before_data_flow_analyse(func);
         //到达-定义分析
         use_define_analysis(func);
         //构建ud-链
@@ -1679,24 +1230,38 @@ func:要优化的函数流图
 */
 void Ic_optimizer::globale_constant_folding(struct ic_func_flow_graph * func)
 {
-    struct quaternion_with_info pre_ic_with_info;
+    Symbol_table * symbol_table=Symbol_table::get_instance();
+    struct quaternion intermediate_code;
+    struct ic_data * arg1;
+    OAA tmp;
+    bool tag;
     for(auto basic_block:func->basic_blocks)
     {
         for(vector<struct quaternion_with_info>::iterator ic_with_info=basic_block->ic_sequence.begin();ic_with_info!=basic_block->ic_sequence.end();ic_with_info++)
         {
-            for(auto ud_chain_node:(*ic_with_info).ud_chain)
+            tag=false;
+            for(auto use:(*ic_with_info).uses)
             {
-                if(ud_chain_node.second.size()==1)
+                if((*ic_with_info).ud_chain.find(use)!=(*ic_with_info).ud_chain.end() && (*ic_with_info).ud_chain.at(use).size()==1)
                 {
-                    for(auto pos:ud_chain_node.second)
+                    intermediate_code=func->get_ic_with_info(*((*ic_with_info).ud_chain.at(use).begin())).intermediate_code;
+                    arg1=((struct ic_data *)intermediate_code.arg1.second);
+                    if(intermediate_code.op==ic_op::ASSIGN && arg1->is_const())
                     {
-                        pre_ic_with_info=ic_func_flow_graph::get_ic_with_info(pos);
-                        if(pre_ic_with_info.intermediate_code.op==ic_op::ASSIGN && pre_ic_with_info.intermediate_code.result.second==ud_chain_node.first && ((struct ic_data *)pre_ic_with_info.intermediate_code.arg1.second)->is_const())
+                        if(use->get_data_type()!=arg1->get_data_type())
                         {
-                            (*ic_with_info).replace_used_data(ud_chain_node.first,(struct ic_data *)pre_ic_with_info.intermediate_code.arg1.second);
+                            tmp=arg1->get_value();
+                            tmp.type_conversion(arg1->get_data_type(),use->get_data_type());
+                            arg1=symbol_table->const_entry(use->get_data_type(),tmp);
                         }
+                        (*ic_with_info).replace_used_data(use,arg1);
+                        tag=true;
                     }
                 }
+            }
+            if(tag)
+            {
+                (*ic_with_info).build_info(false);
             }
         }
     }
@@ -1751,18 +1316,6 @@ void Ic_optimizer::induction_variable_elimination(struct ic_func_flow_graph * fu
 }
 
 /*
-函数内联
-
-Parameters
-----------
-func:要优化的函数流图
-*/
-void Ic_optimizer::function_inline(struct ic_func_flow_graph * func)
-{
-
-}
-
-/*
 全局优化
 */
 void Ic_optimizer::global_optimize()
@@ -1779,11 +1332,6 @@ void Ic_optimizer::global_optimize()
         loop_invariant_computation_motion(func);
         //归纳变量删除
         induction_variable_elimination(func);
-    }
-    for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
-    {
-        //函数内联
-        function_inline(func);
     }
 }
 
@@ -1804,12 +1352,12 @@ struct ic_flow_graph * Ic_optimizer::optimize(list<struct quaternion> * intermed
     intermediate_codes_flow_graph_=new struct ic_flow_graph(intermediate_codes);
     if(need_optimize_)
     {
-        //进行局部优化
+        //局部优化
         local_optimize();
-        //进行数据流分析
-        //data_flow_analysis();
-        //进行全局优化
-        //global_optimize();
+        //数据流分析
+        data_flow_analysis();
+        //全局优化
+        global_optimize();
     }
     //返回优化结果
     return intermediate_codes_flow_graph_;

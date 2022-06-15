@@ -1,16 +1,20 @@
+const int N = -1
+int arr[6] = { 1 , 2 , 33 , 4 , 5 , 6 }
 int main (  )  : 
-	int main::one
-	ASSIGN		1 --> main::one
-	int main::two
-	ASSIGN		2 --> main::two
-	ADD		main::one , main::two --> (int)@0
-	int main::three
-	ASSIGN		@0 --> main::three
-	ADD		main::two , main::three --> (int)@1
-	int main::four
-	ASSIGN		@1 --> main::four
-	ADD		main::three , main::four --> (int)@2
-	int main::five
-	ASSIGN		@2 --> main::five
-	RET		main::five
+	int main::i
+	ASSIGN		0 --> main::i
+	int main::sum
+	ASSIGN		0 --> main::sum
+.0 : 
+	LT		main::i , 6 --> (int)@0
+	IF_NOT_JMP		@0 --> .1
+	MUL		main::i , 1 --> (int)@1
+	ADD		@1 , 0 --> (int)@2
+	ADD		main::sum , arr[@2] --> (int)@3
+	ASSIGN		@3 --> main::sum
+	ADD		main::i , 1 --> (int)@4
+	ASSIGN		@4 --> main::i
+	JMP		.0
+.1 : 
+	RET		main::sum
 

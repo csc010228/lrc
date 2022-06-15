@@ -129,6 +129,10 @@ struct ic_basic_block
     struct ic_basic_block * sequential_next,* jump_next;
     //该基本块的所属函数
     struct ic_func_flow_graph * belong_func_flow_graph;
+    //该基本块中的数组变量和其数组元素（包括数组变量）的映射
+    map<struct ic_data * ,set<struct ic_data * > > array_to_array_member_map;
+    //该基本块中的偏移量和数组元素（包括数组变量）的映射
+    map<struct ic_data * ,set<struct ic_data * > > offset_to_array_member_map;
 
     //到达-定义分析信息
     struct
@@ -155,13 +159,32 @@ struct ic_func_flow_graph
     //往当前的函数流图中加入一条中间代码
     void add_ic(struct quaternion ic);
 
+    //构建函数流图中各个基本块之间的跳转关系
+    void build_jumps_between_basic_blocks();
+
+    //构建函数流图中的数组变量和数组元素之间的映射，以及偏移量和数组元素之间的映射
+    void build_array_and_offset_to_array_member_map();
+
+    //构建函数流图中所有变量的定义点和使用点的信息
+    void build_vars_def_and_use_pos_info();
+
     //获取指定位置的中间代码及其信息
-    static struct quaternion_with_info get_ic_with_info(ic_pos pos);
+    struct quaternion_with_info get_ic_with_info(ic_pos pos);
 
     //对应的函数在符号表中的指针
     struct ic_func * func;
     //函数流图中的所有基本块序列，顺序就是中间代码的书写顺序
     list<struct ic_basic_block * > basic_blocks;
+    //该函数流图中，标签和基本块之间的映射
+    map<struct ic_label *,struct ic_basic_block * > label_basic_block_map;
+    //该函数流图中的数组变量和其数组元素（包括数组变量）的映射
+    map<struct ic_data * ,set<struct ic_data * > > array_to_array_member_map;
+    //该函数流图中的偏移量和数组元素（包括数组变量）的映射
+    map<struct ic_data * ,set<struct ic_data * > > offset_to_array_member_map;
+    //函数流图中所有的变量定义点
+    map<struct ic_data *,set<ic_pos> > vars_def_positions;
+    //函数流图中所有的变量使用点
+    map<struct ic_data *,set<ic_pos> > vars_use_positions;
 };
 
 //中间代码的流图表示
@@ -170,6 +193,9 @@ struct ic_flow_graph
     ic_flow_graph(list<struct quaternion> * intermediate_codes);
 
     ~ic_flow_graph();
+
+    //找到某一个函数对应的函数流图
+    struct ic_func_flow_graph * get_func_flow_graph(struct ic_func * func);
 
     //所有函数的流图，这些流图之间相互独立
     list<struct ic_func_flow_graph * > func_flow_graphs;
@@ -188,30 +214,13 @@ protected:
     //目前正在处理的中间代码流图
     struct ic_flow_graph * intermediate_codes_flow_graph_;
 
-    //强度削弱
-    void reduction_in_strength(struct ic_basic_block * basic_block);
-    //常量合并
-    void constant_folding(struct ic_basic_block * basic_block);
-    //复制传播
-    void copy_progagation(struct ic_basic_block * basic_block);
-    //公共子表达式删除
-    void local_elimination_of_common_subexpression(struct ic_basic_block * basic_block);
-    //局部死代码消除
-    void local_dead_code_elimination(struct ic_basic_block * basic_block);
+    //函数内联
+    void function_inline(struct ic_basic_block * basic_block);
+    //DAG相关优化
+    void DAG_optimize(struct ic_basic_block * basic_block);
 
     //局部优化
     void local_optimize();
-    
-    //到达-定义分析
-    void use_define_analysis(struct ic_func_flow_graph * func);
-    //构建ud-链
-    void build_ud_chain(struct ic_func_flow_graph * func);
-    //活跃变量分析
-    void live_variable_analysis(struct ic_func_flow_graph * func);
-    //构建du-链
-    void build_du_chain(struct ic_func_flow_graph * func);
-    //可用表达式分析
-    void available_expression_analysis(struct ic_func_flow_graph * func);
     
     //数据流分析
     void data_flow_analysis();
@@ -226,8 +235,6 @@ protected:
     void loop_invariant_computation_motion(struct ic_func_flow_graph * func);
     //归纳变量删除
     void induction_variable_elimination(struct ic_func_flow_graph * func);
-    //函数内联
-    void function_inline(struct ic_func_flow_graph * func);
 
     //全局优化
     void global_optimize();

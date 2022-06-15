@@ -118,17 +118,3 @@ map<enum language_data_type,size_t> bits_of_data_types={
     {language_data_type::DOUBLE,64},
     {language_data_type::POINTER,32}
 };
-
-//进行二元运算的时候的类型转换
-enum language_data_type binary_operation_type_conversion(enum language_data_type arg1_type,enum language_data_type arg2_type)
-{
-    //语言只支持int类型
-    return language_data_type::INT;
-}
-
-//进行一元运算的时候的类型转换
-enum language_data_type unary_operation_type_conversion(enum language_data_type arg_type)
-{
-    //语言只支持int类型
-    return language_data_type::INT;
-}

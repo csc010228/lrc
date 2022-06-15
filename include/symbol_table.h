@@ -19,6 +19,7 @@
 #include<cstring>
 #include<stdarg.h>
 #include"language.h"
+#include"util.h"
 
 using namespace std;
 
@@ -195,6 +196,7 @@ enum class ic_scope_type
     ELSE,
     WHILE,
     ANONYMOUS,
+    INLINE_FUNC,
 };
 
 //变量的作用域
@@ -213,6 +215,8 @@ struct ic_scope
     bool is_global() const;
 
     bool is_func() const;
+
+    bool is_inline_func() const;
 
     struct ic_data * get_var(string var_name);
 
@@ -253,11 +257,14 @@ protected:
     //所有已经声明的函数
     map<string,struct ic_func * > functions_;
 
-    //每个函数会改变的全局变量和数组形参
-    map<struct ic_func *,set<struct ic_data * > > funcs_def_global_vars_and_array_f_params_;
+    //每个函数会改变的全局变量和形参
+    map<struct ic_func *,set<struct ic_data * > > funcs_def_globals_and_f_params_;
 
-    //每个函数会使用的全局变量和数组形参
-    map<struct ic_func *,set<struct ic_data * > > funcs_use_global_vars_and_array_f_params_;
+    //每个函数会使用的全局变量和形参
+    map<struct ic_func *,set<struct ic_data * > > funcs_use_globals_and_f_params_;
+
+    //每个函数会直接调用的函数
+    map<struct ic_func *,set<struct ic_func * > > funcs_direct_calls_;
 
     //常量
     map<enum language_data_type,map<OAA,struct ic_data * > > consts_;
@@ -324,16 +331,22 @@ public:
     struct ic_data * array_member_not_array_var_entry(struct ic_data * array_var,struct ic_data * offset);
 
     //增加一个函数会更改的全局变量和数组形参
-    void add_func_def_global_vars_and_array_f_params(struct ic_func * func,struct ic_data * data);
+    void add_func_def_globals_and_f_params(struct ic_func * func,struct ic_data * data);
 
     //增加一个函数会使用的全局变量和数组形参
-    void add_func_use_global_vars_and_array_f_params(struct ic_func * func,struct ic_data * data);
+    void add_func_use_globals_and_f_params(struct ic_func * func,struct ic_data * data);
+
+    //增加一个函数会直接调用的函数
+    void add_func_direct_calls(struct ic_func * func,struct ic_func * called_func);
 
     //获取一个函数会更改的所有全局变量和数组形参
-    set<struct ic_data * > get_func_def_global_vars_and_array_f_params(struct ic_func * func);
+    set<struct ic_data * > get_func_def_globals_and_f_params(struct ic_func * func);
 
     //获取一个函数会使用的所有全局变量和数组形参
-    set<struct ic_data * > get_func_use_global_vars_and_array_f_params(struct ic_func * func);
+    set<struct ic_data * > get_func_use_globals_and_f_params(struct ic_func * func);
+
+    //获取一个函数会直接调用的所有函数
+    set<struct ic_func * > get_func_direct_calls(struct ic_func * func);
 };
 
 

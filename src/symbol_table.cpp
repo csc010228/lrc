@@ -437,6 +437,11 @@ bool ic_scope::is_func() const
     return this->type==ic_scope_type::FUNC;
 }
 
+bool ic_scope::is_inline_func() const
+{
+    return this->type==ic_scope_type::INLINE_FUNC;
+}
+
 struct ic_data * ic_scope::get_var(string var_name)
 {
     struct ic_data * res=nullptr;
@@ -632,6 +637,11 @@ Return
 struct ic_data * Symbol_table::array_member_entry(struct ic_data * array_var,size_t offset_dimension_lens,struct ic_data * offset)
 {
     pair<struct ic_data *,pair<size_t,struct ic_data * > > index;
+    //查看偏移量，如果偏移量是constg关键字指定的变常量，那么就将其转换成常量
+    if(offset->is_const_var())
+    {
+        offset=const_entry(offset->get_data_type(),offset->get_value());
+    }
     //如果该数组取元素时的数组和偏移都是常量，同时数组取元素本身不是一个数组的话，就使用返回常量
     if(array_var->is_const_var() && offset->is_const() && offset_dimension_lens==array_var->dimensions_len->size())
     {
@@ -816,19 +826,19 @@ Parameters
 func:要增加的函数
 data:要增加的数据
 */
-void Symbol_table::add_func_def_global_vars_and_array_f_params(struct ic_func * func,struct ic_data * data)
+void Symbol_table::add_func_def_globals_and_f_params(struct ic_func * func,struct ic_data * data)
 {
     if(data->is_array_member())
     {
         data=data->get_belong_array();
     }
-    if((data->is_f_param() && data->is_array_var()) || data->is_global())
+    if(data->is_f_param() || data->is_global())
     {
-        if(funcs_def_global_vars_and_array_f_params_.find(func)==funcs_def_global_vars_and_array_f_params_.end())
+        if(funcs_def_globals_and_f_params_.find(func)==funcs_def_globals_and_f_params_.end())
         {
-            funcs_def_global_vars_and_array_f_params_.insert(make_pair(func,set<struct ic_data * >()));
+            funcs_def_globals_and_f_params_.insert(make_pair(func,set<struct ic_data * >()));
         }
-        funcs_def_global_vars_and_array_f_params_.at(func).insert(data);
+        funcs_def_globals_and_f_params_.at(func).insert(data);
     }
 }
 
@@ -840,20 +850,37 @@ Parameters
 func:要增加的函数
 data:要增加的数据
 */
-void Symbol_table::add_func_use_global_vars_and_array_f_params(struct ic_func * func,struct ic_data * data)
+void Symbol_table::add_func_use_globals_and_f_params(struct ic_func * func,struct ic_data * data)
 {
     if(data->is_array_member())
     {
         data=data->get_belong_array();
     }
-    if((data->is_f_param() && data->is_array_var()) || data->is_global())
+    if(data->is_f_param() || data->is_global())
     {
-        if(funcs_use_global_vars_and_array_f_params_.find(func)==funcs_use_global_vars_and_array_f_params_.end())
+        if(funcs_use_globals_and_f_params_.find(func)==funcs_use_globals_and_f_params_.end())
         {
-            funcs_use_global_vars_and_array_f_params_.insert(make_pair(func,set<struct ic_data * >()));
+            funcs_use_globals_and_f_params_.insert(make_pair(func,set<struct ic_data * >()));
         }
-        funcs_use_global_vars_and_array_f_params_.at(func).insert(data);
+        funcs_use_globals_and_f_params_.at(func).insert(data);
     }
+}
+
+/*
+增加一个函数会直接调用的函数
+
+Parameters
+----------
+func:要增加直接调用的函数
+called_func:被调用的函数
+*/
+void Symbol_table::add_func_direct_calls(struct ic_func * func,struct ic_func * called_func)
+{
+    if(funcs_direct_calls_.find(func)==funcs_direct_calls_.end())
+    {
+        funcs_direct_calls_.insert(make_pair(func,set<struct ic_func * >()));
+    }
+    funcs_direct_calls_.at(func).insert(called_func);
 }
 
 /*
@@ -867,12 +894,12 @@ Return
 ------
 返回该函数会更改的所有全局变量和数组形参
 */
-set<struct ic_data * > Symbol_table::get_func_def_global_vars_and_array_f_params(struct ic_func * func)
+set<struct ic_data * > Symbol_table::get_func_def_globals_and_f_params(struct ic_func * func)
 {
     set<struct ic_data * > res;
-    if(funcs_def_global_vars_and_array_f_params_.find(func)!=funcs_def_global_vars_and_array_f_params_.end())
+    if(funcs_def_globals_and_f_params_.find(func)!=funcs_def_globals_and_f_params_.end())
     {
-        res=funcs_def_global_vars_and_array_f_params_.at(func);
+        res=funcs_def_globals_and_f_params_.at(func);
     }
     return res;
 }
@@ -888,12 +915,33 @@ Return
 ------
 返回该函数会使用的所有全局变量和数组形参
 */
-set<struct ic_data * > Symbol_table::get_func_use_global_vars_and_array_f_params(struct ic_func * func)
+set<struct ic_data * > Symbol_table::get_func_use_globals_and_f_params(struct ic_func * func)
 {
     set<struct ic_data * > res;
-    if(funcs_use_global_vars_and_array_f_params_.find(func)!=funcs_use_global_vars_and_array_f_params_.end())
+    if(funcs_use_globals_and_f_params_.find(func)!=funcs_use_globals_and_f_params_.end())
     {
-        res=funcs_use_global_vars_and_array_f_params_.at(func);
+        res=funcs_use_globals_and_f_params_.at(func);
+    }
+    return res;
+}
+
+/*
+获取一个函数会直接调用的所有函数
+
+Parameters
+----------
+func:要获取的函数
+
+Return
+------
+返回该函数会直接调用的所有函数
+*/
+set<struct ic_func * > Symbol_table::get_func_direct_calls(struct ic_func * func)
+{
+    set<struct ic_func * > res;
+    if(funcs_direct_calls_.find(func)!=funcs_direct_calls_.end())
+    {
+        res=funcs_direct_calls_.at(func);
     }
     return res;
 }
