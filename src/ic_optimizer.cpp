@@ -1224,11 +1224,14 @@ void Ic_optimizer::DAG_optimize(struct ic_basic_block * basic_block)
 void Ic_optimizer::local_optimize()
 {
     //先进行函数内联
-    for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
+    if(need_optimize_)
     {
-        for(auto basic_block:func->basic_blocks)
+        for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
         {
-            function_inline(basic_block);
+            for(auto basic_block:func->basic_blocks)
+            {
+                function_inline(basic_block);
+            }
         }
     }
     //再进行DAG相关优化
@@ -1258,8 +1261,11 @@ void Ic_optimizer::data_flow_analysis()
         live_variable_analysis(func);
         //构建du-链
         build_du_chain(func);
-        //可用表达式分析
-        available_expression_analysis(func);
+        if(need_optimize_)
+        {
+            //可用表达式分析
+            available_expression_analysis(func);
+        }
     }
 }
 
@@ -1387,14 +1393,20 @@ void Ic_optimizer::global_optimize()
     {
         //全局常量合并
         globale_constant_folding(func);
-        //全局公共子表达式删除
-        global_elimination_of_common_subexpression(func);
+        if(need_optimize_)
+        {
+            //全局公共子表达式删除
+            global_elimination_of_common_subexpression(func);
+        }
         //全局死代码消除
         global_dead_code_elimination(func);
-        //循环不变量外提
-        loop_invariant_computation_motion(func);
-        //归纳变量删除
-        induction_variable_elimination(func);
+        if(need_optimize_)
+        {
+            //循环不变量外提
+            loop_invariant_computation_motion(func);
+            //归纳变量删除
+            induction_variable_elimination(func);
+        }
     }
 }
 
@@ -1413,15 +1425,12 @@ struct ic_flow_graph * Ic_optimizer::optimize(list<struct quaternion> * intermed
 {
     //建立中间代码流图
     intermediate_codes_flow_graph_=new struct ic_flow_graph(intermediate_codes);
-    if(need_optimize_)
-    {
-        //局部优化
-        local_optimize();
-        //数据流分析
-        data_flow_analysis();
-        //全局优化
-        global_optimize();
-    }
+    //局部优化
+    local_optimize();
+    //数据流分析
+    data_flow_analysis();
+    //全局优化
+    global_optimize();
     //返回优化结果
     return intermediate_codes_flow_graph_;
 }
