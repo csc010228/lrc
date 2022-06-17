@@ -2,10 +2,10 @@
 import os
 
 #测试文件夹
-TEST_DIR='../compiler2022-master/test/function'
+TEST_DIR='../compiler2022-master/test/performance'
 
 #是否开启优化
-OPTIMIZE=False
+OPTIMIZE=True
 
 #lrc编译器可执行文件名
 LRC_EXE_FILE='./lrc'

@@ -78,11 +78,18 @@ struct quaternion_with_info
     //尝试将一个ud-链的数据放入ud-链
     void add_to_ud_chain(struct ic_data * data,set<ic_pos> poses);
 
-    //尝试将一个du-链的数据放入ud-链
+    //尝试将一个du-链的数据放入du-链
     void add_to_du_chain(struct ic_data * data,set<ic_pos> poses);
+    void add_to_du_chain(struct ic_data * data,ic_pos pos);
+
+    //查看当前的中间代码是否定义了全局变量或者数组函数形参
+    bool check_if_def_global_or_f_param_array();
 
     //将该条中间代码使用的某一个数据替换成另一个常量数据
     void replace_used_data(struct ic_data * source,struct ic_data * destination);
+
+    //将该中间代码变成NOP
+    void to_NOP();
 
     //中间代码
     struct quaternion intermediate_code;
@@ -169,7 +176,7 @@ struct ic_func_flow_graph
     void build_vars_def_and_use_pos_info();
 
     //获取指定位置的中间代码及其信息
-    struct quaternion_with_info get_ic_with_info(ic_pos pos);
+    struct quaternion_with_info & get_ic_with_info(ic_pos pos);
 
     //对应的函数在符号表中的指针
     struct ic_func * func;
@@ -183,6 +190,8 @@ struct ic_func_flow_graph
     map<struct ic_data * ,set<struct ic_data * > > offset_to_array_member_map;
     //函数流图中所有的变量定义点
     map<struct ic_data *,set<ic_pos> > vars_def_positions;
+    //函数流图中的所有数组定义点（就是C语言语境中的定义点）
+    map<struct ic_data *,ic_pos> arrays_def_positions;
     //函数流图中所有的变量使用点
     map<struct ic_data *,set<ic_pos> > vars_use_positions;
 };

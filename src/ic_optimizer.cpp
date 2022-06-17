@@ -476,7 +476,7 @@ void quaternion_with_info::set_explicit_def(struct ic_data * data)
     {
         if(data->is_array_member())
         {
-            add_to_uses(data->get_belong_array());
+            //add_to_uses(data->get_belong_array());
             add_to_uses(data->get_offset());
             if(data->is_array_var())
             {
@@ -495,7 +495,7 @@ void quaternion_with_info:: add_to_vague_defs(struct ic_data * data)
     {
         if(data->is_array_member())
         {
-            add_to_uses(data->get_belong_array());
+            //add_to_uses(data->get_belong_array());
             add_to_uses(data->get_offset());
             if(data->is_array_var())
             {
@@ -551,6 +551,36 @@ void quaternion_with_info::add_to_du_chain(struct ic_data * data,set<ic_pos> pos
             set_union(poses.begin(),poses.end(),du_chain.at(data).begin(),du_chain.at(data).end(),inserter(du_chain.at(data),du_chain.at(data).begin()));
         }
     }
+}
+
+//尝试将一个du-链的数据放入ud-链
+void quaternion_with_info::add_to_du_chain(struct ic_data * data,ic_pos pos)
+{
+    if(!data->is_const())
+    {
+        if(du_chain.find(data)==du_chain.end())
+        {
+            du_chain.insert(make_pair(data,set<ic_pos>()));
+        }
+        du_chain.at(data).insert(pos);
+    }
+}
+
+//查看当前的中间代码是否定义了全局变量或者数组函数形参
+bool quaternion_with_info::check_if_def_global_or_f_param_array()
+{
+    if(explicit_def && explicit_def->is_global() || (explicit_def->is_array_member() && (explicit_def->get_belong_array()->is_f_param() || explicit_def->get_belong_array()->is_global())) || (explicit_def->is_array_var() && explicit_def->is_f_param()))
+    {
+        return true;
+    }
+    for(auto vauge_def:vague_defs)
+    {
+        if(vauge_def && vauge_def->is_global() || (vauge_def->is_array_member() && (vauge_def->get_belong_array()->is_f_param() || vauge_def->get_belong_array()->is_global())) || (vauge_def->is_array_var() && vauge_def->is_f_param()))
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 //将该条中间代码中使用的某一个数据替换成另一个常量数据
@@ -936,13 +966,25 @@ void ic_func_flow_graph::build_vars_def_and_use_pos_info()
 {
     size_t pos;
     ic_pos current_pos;
-    struct ic_data * belong_array,* offset;
+    struct ic_data * belong_array,* offset,* tmp;
     for(auto basic_block:basic_blocks)
     {
         pos=0;
         for(auto ic_with_info:basic_block->ic_sequence)
         {
             current_pos=ic_pos(basic_block,pos);
+            tmp=((struct ic_data *)ic_with_info.intermediate_code.result.second);
+            if(ic_with_info.intermediate_code.op==ic_op::VAR_DEFINE && tmp->is_array_var())
+            {
+                if(arrays_def_positions.find(tmp)==arrays_def_positions.end())
+                {
+                    arrays_def_positions.insert(make_pair(tmp,current_pos));
+                }
+                else
+                {
+                    arrays_def_positions.at(tmp)=current_pos;
+                }
+            }
             //明确定义点
             if(ic_with_info.explicit_def)
             {
@@ -1036,7 +1078,7 @@ void ic_func_flow_graph::build_vars_def_and_use_pos_info()
 }
 
 //获取指定位置的中间代码及其信息
-struct quaternion_with_info ic_func_flow_graph::get_ic_with_info(ic_pos pos)
+struct quaternion_with_info & ic_func_flow_graph::get_ic_with_info(ic_pos pos)
 {
     return pos.basic_block->ic_sequence.at(pos.offset);
 }
@@ -1232,7 +1274,7 @@ void Ic_optimizer::globale_constant_folding(struct ic_func_flow_graph * func)
 {
     Symbol_table * symbol_table=Symbol_table::get_instance();
     struct quaternion intermediate_code;
-    struct ic_data * arg1;
+    struct ic_data * arg1,* res;
     OAA tmp;
     bool tag;
     for(auto basic_block:func->basic_blocks)
@@ -1246,7 +1288,8 @@ void Ic_optimizer::globale_constant_folding(struct ic_func_flow_graph * func)
                 {
                     intermediate_code=func->get_ic_with_info(*((*ic_with_info).ud_chain.at(use).begin())).intermediate_code;
                     arg1=((struct ic_data *)intermediate_code.arg1.second);
-                    if(intermediate_code.op==ic_op::ASSIGN && arg1->is_const())
+                    res=((struct ic_data *)intermediate_code.result.second);
+                    if(intermediate_code.op==ic_op::ASSIGN && arg1->is_const() && res==use)
                     {
                         if(use->get_data_type()!=arg1->get_data_type())
                         {
@@ -1288,7 +1331,27 @@ func:要优化的函数流图
 */
 void Ic_optimizer::global_dead_code_elimination(struct ic_func_flow_graph * func)
 {
-
+    for(auto basic_block:func->basic_blocks)
+    {
+        for(vector<struct quaternion_with_info>::iterator ic_with_info=basic_block->ic_sequence.begin();ic_with_info!=basic_block->ic_sequence.end();ic_with_info++)
+        {
+            if((*ic_with_info).intermediate_code.op!=ic_op::NOP && 
+            (*ic_with_info).intermediate_code.op!=ic_op::JMP && 
+            (*ic_with_info).intermediate_code.op!=ic_op::IF_JMP && 
+            (*ic_with_info).intermediate_code.op!=ic_op::IF_NOT_JMP && 
+            (*ic_with_info).intermediate_code.op!=ic_op::VAR_DEFINE && 
+            (*ic_with_info).intermediate_code.op!=ic_op::LABEL_DEFINE && 
+            (*ic_with_info).intermediate_code.op!=ic_op::FUNC_DEFINE && 
+            (*ic_with_info).intermediate_code.op!=ic_op::END_FUNC_DEFINE && 
+            (*ic_with_info).intermediate_code.op!=ic_op::CALL && 
+            (*ic_with_info).intermediate_code.op!=ic_op::RET && 
+            !(*ic_with_info).check_if_def_global_or_f_param_array() && 
+            (*ic_with_info).du_chain.empty())
+            {
+                (*ic_with_info)=quaternion_with_info();
+            }
+        }
+    }
 }
 
 /*
