@@ -1,0 +1,97 @@
+COMP_UNIT                                   
+COMP_UNIT -> DECL_or_FUNC_DEF  ___COMP_UNIT_1___               编译单元
+COMP_UNIT -> DECL_or_FUNC_DEF COMP_UNIT  ___COMP_UNIT_2___                
+DECL_or_FUNC_DEF -> DECL  ___DECL_or_FUNC_DEF_1___                        声明或者函数定义
+DECL_or_FUNC_DEF -> FUNC_DEF  ___DECL_or_FUNC_DEF_2___                    
+DECL -> CONST_DECL  ___DECL_1___                              声明
+DECL -> VAR_DECL  ___DECL_2___                                
+B_TYPE -> int  ___B_TYPE_1___                                   基本数据类型
+B_TYPE -> float  ___B_TYPE_2___                                 
+CONST_DECL -> const B_TYPE one_or_more_CONST_DEF_divided_with_comma ;  ___CONST_DECL___          常量声明
+one_or_more_CONST_DEF_divided_with_comma -> CONST_DEF , one_or_more_CONST_DEF_divided_with_comma  ___one_or_more_CONST_DEF_divided_with_comma_1___              一个或者多个用逗号隔开的CONST_DEF             
+one_or_more_CONST_DEF_divided_with_comma -> CONST_DEF  ___one_or_more_CONST_DEF_divided_with_comma_2___               
+CONST_DEF -> id zero_or_more_CONST_EXP_surrounded_by_bracket = CONST_INIT_VAL  ___CONST_DEF___             常量定义
+zero_or_more_CONST_EXP_surrounded_by_bracket -> @  ___zero_or_more_CONST_EXP_surrounded_by_bracket_1___               零个或多个被中括号包围的CONST_EXP
+zero_or_more_CONST_EXP_surrounded_by_bracket -> [ CONST_EXP ] zero_or_more_CONST_EXP_surrounded_by_bracket  ___zero_or_more_CONST_EXP_surrounded_by_bracket_2___                  
+CONST_INIT_VAL -> CONST_EXP  ___CONST_INIT_VAL_1___             常量初值
+CONST_INIT_VAL -> { zero_or_more_CONST_INIT_VAL_divided_with_comma }  ___CONST_INIT_VAL_2___                   
+zero_or_more_CONST_INIT_VAL_divided_with_comma -> @  ___zero_or_more_CONST_INIT_VAL_divided_with_comma_1___              零个或多个用逗号隔开的CONST_INIT_VAL
+zero_or_more_CONST_INIT_VAL_divided_with_comma -> CONST_INIT_VAL  ___zero_or_more_CONST_INIT_VAL_divided_with_comma_2___             
+zero_or_more_CONST_INIT_VAL_divided_with_comma -> CONST_INIT_VAL , zero_or_more_CONST_INIT_VAL_divided_with_comma  ___zero_or_more_CONST_INIT_VAL_divided_with_comma_3___             
+VAR_DECL -> B_TYPE one_or_more_VAR_DEF_divided_with_comma ;  ___VAR_DECL___             变量声明
+one_or_more_VAR_DEF_divided_with_comma -> VAR_DEF  ___one_or_more_VAR_DEF_divided_with_comma_1___                       一个或者多个用逗号隔开的VAR_DEF
+one_or_more_VAR_DEF_divided_with_comma -> VAR_DEF , one_or_more_VAR_DEF_divided_with_comma  ___one_or_more_VAR_DEF_divided_with_comma_2___              
+VAR_DEF -> id zero_or_more_CONST_EXP_surrounded_by_bracket  ___VAR_DEF_1___              变量定义
+VAR_DEF -> id zero_or_more_CONST_EXP_surrounded_by_bracket = INIT_VAL  ___VAR_DEF_2___                   
+INIT_VAL -> EXP  ___INIT_VAL_1___                 变量初值
+INIT_VAL -> { zero_or_more_INIT_VAL_divided_with_comma }  ___INIT_VAL_2___                          
+zero_or_more_INIT_VAL_divided_with_comma -> @  ___zero_or_more_INIT_VAL_divided_with_comma_1___              零个或多个用逗号隔开的INIT_VAL
+zero_or_more_INIT_VAL_divided_with_comma -> INIT_VAL  ___zero_or_more_INIT_VAL_divided_with_comma_2___             
+zero_or_more_INIT_VAL_divided_with_comma -> INIT_VAL , zero_or_more_INIT_VAL_divided_with_comma  ___zero_or_more_INIT_VAL_divided_with_comma_3___             
+FUNC_DEF -> B_TYPE id ( )  ___FUNC_DEF_1___ BLOCK  ___FUNC_DEF_2___                函数定义
+FUNC_DEF -> B_TYPE id ( FUNC_F_PARAMS )  ___FUNC_DEF_3___ BLOCK  ___FUNC_DEF_4___                  
+FUNC_DEF -> void id ( )  ___FUNC_DEF_5___ BLOCK  ___FUNC_DEF_6___                
+FUNC_DEF -> void id ( FUNC_F_PARAMS )  ___FUNC_DEF_7___ BLOCK  ___FUNC_DEF_8___                   
+FUNC_F_PARAMS -> one_or_more_FUNC_F_PARAM_divided_with_comma  ___FUNC_F_PARAMS___            函数形参表
+one_or_more_FUNC_F_PARAM_divided_with_comma -> FUNC_F_PARAM  ___one_or_more_FUNC_F_PARAM_divided_with_comma_1___             一个或者多个用逗号隔开的FUNC_F_PARAM
+one_or_more_FUNC_F_PARAM_divided_with_comma -> FUNC_F_PARAM , one_or_more_FUNC_F_PARAM_divided_with_comma  ___one_or_more_FUNC_F_PARAM_divided_with_comma_2___           
+FUNC_F_PARAM -> B_TYPE id  ___FUNC_F_PARAM_1___              函数形参
+FUNC_F_PARAM -> B_TYPE id [ ] zero_or_more_EXP_surrounded_by_bracket  ___FUNC_F_PARAM_2___            
+zero_or_more_EXP_surrounded_by_bracket -> @  ___zero_or_more_EXP_surrounded_by_bracket_1___               零个或多个被中括号包围的EXP
+zero_or_more_EXP_surrounded_by_bracket -> [ EXP ] zero_or_more_EXP_surrounded_by_bracket  ___zero_or_more_EXP_surrounded_by_bracket_2___            
+BLOCK -> {  ___BLOCK_1___ zero_or_more_BLOCK_ITEM }  ___BLOCK_2___                语句块
+zero_or_more_BLOCK_ITEM -> @  ___zero_or_more_BLOCK_ITEM_1___                        零个或者多个BLOCK_ITEM
+zero_or_more_BLOCK_ITEM -> BLOCK_ITEM zero_or_more_BLOCK_ITEM  ___zero_or_more_BLOCK_ITEM_2___           
+BLOCK_ITEM -> DECL  ___BLOCK_ITEM_1___                  语句块项
+BLOCK_ITEM -> STMT  ___BLOCK_ITEM_2___                  
+STMT -> BLOCK  ___STMT_1___                   语句
+STMT -> L_VAL = EXP ;  ___STMT_2___               
+STMT -> ;  ___STMT_3___                       
+STMT -> EXP ;  ___STMT_4___               
+STMT -> IF_STMT  ___STMT_5___               
+STMT -> WHILE_STMT  ___STMT_6___             
+STMT -> JMP_STMT  ___STMT_7___             
+JMP_STMT -> break ;  ___JMP_STMT_1___                         跳转语句
+JMP_STMT -> continue ;  ___JMP_STMT_2___                  
+JMP_STMT -> return ;  ___JMP_STMT_3___                        
+JMP_STMT -> return EXP ;  ___JMP_STMT_4___                        
+WHILE_STMT -> while  ___WHILE_STMT_1___ ( COND ) STMT  ___WHILE_STMT_2___            while语句
+IF_STMT -> if ( COND ) STMT  ___IF_STMT_1___ else STMT  ___IF_STMT_2___               
+IF_STMT -> if ( COND ) STMT  ___IF_STMT_3___                 if语句
+EXP -> ADD_EXP  ___EXP___              表达式（注：SysY表达式是int型表达式）
+COND -> L_OR_EXP  ___COND___            条件表达式
+L_VAL -> id zero_or_more_EXP_surrounded_by_bracket  ___L_VAL___              
+PRIMARY_EXP -> ( EXP )  ___PRIMARY_EXP_1___          基本表达式
+PRIMARY_EXP -> L_VAL  ___PRIMARY_EXP_2___                
+PRIMARY_EXP -> NUMBER  ___PRIMARY_EXP_3___               
+NUMBER -> const_int  ___NUMBER_1___             数值
+NUMBER -> const_float  ___NUMBER_2___             
+UNARY_EXP -> PRIMARY_EXP  ___UNARY_EXP_1___                一元表达式
+UNARY_EXP -> id ( )  ___UNARY_EXP_2___                     
+UNARY_EXP -> id ( FUNC_R_PARAMS )  ___UNARY_EXP_3___           
+UNARY_EXP -> UNARY_OP UNARY_EXP  ___UNARY_EXP_4___                 
+UNARY_OP -> +  ___UNARY_OP_1___               单目运算符（注：!仅出现在条件表达式中）
+UNARY_OP -> -  ___UNARY_OP_2___               
+UNARY_OP -> !  ___UNARY_OP_3___               
+FUNC_R_PARAMS -> EXP  ___FUNC_R_PARAMS_1___            函数实参表
+FUNC_R_PARAMS -> EXP , FUNC_R_PARAMS  ___FUNC_R_PARAMS_2___            
+MUL_EXP -> UNARY_EXP  ___MUL_EXP_1___            乘除模表达式
+MUL_EXP -> MUL_EXP * UNARY_EXP  ___MUL_EXP_2___          
+MUL_EXP -> MUL_EXP / UNARY_EXP  ___MUL_EXP_3___          
+MUL_EXP -> MUL_EXP % UNARY_EXP  ___MUL_EXP_4___          
+ADD_EXP -> MUL_EXP  ___ADD_EXP_1___              加减表达式
+ADD_EXP -> ADD_EXP + MUL_EXP  ___ADD_EXP_2___            
+ADD_EXP -> ADD_EXP - MUL_EXP  ___ADD_EXP_3___            
+REL_EXP -> ADD_EXP  ___REL_EXP_1___              关系表达式
+REL_EXP -> REL_EXP < ADD_EXP  ___REL_EXP_2___            
+REL_EXP -> REL_EXP > ADD_EXP  ___REL_EXP_3___            
+REL_EXP -> REL_EXP <= ADD_EXP  ___REL_EXP_4___            
+REL_EXP -> REL_EXP >= ADD_EXP  ___REL_EXP_5___            
+EQ_EXP -> REL_EXP  ___EQ_EXP_1___               相等性表达式
+EQ_EXP -> EQ_EXP == REL_EXP  ___EQ_EXP_2___             
+EQ_EXP -> EQ_EXP != REL_EXP  ___EQ_EXP_3___                
+L_AND_EXP -> EQ_EXP  ___L_AND_EXP_1___             逻辑与表达式
+L_AND_EXP -> L_AND_EXP &&  ___L_AND_EXP_2___ EQ_EXP  ___L_AND_EXP_3___            
+L_OR_EXP -> L_AND_EXP  ___L_OR_EXP_1___           逻辑或表达式
+L_OR_EXP -> L_OR_EXP ||  ___L_OR_EXP_2___ L_AND_EXP  ___L_OR_EXP_3___           
+CONST_EXP -> ADD_EXP  ___CONST_EXP___            常量表达式（注：使用的id必须是常量）
