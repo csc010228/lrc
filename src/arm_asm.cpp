@@ -196,6 +196,27 @@ map<enum arm_pseudo_op,string> pseudo_instruction_output_map=
     {arm_pseudo_op::IT,"it"}
 };
 
+
+
+//===================================== struct arm_registers =====================================//
+
+size_t arm_registers::get_regs_num() const
+{
+    return registers_.size();
+}
+
+reg_index arm_registers::get_only_member() const
+{
+    if(get_regs_num()==1)
+    {
+        for(auto reg:registers_)
+        {
+            return reg;
+        }
+    }
+    return 0;
+}
+
 string arm_registers::to_string() const
 {
     string res;
@@ -211,6 +232,12 @@ string arm_registers::to_string() const
 
     return res;
 }
+
+//==========================================================================//
+
+
+
+//===================================== struct operand2 =====================================//
 
 string operand2::to_string() const
 {
@@ -243,6 +270,12 @@ string operand2::to_string() const
     return res;
 }
 
+//==========================================================================//
+
+
+
+//===================================== struct immed_16r =====================================//
+
 string immed_16r::to_string() const
 {
     string res="#";
@@ -258,6 +291,12 @@ string immed_16r::to_string() const
 
     return res;
 }
+
+//==========================================================================//
+
+
+
+//===================================== struct flexoffset =====================================//
 
 string flexoffset::to_string() const
 {
@@ -291,6 +330,12 @@ string flexoffset::to_string() const
     return res;
 }
 
+//==========================================================================//
+
+
+
+//===================================== class Arm_directive =====================================//
+
 string Arm_directive::to_string() const
 {
     string res="\t"+directive_output_map[directive_type_]+" ";
@@ -304,6 +349,12 @@ string Arm_directive::to_string() const
     }
     return res;
 }
+
+//==========================================================================//
+
+
+
+//===================================== class Arm_pseudo_instruction =====================================//
 
 string Arm_pseudo_instruction::to_string() const
 {
@@ -340,10 +391,27 @@ string Arm_pseudo_instruction::to_string() const
     return res;
 }
 
+//==========================================================================//
+
+
+
+//===================================== class Arm_cpu_branch_instruction =====================================//
+
+Arm_label Arm_cpu_branch_instruction::get_label() const
+{
+    return label_;
+}
+
 string Arm_cpu_branch_instruction::to_string() const
 {
     return "\t"+op_output_map[op_]+condition_output_map[cond_]+"\t"+source_registers_.to_string()+label_.to_string(false);
 }
+
+//==========================================================================//
+
+
+
+//===================================== class Arm_cpu_data_process_instruction =====================================//
 
 string Arm_cpu_data_process_instruction::to_string() const
 {
@@ -377,6 +445,12 @@ string Arm_cpu_data_process_instruction::to_string() const
     return res;
 }
 
+//==========================================================================//
+
+
+
+//===================================== class Arm_cpu_multiple_registers_load_and_store_instruction =====================================//
+
 string Arm_cpu_multiple_registers_load_and_store_instruction::to_string() const
 {
     string res="\t"+op_output_map[op_]+condition_output_map[cond_]+address_mode_output_map[address_mode_]+"\t",source_registers=source_registers_.to_string();
@@ -389,6 +463,12 @@ string Arm_cpu_multiple_registers_load_and_store_instruction::to_string() const
 
     return res;
 }
+
+//==========================================================================//
+
+
+
+//===================================== class Arm_cpu_single_register_load_and_store_instruction =====================================//
 
 string Arm_cpu_single_register_load_and_store_instruction::to_string() const
 {
@@ -417,6 +497,12 @@ string Arm_cpu_single_register_load_and_store_instruction::to_string() const
     return res;
 }
 
+//==========================================================================//
+
+
+
+//===================================== class Arm_vfp_register_transfer_instruction =====================================//
+
 string Arm_vfp_register_transfer_instruction::to_string() const
 {
     string res="\t"+op_output_map[op_]+condition_output_map[cond_]+"\t"+destination_registers_.to_string()+",";
@@ -432,6 +518,12 @@ string Arm_vfp_register_transfer_instruction::to_string() const
 
     return res;
 }
+
+//==========================================================================//
+
+
+
+//===================================== class Arm_vfp_data_process_instruction =====================================//
 
 string Arm_vfp_data_process_instruction::to_string() const
 {
@@ -457,6 +549,12 @@ string Arm_vfp_data_process_instruction::to_string() const
     return res;
 }
 
+//==========================================================================//
+
+
+
+//===================================== class Arm_vfp_multiple_registers_load_and_store_instruction =====================================//
+
 string Arm_vfp_multiple_registers_load_and_store_instruction::to_string() const
 {
     string res="\t"+op_output_map[op_]+condition_output_map[cond_]+address_mode_output_map[address_mode_]+"\t";
@@ -469,6 +567,12 @@ string Arm_vfp_multiple_registers_load_and_store_instruction::to_string() const
 
     return res;
 }
+
+//==========================================================================//
+
+
+
+//===================================== class Arm_vfp_single_register_load_and_store_instruction =====================================//
 
 string Arm_vfp_single_register_load_and_store_instruction::to_string() const
 {
@@ -498,6 +602,17 @@ string Arm_vfp_single_register_load_and_store_instruction::to_string() const
     return res;
 }
 
+//==========================================================================//
+
+
+
+//===================================== class Arm_label =====================================//
+
+bool Arm_label::is_func() const
+{
+    return (!name_.empty() && name_.at(0)!='.');
+}
+
 string Arm_label::to_string(bool is_define) const
 {
     return name_+(is_define?":":"");
@@ -507,3 +622,167 @@ string Arm_label::to_string() const
 {
     return name_+":";
 }
+
+//==========================================================================//
+
+
+
+//===================================== struct arm_basic_block =====================================//
+
+void arm_basic_block::set_sequential_next(struct arm_basic_block * next)
+{
+    sequential_next=next;
+}
+
+void arm_basic_block::set_jump_next(struct arm_basic_block * next)
+{
+    jump_next=next;
+}
+
+void arm_basic_block::add_arm_asm(Arm_asm_file_line * arm_asm)
+{
+    arm_sequence.push_back(arm_asm);
+}
+
+list<string> arm_basic_block::to_string()
+{
+    list<string> res;
+    for(auto i:arm_sequence)
+    {
+        res.push_back(i->to_string());
+    }
+    return res;
+}
+
+//==========================================================================//
+
+
+
+//===================================== struct arm_func_flow_graph =====================================//
+
+void arm_func_flow_graph::build_nexts_between_basic_blocks()
+{
+    // struct arm_basic_block * pre_basic_block;
+    // bool need_set_sequential_next=false;
+    // for(auto basic_block:basic_blocks)
+    // {
+    //     if(need_set_sequential_next)
+    //     {
+    //         pre_basic_block->set_sequential_next(basic_block);
+    //     }
+    //     switch(basic_block->arm_sequence.back().)
+    //     {
+    //         case arm_op::JMP:
+    //             need_set_sequential_next=false;
+    //             basic_block->set_sequential_next(nullptr);
+    //             basic_block->set_jump_next(label_basic_block_map.at((struct ic_label *)(basic_block->ic_sequence.back().intermediate_code.result.second)));
+    //             break;
+    //         case ic_op::IF_JMP:
+    //         case ic_op::IF_NOT_JMP:
+    //             need_set_sequential_next=true;
+    //             basic_block->set_jump_next(label_basic_block_map.at((struct ic_label *)(basic_block->ic_sequence.back().intermediate_code.result.second)));
+    //             break;
+    //         case ic_op::RET:
+    //         case ic_op::END_FUNC_DEFINE:
+    //             need_set_sequential_next=false;
+    //             basic_block->set_sequential_next(nullptr);
+    //             basic_block->set_jump_next(nullptr);
+    //             break;
+    //         default:
+    //             need_set_sequential_next=true;
+    //             basic_block->set_jump_next(nullptr);
+    //             break;
+    //     }
+    //     pre_basic_block=basic_block;
+    // }
+}
+
+void arm_func_flow_graph::add_arm_asm(Arm_asm_file_line * arm_asm,bool new_basic_block)
+{
+    static struct arm_basic_block * current_arm_basic_block=nullptr;
+    if(new_basic_block)
+    {
+        current_arm_basic_block=new struct arm_basic_block;
+        basic_blocks.push_back(current_arm_basic_block);
+    }
+    if(arm_asm)
+    {
+        current_arm_basic_block->add_arm_asm(arm_asm);
+    }
+}
+
+list<string> arm_func_flow_graph::to_string()
+{
+    string func_name=function->name;
+    list<string> res;
+    res.push_back("\t.text");
+    res.push_back("\t.align 1");
+    res.push_back("\t.global	__aeabi_idiv");
+    res.push_back("\t.global	__aeabi_idivmod");
+    res.push_back("\t.global "+func_name);
+    res.push_back("\t.syntax unified");
+    res.push_back("\t.thumb");
+    res.push_back("\t.thumb_func");
+    res.push_back("\t.fpu vfp");
+    res.push_back("\t.type	"+func_name+", %function");
+    res.push_back(func_name+":");
+    for(auto i:basic_blocks)
+    {
+        res.splice(res.end(),i->to_string());
+    }
+    res.push_back("\t.size	"+func_name+", .-"+func_name);
+    return res;
+}
+
+//==========================================================================//
+
+
+
+//===================================== struct arm_flow_graph =====================================//
+
+void arm_flow_graph::add_arm_asm_to_func(Arm_asm_file_line * arm_asm,bool new_basic_block,struct ic_func * new_func)
+{
+    static struct arm_func_flow_graph * current_arm_func_flow_graph=nullptr;
+    if(new_func!=nullptr)
+    {
+        current_arm_func_flow_graph=new struct arm_func_flow_graph(new_func);
+        func_flow_graphs.insert(current_arm_func_flow_graph);
+    }
+    if(current_arm_func_flow_graph)
+    {
+        current_arm_func_flow_graph->add_arm_asm(arm_asm,new_basic_block);
+    }
+}
+
+void arm_flow_graph::add_arm_asm_to_global(Arm_asm_file_line * arm_asm)
+{
+    global_basic_block.add_arm_asm(arm_asm);
+}
+
+list<string> arm_flow_graph::to_string()
+{
+    list<string> res,tmp;
+    res.push_back("\t.arch armv7");
+    res.push_back("\t.eabi_attribute 28, 1");
+    res.push_back("\t.eabi_attribute 20, 1");
+    res.push_back("\t.eabi_attribute 21, 1");
+    res.push_back("\t.eabi_attribute 23, 3");
+    res.push_back("\t.eabi_attribute 24, 1");
+    res.push_back("\t.eabi_attribute 25, 1");
+    res.push_back("\t.eabi_attribute 26, 2");
+    res.push_back("\t.eabi_attribute 30, 6");
+    res.push_back("\t.eabi_attribute 34, 1");
+    res.push_back("\t.eabi_attribute 18, 4");
+    for(auto i:func_flow_graphs)
+    {
+        tmp=i->to_string();
+        res.splice(res.end(),tmp);
+    }
+    tmp=global_basic_block.to_string();
+    res.splice(res.end(),tmp);
+    res.push_back("\t.ident	\"GCC: (Raspbian 8.3.0-6+rpi1) 8.3.0\"");
+    res.push_back("\t.section	.note.GNU-stack,\"\",%progbits");
+    return res;
+}
+
+//==========================================================================//

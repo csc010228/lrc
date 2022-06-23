@@ -20,7 +20,7 @@ using namespace std;
 //arm的CPU汇编指令操作码
 enum class arm_op
 {
-    /*================Arm的cpu指令================*/
+    /*=================Arm的cpu指令=================*/
     //Branch instruction
     B,
     BL,
@@ -56,8 +56,8 @@ enum class arm_op
     //Single resgiter load and store instruction
     LDR,
     STR,
-    /*============================================*/
-    /*================Arm的vfp指令================*/
+    /*=============================================*/
+    /*=================Arm的vfp指令=================*/
     //Register transfer
     VMOV,
     VMRS,
@@ -84,7 +84,7 @@ enum class arm_op
     //Single resgiter load and store instruction
     VLDR,
     VSTR,
-    /*============================================*/
+    /*=============================================*/
 };
 
 //arm汇编的数据类型
@@ -387,6 +387,12 @@ struct arm_registers
 		va_end(argptr);
     };
 
+    //获取该寄存器组中的寄存器个数
+    size_t get_regs_num() const;
+
+    //如果寄存器组中只有一个寄存器，那么将其返回
+    reg_index get_only_member() const;
+
     //转换成字符串
     string to_string() const;
 
@@ -653,6 +659,9 @@ public:
 
     };
 
+    //该label是否表示一个函数
+    bool is_func() const;
+
     //转换成字符串
     string to_string(bool is_define) const;
 
@@ -712,6 +721,9 @@ public:
     {
 
     };
+
+    //获取label
+    Arm_label get_label() const;
 
     //转换成字符串
     string to_string() const;
@@ -791,9 +803,19 @@ public:
 
     };
 
+    //获取operand2
     inline struct operand2 get_operand2() const
     {
         return operand2_;
+    };
+
+    //更改影响标志位
+    inline void set_update_flags(bool new_update_flags)
+    {
+        if(op_!=arm_op::MOVT && op_!=arm_op::MOVW)
+        {
+            update_flags_=new_update_flags;
+        }
     };
 
     //转换成字符串
@@ -1027,7 +1049,6 @@ private:
     enum precision precision_;
 
     //single register load and store的类型
-    //enum arm_single_register_load_and_store_type single_register_load_and_store_type_;
     enum vfp_single_register_load_and_store_type single_register_load_and_store_type_;
 
     union
@@ -1102,22 +1123,17 @@ struct arm_basic_block
         }
     };
 
-    //往汇编函数流图中添加一条arm汇编
-    void add_arm_asm(Arm_asm_file_line * arm_asm)
-    {
-        arm_sequence.push_back(arm_asm);
-    };
+    //设置顺序执行的下一个基本块
+    void set_sequential_next(struct arm_basic_block * next);
+
+    //设置跳转的下一个基本块
+    void set_jump_next(struct arm_basic_block * next);
+
+    //往汇编基本块中添加一条arm汇编
+    void add_arm_asm(Arm_asm_file_line * arm_asm);
 
     //转换成字符串
-    list<string> to_string()
-    {
-        list<string> res;
-        for(auto i:arm_sequence)
-        {
-            res.push_back(i->to_string());
-        }
-        return res;
-    };
+    list<string> to_string();
 
     list<Arm_asm_file_line * > arm_sequence;
     struct arm_basic_block * sequential_next,* jump_next;
@@ -1139,44 +1155,14 @@ struct arm_func_flow_graph
         }
     };
 
+    //构建函数中的基本块之间的跳转关系
+    void build_nexts_between_basic_blocks();
+
     //往汇编函数流图中添加一条arm汇编
-    void add_arm_asm(Arm_asm_file_line * arm_asm,bool new_basic_block)
-    {
-        static struct arm_basic_block * current_arm_basic_block=nullptr;
-        if(new_basic_block)
-        {
-            current_arm_basic_block=new struct arm_basic_block;
-            basic_blocks.push_back(current_arm_basic_block);
-        }
-        if(arm_asm)
-        {
-            current_arm_basic_block->add_arm_asm(arm_asm);
-        }
-    };
+    void add_arm_asm(Arm_asm_file_line * arm_asm,bool new_basic_block);
 
     //转换成字符串
-    list<string> to_string()
-    {
-        string func_name=function->name;
-        list<string> res;
-        res.push_back("\t.text");
-        res.push_back("\t.align 1");
-        res.push_back("\t.global	__aeabi_idiv");
-        res.push_back("\t.global	__aeabi_idivmod");
-        res.push_back("\t.global "+func_name);
-        res.push_back("\t.syntax unified");
-        res.push_back("\t.thumb");
-        res.push_back("\t.thumb_func");
-        res.push_back("\t.fpu vfp");
-        res.push_back("\t.type	"+func_name+", %function");
-        res.push_back(func_name+":");
-        for(auto i:basic_blocks)
-        {
-            res.splice(res.end(),i->to_string());
-        }
-        res.push_back("\t.size	"+func_name+", .-"+func_name);
-        return res;
-    };
+    list<string> to_string();
 
     //函数
     struct ic_func * function;
@@ -1192,29 +1178,6 @@ struct arm_flow_graph
         
     };
 
-    //把一条arm汇编语句插入到汇编流图中
-    //参数arm_asm时要插入的汇编语句
-    //参数new_func如果不是nullptr，就表示要新建一个函数，将arm_asm插入到这个函数中
-    //参数new_basic_block如果不是false，就表示要新建一个基本块，将arm_asm插入到这个基本块中
-    void add_arm_asm_to_current_func(Arm_asm_file_line * arm_asm,struct ic_func * new_func,bool new_basic_block)
-    {
-        static struct arm_func_flow_graph * current_arm_func_flow_graph=nullptr;
-        if(new_func!=nullptr)
-        {
-            current_arm_func_flow_graph=new struct arm_func_flow_graph(new_func);
-            func_flow_graphs.insert(current_arm_func_flow_graph);
-        }
-        if(current_arm_func_flow_graph)
-        {
-            current_arm_func_flow_graph->add_arm_asm(arm_asm,new_basic_block);
-        }
-    };
-
-    void add_arm_asm_to_global(Arm_asm_file_line * arm_asm)
-    {
-        global_basic_block.add_arm_asm(arm_asm);
-    };
-
     ~arm_flow_graph()
     {
         for(auto i:func_flow_graphs)
@@ -1223,33 +1186,17 @@ struct arm_flow_graph
         }
     };
 
+    //把一条arm汇编语句插入到汇编流图中
+    //参数arm_asm是要插入的汇编语句
+    //参数new_basic_block如果不是false，就表示要新建一个基本块，将arm_asm插入到这个基本块中
+    //参数new_func如果不是nullptr，就表示要新建一个函数，将arm_asm插入到这个函数中，否则的话就表示将arm_asm插入到当前函数中
+    void add_arm_asm_to_func(Arm_asm_file_line * arm_asm,bool new_basic_block,struct ic_func * new_func=nullptr);
+
+    //把一句arm汇编加入到全局变量定义中
+    void add_arm_asm_to_global(Arm_asm_file_line * arm_asm);
+
     //转换成字符串
-    list<string> to_string()
-    {
-        list<string> res,tmp;
-        res.push_back("\t.arch armv7");
-        res.push_back("\t.eabi_attribute 28, 1");
-	    res.push_back("\t.eabi_attribute 20, 1");
-	    res.push_back("\t.eabi_attribute 21, 1");
-	    res.push_back("\t.eabi_attribute 23, 3");
-	    res.push_back("\t.eabi_attribute 24, 1");
-	    res.push_back("\t.eabi_attribute 25, 1");
-	    res.push_back("\t.eabi_attribute 26, 2");
-	    res.push_back("\t.eabi_attribute 30, 6");
-	    res.push_back("\t.eabi_attribute 34, 1");
-	    res.push_back("\t.eabi_attribute 18, 4");
-        //res.push_back("\t.file	\"lrc_test.sy\"");
-        for(auto i:func_flow_graphs)
-        {
-            tmp=i->to_string();
-            res.splice(res.end(),tmp);
-        }
-        tmp=global_basic_block.to_string();
-        res.splice(res.end(),tmp);
-        res.push_back("\t.ident	\"GCC: (Raspbian 8.3.0-6+rpi1) 8.3.0\"");
-	    res.push_back("\t.section	.note.GNU-stack,\"\",%progbits");
-        return res;
-    };
+    list<string> to_string();
 
     //所有函数的流图，这些流图之间相互独立
     set<struct arm_func_flow_graph * > func_flow_graphs;

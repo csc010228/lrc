@@ -1422,7 +1422,7 @@ instruction:要插入的instruction
 */
 void Arm_instruction_generator::push_instruction(Arm_instruction * instruction)
 {
-    arm_flow_graph_.add_arm_asm_to_current_func(instruction,nullptr,false);
+    arm_flow_graph_.add_arm_asm_to_func(instruction,false);
 }
 
 /*
@@ -1434,7 +1434,7 @@ pseudo instruction:要插入的pseudo instruction
 */
 void Arm_instruction_generator::push_pseudo_instruction(Arm_pseudo_instruction * pseudo_instruction)
 {
-    arm_flow_graph_.add_arm_asm_to_current_func(pseudo_instruction,nullptr,false);
+    arm_flow_graph_.add_arm_asm_to_func(pseudo_instruction,false);
 }
 
 /*
@@ -1446,7 +1446,7 @@ label:要插入的label
 */
 void Arm_instruction_generator::push_label_to_func(Arm_label * label)
 {
-    arm_flow_graph_.add_arm_asm_to_current_func(label,nullptr,false);
+    arm_flow_graph_.add_arm_asm_to_func(label,false);
 }
 
 /*
@@ -2033,12 +2033,12 @@ void Arm_instruction_generator::handle_POP_STACK(size_t pop_size)
 
 void Arm_instruction_generator::handle_START_FUNC(struct ic_func * func)
 {
-    arm_flow_graph_.add_arm_asm_to_current_func(nullptr,func,false);
+    arm_flow_graph_.add_arm_asm_to_func(nullptr,false,func);
 }
 
 void Arm_instruction_generator::handle_START_BASIC_BLOCK()
 {
-    arm_flow_graph_.add_arm_asm_to_current_func(nullptr,nullptr,true);
+    arm_flow_graph_.add_arm_asm_to_func(nullptr,true);
 }
 
 /*

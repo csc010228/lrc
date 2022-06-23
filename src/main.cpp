@@ -118,7 +118,7 @@ bool lrc(string source_program_filename,string target_filename,bool optimize,boo
     }
 
     //初始化汇编生成器
-    if(!(asm_generator.init()))
+    if(!(asm_generator.init(optimize)))
     {
         cout<<"Asm generator init error!"<<endl;
         goto out;

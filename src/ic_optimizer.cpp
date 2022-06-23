@@ -907,12 +907,12 @@ void ic_func_flow_graph::add_ic(struct quaternion ic)
     if(func_end)
     {
         //如果该函数的流图构造完毕，那么就对各个基本块之间的跳转情况进行设置
-        build_jumps_between_basic_blocks();
+        build_nexts_between_basic_blocks();
     }
 }
 
 //构建函数中的基本块之间的跳转关系
-void ic_func_flow_graph::build_jumps_between_basic_blocks()
+void ic_func_flow_graph::build_nexts_between_basic_blocks()
 {
     struct ic_basic_block * pre_basic_block;
     bool need_set_sequential_next=false;

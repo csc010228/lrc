@@ -56,8 +56,8 @@ JMP_STMT -> continue ;  ___JMP_STMT_2___
 JMP_STMT -> return ;  ___JMP_STMT_3___                        
 JMP_STMT -> return EXP ;  ___JMP_STMT_4___                        
 WHILE_STMT -> while  ___WHILE_STMT_1___ ( COND ) STMT  ___WHILE_STMT_2___            while语句
-IF_STMT -> if ( COND ) STMT  ___IF_STMT_1___ else STMT  ___IF_STMT_2___               
-IF_STMT -> if ( COND ) STMT  ___IF_STMT_3___                 if语句
+IF_STMT -> if ( COND ) STMT  ___IF_STMT_1___ else STMT  ___IF_STMT_2___               if语句
+IF_STMT -> if ( COND ) STMT  ___IF_STMT_3___                 
 EXP -> ADD_EXP  ___EXP___              表达式（注：SysY表达式是int型表达式）
 COND -> L_OR_EXP  ___COND___            条件表达式
 L_VAL -> id zero_or_more_EXP_surrounded_by_bracket  ___L_VAL___              

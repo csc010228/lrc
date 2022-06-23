@@ -45,7 +45,7 @@ protected:
     virtual bool init_intermediate_code_manager();
 
     //初始化汇编指令优化器
-    virtual bool init_asm_optimizer()=0;
+    virtual bool init_asm_optimizer(bool optimize)=0;
 
     //初始化汇编指令生成器
     virtual bool init_instruction_generator(map<reg_index,string> regs_info)=0;
@@ -55,7 +55,7 @@ public:
     Asm_generator();
 
     //初始化
-    bool init(set<struct reg> regs,struct flag_reg flag_reg,string memory_info);
+    bool init(set<struct reg> regs,struct flag_reg flag_reg,string memory_info,bool optimize);
 
     //析构函数
     virtual ~Asm_generator();

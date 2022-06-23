@@ -12,7 +12,7 @@
 /*
 构造函数
 */
-Asm_optimizer::Asm_optimizer()
+Asm_optimizer::Asm_optimizer(bool optimize):optimize_(optimize)
 {
     ;
 }

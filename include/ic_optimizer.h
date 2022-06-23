@@ -167,7 +167,7 @@ struct ic_func_flow_graph
     void add_ic(struct quaternion ic);
 
     //构建函数流图中各个基本块之间的跳转关系
-    void build_jumps_between_basic_blocks();
+    void build_nexts_between_basic_blocks();
 
     //构建函数流图中的数组变量和数组元素之间的映射，以及偏移量和数组元素之间的映射
     void build_array_and_offset_to_array_member_map();

@@ -33,9 +33,9 @@ bool Arm_asm_generator::init_instruction_generator(map<reg_index,string> regs_in
 }
 
 //初始化汇编指令优化器
-bool Arm_asm_generator::init_asm_optimizer()
+bool Arm_asm_generator::init_asm_optimizer(bool optimize)
 {
-    asm_optimizer_=new Arm_asm_optimizer;
+    asm_optimizer_=new Arm_asm_optimizer(optimize);
     asm_optimizer_->set_mediator(this);
     return true;
 }
@@ -232,6 +232,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::GET_FP_REG:
             case event_type::GET_SP_REG:
             case event_type::GET_REG_BYTE_SIZE:
+            case event_type::GET_ALL_ARGUMENT_REGS:
                 res=register_manager_->handler(event);
                 break;
             default:
@@ -248,7 +249,7 @@ Return
 ------
 如果初始化成功返回true，否则返回false
 */
-bool Arm_asm_generator::init()
+bool Arm_asm_generator::init(bool optimize)
 {
     //ARM可用的寄存器的名字以及描述
     set<struct reg> arm_regs={
@@ -303,5 +304,5 @@ bool Arm_asm_generator::init()
         reg("APSR_nzcv",48,reg_attr::FLAGS,false,32,reg_processor::CPU),
         reg("FPSCR",49,reg_attr::FLAGS,false,32,reg_processor::VFP),
     };
-    return Asm_generator::init(arm_regs,flag_reg("cpsr",4,flag_in_flag_reg::NEGATIVE,flag_in_flag_reg::ZERO,flag_in_flag_reg::CARRY,flag_in_flag_reg::OVERFLOW),arm_memory_info);
+    return Asm_generator::init(arm_regs,flag_reg("cpsr",4,flag_in_flag_reg::NEGATIVE,flag_in_flag_reg::ZERO,flag_in_flag_reg::CARRY,flag_in_flag_reg::OVERFLOW),arm_memory_info,optimize);
 }

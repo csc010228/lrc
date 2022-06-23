@@ -2155,7 +2155,7 @@ define_semantic_rule(___IF_STMT_1___)
     }
     else
     {
-        print_error("___IF_STMT_2___ error!");
+        print_error("___IF_STMT_1___ error!");
     }
     //进行回填
     for(vector<list<struct quaternion>::iterator>::iterator i=backpatching_codes->begin();i!=backpatching_codes->end();i++)
@@ -2271,7 +2271,7 @@ define_semantic_rule(___IF_STMT_3___)
     }
     else
     {
-        print_error("___IF_STMT_1___ error!");
+        print_error("___IF_STMT_3___ error!");
     }
     //进行回填
     for(vector<list<struct quaternion>::iterator>::iterator i=backpatching_codes->begin();i!=backpatching_codes->end();i++)

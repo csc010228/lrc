@@ -1572,6 +1572,19 @@ void Register_manager::handle_UNATTACH_REG_S_ALL_DATA(reg_index reg)
     regs_info_.unattach_reg_s_all_data(reg);
 }
 
+struct event Register_manager::handle_GET_ALL_ARGUMENT_REGS()
+{
+    set<reg_index> * argument_reg=new set<reg_index>;
+    for(auto reg:regs_info_.reg_indexs)
+    {
+        if(reg.second.attr==reg_attr::ARGUMENT)
+        {
+            argument_reg->insert(reg.first);
+        }
+    }
+    return event(event_type::RESPONSE_POINTER,(void *)argument_reg);
+}
+
 /*
 事件处理函数(由中介者进行调用)
 
@@ -1741,6 +1754,9 @@ struct event Register_manager::handler(struct event event)
             break;
         case event_type::UNATTACH_REG_S_ALL_DATA:
             handle_UNATTACH_REG_S_ALL_DATA((reg_index)event.int_data);
+            break;
+        case event_type::GET_ALL_ARGUMENT_REGS:
+            response=handle_GET_ALL_ARGUMENT_REGS();
             break;
         default:
             break;

@@ -22,7 +22,7 @@ private:
     bool init_instruction_generator(map<reg_index,string> regs_info);
 
     //初始化汇编指令优化器
-    bool init_asm_optimizer();
+    bool init_asm_optimizer(bool optimize);
 
 public:
     //构造函数
@@ -35,7 +35,7 @@ public:
     struct event notify(Asm_generator_component *sender, struct event event) const;
 
     //初始化
-    bool init();
+    bool init(bool optimize);
 };
 
 #endif //__ARM_ASM_GENERATOR_H

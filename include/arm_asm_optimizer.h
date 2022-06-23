@@ -18,11 +18,17 @@ private:
     //要优化的arm汇编流图
     struct arm_flow_graph * arm_flow_graph_;
 
+    //利用arm数据处理指令能够更改标志位进行优化
+    void data_process_instructions_change_flags(struct arm_basic_block * basic_block);
+    
     //局部优化
     void local_optimize();
 
     //优化函数的出入口代码
     void optimize_func_enter_and_exit(struct arm_func_flow_graph * func);
+
+    //利用arm的条件执行进行优化
+    void conditional_execute(struct arm_func_flow_graph * func);
 
     //全局优化
     void global_optimize();
@@ -32,7 +38,7 @@ private:
 
 public:
     //构造函数
-    Arm_asm_optimizer();
+    Arm_asm_optimizer(bool optimize);
 
     //析构函数
     ~Arm_asm_optimizer();

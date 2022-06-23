@@ -66,14 +66,14 @@ Parameters
 regs:目标机器下的可用的寄存器以及其类型
 memory_info:目标机器的内存信息
 */
-bool Asm_generator::init(set<struct reg> regs,struct flag_reg flag_reg,string memory_info)
+bool Asm_generator::init(set<struct reg> regs,struct flag_reg flag_reg,string memory_info,bool optimize)
 {
     map<reg_index,string> regs_info;
     for(auto i:regs)
     {
         regs_info.insert(make_pair(i.index,i.name));
     }
-    return init_register_manager(regs,flag_reg) && init_memory_manager(memory_info) && init_instruction_generator(regs_info) && init_intermediate_code_manager() && init_asm_optimizer();
+    return init_register_manager(regs,flag_reg) && init_memory_manager(memory_info) && init_instruction_generator(regs_info) && init_intermediate_code_manager() && init_asm_optimizer(optimize);
 }
 
 /*

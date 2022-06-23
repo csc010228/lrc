@@ -13,11 +13,13 @@
 
 class Asm_optimizer:public Asm_generator_component
 {
-private:
+protected:
+    //优化标志
+    bool optimize_;
 
 public:
     //构造函数
-    Asm_optimizer();
+    Asm_optimizer(bool optimize);
 
     //析构函数
     virtual ~Asm_optimizer();

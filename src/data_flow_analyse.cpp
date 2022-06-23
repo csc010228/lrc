@@ -30,8 +30,6 @@ Parameters
 ----------
 func:要分析的函数流图
 */
-#include<iostream>
-using namespace std;
 void use_define_analysis(struct ic_func_flow_graph * func)
 {
     map<struct ic_basic_block *,map<struct ic_data *,set<ic_pos> > > gens,kills;
@@ -71,25 +69,6 @@ void use_define_analysis(struct ic_func_flow_graph * func)
                     set_union(func->vars_def_positions.at(ic_with_info.explicit_def).begin(),func->vars_def_positions.at(ic_with_info.explicit_def).end(),kills.at(basic_block).at(ic_with_info.explicit_def).begin(),kills.at(basic_block).at(ic_with_info.explicit_def).end(),inserter(kills.at(basic_block).at(ic_with_info.explicit_def),kills.at(basic_block).at(ic_with_info.explicit_def).begin()));
                     kills.at(basic_block).at(ic_with_info.explicit_def).erase(current_pos);
                 }
-                // //一个变量的明确定义会杀死（kill）所有以该变量为偏移量的数组取元素变量的定义
-                // if(func->offset_to_array_member_map.find(ic_with_info.explicit_def)!=func->offset_to_array_member_map.end())
-                // {
-                //     for(auto array_member:func->offset_to_array_member_map.at(ic_with_info.explicit_def))
-                //     {
-                //         if(func->vars_def_positions.find(array_member)!=func->vars_def_positions.end())
-                //         {
-                //             if(kills.at(basic_block).find(array_member)==kills.at(basic_block).end())
-                //             {
-                //                 kills.at(basic_block).insert(make_pair(array_member,set<ic_pos>()));
-                //             }
-                //             set_union(func->vars_def_positions.at(array_member).begin(),func->vars_def_positions.at(array_member).end(),kills.at(basic_block).at(array_member).begin(),kills.at(basic_block).at(array_member).end(),inserter(kills.at(basic_block).at(array_member),kills.at(basic_block).at(array_member).begin()));
-                //         }
-                //         if(gens.at(basic_block).find(array_member)!=gens.at(basic_block).end())
-                //         {
-                //             gens.at(basic_block).erase(array_member);
-                //         }
-                //     }
-                // }
                 //一个变量的明确定义会为所有以该变量为偏移量的数组取元素变量生成一个定义，那就是它们的所属数组的定义点
                 if(func->offset_to_array_member_map.find(ic_with_info.explicit_def)!=func->offset_to_array_member_map.end())
                 {
@@ -296,17 +275,6 @@ void build_ud_chain(struct ic_func_flow_graph * func)
                     defs.at((*ic_with_info).explicit_def).clear();
                 }
                 defs.at((*ic_with_info).explicit_def).insert(current_pos);
-                //明确定义也会杀死（kill）所有以该变量作为偏移的数组取元素的定义
-                // if(func->offset_to_array_member_map.find((*ic_with_info).explicit_def)!=func->offset_to_array_member_map.end())
-                // {
-                //     for(auto array_member:func->offset_to_array_member_map.at((*ic_with_info).explicit_def))
-                //     {
-                //         if(defs.find(array_member)!=defs.end())
-                //         {
-                //             defs.erase(array_member);
-                //         }
-                //     }
-                // }
                 //明确定义会为所有以该变量为偏移量的数组取元素变量生成一个定义，那就是它们的所属数组的定义点
                 if(func->offset_to_array_member_map.find((*ic_with_info).explicit_def)!=func->offset_to_array_member_map.end())
                 {
@@ -433,24 +401,7 @@ func:要分析的函数流图
 */
 void live_variable_analysis(struct ic_func_flow_graph * func)
 {
-    // map<struct ic_basic_block *,map<struct ic_data *,set<ic_pos> > > uses,defs;
-    // set<struct ic_basic_block * > precursors;
-    // map<struct ic_data *,set<ic_pos> > oldout;
-    // struct ic_data * belong_array,* offset;
-    // size_t pos;
-    // ic_pos current_pos;
-    // bool change=true;
-    // //先构造每一个基本块的uses和defs集合
-    // for(auto basic_block:func->basic_blocks)
-    // {
-    //     uses.insert(make_pair(basic_block,map<struct ic_data *,set<ic_pos> >()));
-    //     defs.insert(make_pair(basic_block,map<struct ic_data *,set<ic_pos> >()));
-    //     pos=0;
-    //     for(auto ic_with_info:basic_block->ic_sequence)
-    //     {
-    //         current_pos=ic_pos(basic_block,pos);
-    //     }
-    // }
+    
 }
 
 /*
