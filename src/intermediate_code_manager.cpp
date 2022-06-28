@@ -103,6 +103,33 @@ struct event Intermediate_code_manager::handle_IS_VAR_STILL_ALIVE(struct ic_data
     return res;
 }
 
+struct event Intermediate_code_manager::handle_IS_FUNC_NEED_PASS_PARAMS_BY_STACK(struct ic_func * func)
+{
+    static size_t cpu_argument_reg_num=notify(event(event_type::GET_CPU_ARGUMENT_REG_NUM,nullptr)).int_data;
+    static size_t vfp_argument_reg_num=notify(event(event_type::GET_VFP_ARGUMENT_REG_NUM,nullptr)).int_data;
+    size_t param_num_passed_by_cpu_reg=0,param_num_passed_by_vfp_reg=0;
+    for(auto f_param:(*func->f_params))
+    {
+        if(f_param->is_array_var() || f_param->get_data_type()==language_data_type::INT)
+        {
+            param_num_passed_by_cpu_reg++;
+            if(param_num_passed_by_cpu_reg>cpu_argument_reg_num)
+            {
+                return event(event_type::RESPONSE_BOOL,true);
+            }
+        }
+        else if(f_param->get_data_type()==language_data_type::FLOAT)
+        {
+            param_num_passed_by_vfp_reg++;
+            if(param_num_passed_by_vfp_reg>vfp_argument_reg_num)
+            {
+                return event(event_type::RESPONSE_BOOL,true);
+            }
+        }
+    }
+    return event(event_type::RESPONSE_BOOL,false);
+}
+
 /*
 事件处理函数(由中介者进行调用)
 
@@ -124,6 +151,9 @@ struct event Intermediate_code_manager::handler(struct event event)
             break;
         case event_type::IS_VAR_STILL_ALIVE:
             res=handle_IS_VAR_STILL_ALIVE((struct ic_data *)event.pointer_data);
+            break;
+        case event_type::IS_FUNC_NEED_PASS_PARAMS_BY_STACK:
+            res=handle_IS_FUNC_NEED_PASS_PARAMS_BY_STACK((struct ic_func *)event.pointer_data);
             break;
         default:
             break;

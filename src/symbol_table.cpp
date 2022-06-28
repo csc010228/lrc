@@ -417,7 +417,7 @@ void ic_scope::set_scope_type(enum ic_scope_type type)
         {
             this->father->different_type_children_num.insert(make_pair(type,0));
         }
-        this->index_for_output=this->father->different_type_children_num[type]++;
+        this->index_for_output=this->father->different_type_children_num.at(type)++;
         this->type=type;
     }
 }
@@ -683,15 +683,21 @@ data_type:变量类型
 dimensions_len:存储数组各个维度的长度的数组,如果这个参数是nullptr，说明此时这个变量是基本变量，反之则说明是数组变量
 const_or_init_value:常量的值
 is_const:是否是const变量
+belong_scope:新增的变量的作用域，默认是nulltr，就是使用当前作用域
 
 Return
 ------
 如果添加成功，就返回参数ic_data，否则就会把ic_data释放，并且返回nullptr
 */
-struct ic_data * Symbol_table::new_var(string name,enum language_data_type data_type,list<struct ic_data * > * dimensions_len,OAA const_or_init_value,bool is_const)
+struct ic_data * Symbol_table::new_var(string name,enum language_data_type data_type,list<struct ic_data * > * dimensions_len,OAA const_or_init_value,bool is_const,struct ic_scope * belong_scope)
 {
     struct ic_data * res=nullptr;
-    if(current_scope_)
+    if(belong_scope)
+    {
+        res=new struct ic_data(name,data_type,dimensions_len,const_or_init_value,is_const);
+        belong_scope->add_var(res);
+    }
+    else if(current_scope_)
     {
         res=new struct ic_data(name,data_type,dimensions_len,const_or_init_value,is_const);
         current_scope_->add_var(res);

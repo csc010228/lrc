@@ -405,7 +405,7 @@ void DAG::generate_IF_JMP_or_IF_NOT_JMP_in_DAG(enum ic_op op,struct ic_data * ar
 
 void DAG::generate_CALL_in_DAG(struct ic_func * func,struct ic_data * ret,list<struct ic_data * > * r_params)
 {
-    Symbol_table * symbol_table=Symbol_table::get_instance();
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     size_t f_param_pos=0;
     set<struct ic_data * > func_def_globals_and_f_params;
     struct ic_data * array;
@@ -517,7 +517,7 @@ bool DAG::constant_merge(enum ic_op op,struct ic_data * result,struct ic_data * 
 
 bool DAG::algebraic_simplify(enum ic_op op,struct ic_data * result,struct ic_data * arg1,struct ic_data * arg2)
 {
-    Symbol_table * symbol_table=Symbol_table::get_instance();
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     struct ic_data * new_arg;
     struct DAG_node * new_arg_s_DAG_node;
     arg1=copy_progagation(arg1);

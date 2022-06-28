@@ -120,6 +120,7 @@ Return
 */
 list<struct quaternion> * Syntax_directed_translator::translate()
 {
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     int tag=-1;
     list<struct quaternion> * intermediate_codes;
     struct action_entry entry;
@@ -130,7 +131,6 @@ list<struct quaternion> * Syntax_directed_translator::translate()
     state next_state;
     semantic_rule rule;
     map<string,union semantic_stack_node_member> new_semantic_stack_node;
-    Symbol_table * symbol_table=Symbol_table::get_instance();
 
     //先给符号栈和状态栈赋初始值
     state_stack_.push(0);

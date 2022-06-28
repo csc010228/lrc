@@ -224,11 +224,8 @@ struct ic_scope
 
     enum ic_scope_type type;
     map<string,struct ic_data * > vars;
-    union
-    {
-        struct ic_func * func;
-        size_t index_for_output;
-    };
+    struct ic_func * func;
+    size_t index_for_output;
     struct ic_scope * father;
     list<struct ic_scope * > children;
     map<enum ic_scope_type,size_t> different_type_children_num;
@@ -292,7 +289,7 @@ public:
     static void delete_instance();
 
     //往符号表中添加一个用户定义的变量
-    struct ic_data * new_var(string name,enum language_data_type data_type,list<struct ic_data * > * dimensions_len,OAA const_or_init_value,bool is_const);
+    struct ic_data * new_var(string name,enum language_data_type data_type,list<struct ic_data * > * dimensions_len,OAA const_or_init_value,bool is_const,struct ic_scope * belong_scope=nullptr);
 
     //往符号表中添加一个临时变量
     struct ic_data * new_tmp_var(enum language_data_type data_type,list<struct ic_data * > * dimensions_len,OAA const_or_init_value,bool is_const);
@@ -330,19 +327,19 @@ public:
     //获取符号表中的某一个数组取元素（不是数组）
     struct ic_data * array_member_not_array_var_entry(struct ic_data * array_var,struct ic_data * offset);
 
-    //增加一个函数会更改的全局变量和数组形参
+    //增加一个函数会更改的全局变量和形参
     void add_func_def_globals_and_f_params(struct ic_func * func,struct ic_data * data);
 
-    //增加一个函数会使用的全局变量和数组形参
+    //增加一个函数会使用的全局变量和形参
     void add_func_use_globals_and_f_params(struct ic_func * func,struct ic_data * data);
 
     //增加一个函数会直接调用的函数
     void add_func_direct_calls(struct ic_func * func,struct ic_func * called_func);
 
-    //获取一个函数会更改的所有全局变量和数组形参
+    //获取一个函数会更改的所有全局变量和形参
     set<struct ic_data * > get_func_def_globals_and_f_params(struct ic_func * func);
 
-    //获取一个函数会使用的所有全局变量和数组形参
+    //获取一个函数会使用的所有全局变量和形参
     set<struct ic_data * > get_func_use_globals_and_f_params(struct ic_func * func);
 
     //获取一个函数会直接调用的所有函数

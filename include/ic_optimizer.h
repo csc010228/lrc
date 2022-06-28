@@ -57,7 +57,6 @@ typedef struct ic_pos
 struct quaternion_with_info
 {
     quaternion_with_info();
-
     quaternion_with_info(struct quaternion ic);
 
     //根据中间代码建立信息
@@ -75,6 +74,12 @@ struct quaternion_with_info
     //尝试将一个数据放入该中间代码的使用数据
     void add_to_uses(struct ic_data * data);
 
+    //获取该中间代码涉及到的所有数据
+    set<struct ic_data * > get_all_datas() const;
+
+    //获取该中间代码涉及到的标签，如果没有就返回nullptr
+    struct ic_label * get_related_label() const;
+
     //尝试将一个ud-链的数据放入ud-链
     void add_to_ud_chain(struct ic_data * data,set<ic_pos> poses);
 
@@ -85,11 +90,11 @@ struct quaternion_with_info
     //查看当前的中间代码是否定义了全局变量或者数组函数形参
     bool check_if_def_global_or_f_param_array();
 
-    //将该条中间代码使用的某一个数据替换成另一个常量数据
-    void replace_used_data(struct ic_data * source,struct ic_data * destination);
+    //将该条中间代码使用的某一个数据替换成另一个数据
+    void replace_datas(struct ic_data * source,struct ic_data * destination,bool only_use_datas=false);
 
-    //将该中间代码变成NOP
-    void to_NOP();
+    //将中间代码中涉及的所有数据都进行替换
+    void replace_all_vars(const map<struct ic_data *,struct ic_data *> & old_and_new_vars_map);
 
     //中间代码
     struct quaternion intermediate_code;
@@ -111,6 +116,7 @@ struct quaternion_with_info
 struct ic_basic_block
 {
     ic_basic_block(struct ic_func_flow_graph * belong_func_flow_graph);
+    ic_basic_block(const struct ic_basic_block & source,struct ic_func_flow_graph * new_belong_func_flow_graph,const map<struct ic_data *,struct ic_data * > & old_and_new_vars_map,const map<struct ic_label *,struct ic_label * > & old_and_new_labels_map);
 
     //设置该基本块顺序执行的时候的下一个基本块
     void set_sequential_next(struct ic_basic_block * next);
@@ -134,7 +140,7 @@ struct ic_basic_block
     vector<struct quaternion_with_info> ic_sequence;
     //该基本块的后续基本块
     struct ic_basic_block * sequential_next,* jump_next;
-    //该基本块的所属函数
+    //该基本块的所属函数流图
     struct ic_func_flow_graph * belong_func_flow_graph;
     //该基本块中的数组变量和其数组元素（包括数组变量）的映射
     map<struct ic_data * ,set<struct ic_data * > > array_to_array_member_map;
@@ -174,6 +180,9 @@ struct ic_func_flow_graph
 
     //构建函数流图中所有变量的定义点和使用点的信息
     void build_vars_def_and_use_pos_info();
+
+    //获取函数的出口个数
+    size_t get_exit_num() const;
 
     //获取指定位置的中间代码及其信息
     struct quaternion_with_info & get_ic_with_info(ic_pos pos);
@@ -224,7 +233,7 @@ protected:
     struct ic_flow_graph * intermediate_codes_flow_graph_;
 
     //函数内联
-    void function_inline(struct ic_basic_block * basic_block);
+    void function_inline(struct ic_func_flow_graph * func);
     //DAG相关优化
     void DAG_optimize(struct ic_basic_block * basic_block);
 

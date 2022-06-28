@@ -381,6 +381,8 @@ private:
     void handle_ATTACH_VAR_VALUE_TO_REG_THEN_SET_DIRTY(struct ic_data * var_data,reg_index reg);
     void handle_UNATTACH_REG_S_ALL_DATA(reg_index reg);
     struct event handle_GET_ALL_ARGUMENT_REGS();
+    struct event handle_GET_CPU_ARGUMENT_REG_NUM();
+    struct event handle_GET_VFP_ARGUMENT_REG_NUM();
 
 public:
     //构造函数

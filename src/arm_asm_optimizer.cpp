@@ -175,6 +175,9 @@ void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph 
     int fp_sp_deviation=0;
     reg_index pc=(reg_index)notify(event(event_type::GET_PC_REG,nullptr)).int_data,sp=(reg_index)notify(event(event_type::GET_SP_REG,nullptr)).int_data,lr=(reg_index)notify(event(event_type::GET_LR_REG,nullptr)).int_data,fp=(reg_index)notify(event(event_type::GET_FP_REG,nullptr)).int_data;
     bool tag=false;
+    bool func_need_pass_params_by_stack;
+    //先查看一下这个函数是否需要使用到寄存器传参
+    func_need_pass_params_by_stack=notify(event(event_type::IS_FUNC_NEED_PASS_PARAMS_BY_STACK,(void *)(arm_func->function))).bool_data;
     //统计整个函数中用到的所有的寄存器
     for(auto basic_block:arm_func->basic_blocks)
     {
@@ -295,10 +298,10 @@ next:
         }
     }
     push_cpu_regs=used_cpu_temp_regs;
-    push_cpu_regs.push_back(fp);
-    push_cpu_regs.push_back(lr);
     pop_cpu_regs=used_cpu_temp_regs;
+    push_cpu_regs.push_back(fp);
     pop_cpu_regs.push_back(fp);
+    push_cpu_regs.push_back(lr);
     pop_cpu_regs.push_back(pc);
     for(auto basic_block:arm_func->basic_blocks)
     {
@@ -330,6 +333,7 @@ next:
             }
             else if(assign_fp==*arm_asm)
             {
+                delete *arm_asm;
                 for(auto reg:push_cpu_regs)
                 {
                     fp_sp_deviation+=notify(event(event_type::GET_REG_BYTE_SIZE,(int)reg)).int_data;

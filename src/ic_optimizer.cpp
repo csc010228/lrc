@@ -50,11 +50,11 @@ quaternion_with_info::quaternion_with_info(struct quaternion ic):intermediate_co
 //根据中间代码建立信息
 void quaternion_with_info::build_info(bool clear_data_flow_analysis_info)
 {
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     struct ic_data * arg1=nullptr,* arg2=nullptr,* result=nullptr;
     struct ic_func * func=nullptr;
     list<struct ic_data * > * r_params=nullptr;
     set<struct ic_data * > func_def_globals_and_f_params;
-    Symbol_table * symbol_table=Symbol_table::get_instance();
     explicit_def=nullptr;
     vague_defs.clear();
     uses.clear();
@@ -143,8 +143,8 @@ void quaternion_with_info::build_info(bool clear_data_flow_analysis_info)
 //中间代码化简
 void quaternion_with_info::simplify()
 {
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     struct ic_data * arg1=nullptr,* arg2=nullptr,* result=nullptr;
-    Symbol_table * symbol_table=Symbol_table::get_instance();
     arg1=(struct ic_data *)intermediate_code.arg1.second;
     arg2=(struct ic_data *)intermediate_code.arg2.second;
     result=(struct ic_data *)intermediate_code.result.second;
@@ -469,7 +469,6 @@ void quaternion_with_info::simplify()
     }
 }
 
-//尝试将一个数据放入该中间代码的明确定义数据
 void quaternion_with_info::set_explicit_def(struct ic_data * data)
 {
     if(!data->is_const())
@@ -488,7 +487,6 @@ void quaternion_with_info::set_explicit_def(struct ic_data * data)
     }
 }
 
-//尝试将一个数据放入该中间代码的模糊定义数据
 void quaternion_with_info:: add_to_vague_defs(struct ic_data * data)
 {
     if(!data->is_const())
@@ -507,7 +505,6 @@ void quaternion_with_info:: add_to_vague_defs(struct ic_data * data)
     }
 }
 
-//尝试将一个数据放入该中间代码的使用数据
 void quaternion_with_info::add_to_uses(struct ic_data * data)
 {
     if(!data->is_const())
@@ -521,7 +518,34 @@ void quaternion_with_info::add_to_uses(struct ic_data * data)
     }
 }
 
-//尝试将一个ud-链的数据放入ud-链
+set<struct ic_data * > quaternion_with_info::get_all_datas() const
+{
+    set<struct ic_data * > res;
+    if(explicit_def)
+    {
+        res.insert(explicit_def);
+    }
+    set_union(vague_defs.begin(),vague_defs.end(),res.begin(),res.end(),inserter(res,res.begin()));
+    set_union(uses.begin(),uses.end(),res.begin(),res.end(),inserter(res,res.begin()));
+    return res;
+}
+
+struct ic_label * quaternion_with_info::get_related_label() const
+{
+    switch(intermediate_code.op)
+    {
+        case ic_op::JMP:
+        case ic_op::IF_JMP:
+        case ic_op::IF_NOT_JMP:
+        case ic_op::LABEL_DEFINE:
+            return (struct ic_label * )intermediate_code.result.second;
+            break;
+        default:
+            break;
+    }
+    return nullptr;
+}
+
 void quaternion_with_info::add_to_ud_chain(struct ic_data * data,set<ic_pos> poses)
 {
     if(!data->is_const())
@@ -537,7 +561,6 @@ void quaternion_with_info::add_to_ud_chain(struct ic_data * data,set<ic_pos> pos
     }
 }
 
-//尝试将一个du-链的数据放入ud-链
 void quaternion_with_info::add_to_du_chain(struct ic_data * data,set<ic_pos> poses)
 {
     if(!data->is_const())
@@ -583,121 +606,17 @@ bool quaternion_with_info::check_if_def_global_or_f_param_array()
     return false;
 }
 
-//将该条中间代码中使用的某一个数据替换成另一个常量数据
-void quaternion_with_info::replace_used_data(struct ic_data * source,struct ic_data * destination)
+//将该条中间代码中使用的某一个数据替换成另一个数据
+void quaternion_with_info::replace_datas(struct ic_data * source,struct ic_data * destination,bool only_use_datas)
 {
-    static Symbol_table * symbol_table=Symbol_table::get_instance();
-    struct ic_data * arg1,* arg2,* result;
-    list<struct ic_data * > * r_params,* new_r_params;
-    switch(intermediate_code.op)
-    {
-        case ic_op::ASSIGN:
-        case ic_op::NOT:
-            arg1=(struct ic_data *)intermediate_code.arg1.second;
-            result=(struct ic_data *)intermediate_code.result.second;
-            if(arg1==source)
-            {
-                intermediate_code.arg1.second=(void *)destination;
-            }
-            else if(arg1->is_array_member() && arg1->get_offset()==source)
-            {
-                intermediate_code.arg1.second=symbol_table->array_member_not_array_var_entry(arg1->get_belong_array(),destination);
-            }
-            if(result->is_array_member() && result->get_offset()==source)
-            {
-                intermediate_code.result.second=symbol_table->array_member_not_array_var_entry(result->get_belong_array(),destination);
-            }
-            break;
-        case ic_op::ADD:
-        case ic_op::SUB:
-        case ic_op::MUL:
-        case ic_op::DIV:
-        case ic_op::MOD:
-        case ic_op::EQ:
-        case ic_op::UEQ:
-        case ic_op::GT:
-        case ic_op::LT:
-        case ic_op::GE:
-        case ic_op::LE:
-            arg1=(struct ic_data *)intermediate_code.arg1.second;
-            arg2=(struct ic_data *)intermediate_code.arg2.second;
-            result=(struct ic_data *)intermediate_code.result.second;
-            if(arg1==source)
-            {
-                intermediate_code.arg1.second=(void *)destination;
-            }
-            else if(arg1->is_array_member() && arg1->get_offset()==source)
-            {
-                intermediate_code.arg1.second=symbol_table->array_member_not_array_var_entry(arg1->get_belong_array(),destination);
-            }
-            if(arg2==source)
-            {
-                intermediate_code.arg2.second=(void *)destination;
-            }
-            else if(arg2->is_array_member() && arg2->get_offset()==source)
-            {
-                intermediate_code.arg2.second=symbol_table->array_member_not_array_var_entry(arg2->get_belong_array(),destination);
-            }
-            if(result->is_array_member() && result->get_offset()==source)
-            {
-                intermediate_code.result.second=symbol_table->array_member_not_array_var_entry(result->get_belong_array(),destination);
-            }
-            break;
-        case ic_op::IF_JMP:
-        case ic_op::IF_NOT_JMP:
-            arg1=(struct ic_data *)intermediate_code.arg1.second;
-            if(arg1==source)
-            {
-                intermediate_code.arg1.second=(void *)destination;
-            }
-            else if(arg1->is_array_member() && arg1->get_offset()==source)
-            {
-                intermediate_code.arg1.second=symbol_table->array_member_not_array_var_entry(arg1->get_belong_array(),destination);
-            }
-            break;
-        case ic_op::CALL:
-            r_params=(list<struct ic_data * > *)intermediate_code.arg2.second;
-            result=(struct ic_data *)intermediate_code.result.second;
-            new_r_params=new list<struct ic_data * >;
-            for(auto r_param:*r_params)
-            {
-                if(r_param==source)
-                {
-                    new_r_params->push_back(destination);
-                }
-                else if(r_param->is_array_member() && r_param->get_offset()==source)
-                {
-                    new_r_params->push_back(symbol_table->array_member_entry(r_param->get_belong_array(),r_param->get_belong_array()->dimensions_len->size()-(r_param->dimensions_len==nullptr?0:r_param->dimensions_len->size()),destination));
-                }
-                else
-                {
-                    new_r_params->push_back(r_param);
-                }
-            }
-            delete r_params;
-            intermediate_code.arg2.second=(void *)new_r_params;
-            if(result && result->is_array_member() && result->get_offset()==source)
-            {
-                intermediate_code.result.second=symbol_table->array_member_not_array_var_entry(result->get_belong_array(),destination);
-            }
-            break;
-        case ic_op::RET:
-            result=(struct ic_data *)intermediate_code.result.second;
-            if(result)
-            {
-                if(result==source)
-                {
-                    intermediate_code.result.second=(void *)destination;
-                }
-                else if(result->is_array_member() && result->get_offset()==source)
-                {
-                    intermediate_code.result.second=symbol_table->array_member_not_array_var_entry(result->get_belong_array(),destination);
-                }
-            }
-            break;
-        default:
-            break;
-    }
+    intermediate_code.replace_datas(source,destination,only_use_datas);
+    simplify();
+}
+
+//将中间代码中涉及的所有数据都进行替换
+void quaternion_with_info::replace_all_vars(const map<struct ic_data *,struct ic_data *> & old_and_new_vars_map)
+{
+    intermediate_code.replace_all_vars(old_and_new_vars_map);
     simplify();
 }
 
@@ -711,6 +630,18 @@ ic_basic_block::ic_basic_block(struct ic_func_flow_graph * belong_func_flow_grap
 {
     
 };
+
+ic_basic_block::ic_basic_block(const struct ic_basic_block & source,struct ic_func_flow_graph * new_belong_func_flow_graph,const map<struct ic_data *,struct ic_data * > & old_and_new_vars_map,const map<struct ic_label *,struct ic_label * > & old_and_new_labels_map):sequential_next(source.sequential_next),jump_next(source.jump_next),belong_func_flow_graph(new_belong_func_flow_graph)
+{
+    struct quaternion old_ic;
+    for(auto old_ic_with_info:source.ic_sequence)
+    {
+        old_ic=old_ic_with_info.intermediate_code;
+        old_ic.replace_all_vars(old_and_new_vars_map);
+        old_ic.replace_all_labels(old_and_new_labels_map);
+        add_ic(old_ic);
+    }
+}
 
 void ic_basic_block::set_sequential_next(struct ic_basic_block * next)
 {
@@ -1077,6 +1008,24 @@ void ic_func_flow_graph::build_vars_def_and_use_pos_info()
     }
 }
 
+//获取函数的出口个数
+size_t ic_func_flow_graph::get_exit_num() const
+{
+    size_t res=0;
+    for(auto basic_block:basic_blocks)
+    {
+        for(vector<struct quaternion_with_info>::reverse_iterator ic_with_info=basic_block->ic_sequence.rbegin();ic_with_info!=basic_block->ic_sequence.rend();ic_with_info++)
+        {
+            if((*ic_with_info).intermediate_code.op==ic_op::RET)
+            {
+                res++;
+                break;
+            }
+        }
+    }
+    return res;
+}
+
 //获取指定位置的中间代码及其信息
 struct quaternion_with_info & ic_func_flow_graph::get_ic_with_info(ic_pos pos)
 {
@@ -1155,30 +1104,279 @@ void Ic_optimizer::init(bool optimize)
 
 Parameters
 ----------
-basic_block:要优化的基本块
+func:要优化的函数流图
 */
-void Ic_optimizer::function_inline(struct ic_basic_block * basic_block)
+void Ic_optimizer::function_inline(struct ic_func_flow_graph * func)
 {
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     struct ic_func * current_func,* called_func;
     set<struct ic_func * > funcs_called_directly_by_called_func;
     struct ic_func_flow_graph * called_func_flow_graph;
-    for(auto ic_with_info:basic_block->ic_sequence)
+    set<struct ic_data * > called_func_def_globals_and_f_params;
+    list<struct ic_data * > * f_params,* r_params;
+    list<struct ic_data * >::iterator f_param_iterator,r_param_iterator;
+    list<struct ic_basic_block * > copyed_basic_blocks;
+    map<struct ic_basic_block *,struct ic_basic_block *> old_and_new_ic_basic_block_map;
+    struct ic_basic_block * new_basic_block,* skip_until_basic_block;
+    map<struct ic_data *,struct ic_data * > old_and_new_vars_map;
+    map<struct ic_label *,struct ic_label * > old_and_new_labels_map;
+    struct ic_data * new_var,* result;
+    struct ic_scope * inline_func_scope;
+    struct ic_label * old_label,* new_label;
+    vector<struct quaternion_with_info>::iterator another_ic_with_info;
+    list<struct quaternion> new_basic_block_ic_sequence;
+    size_t called_func_exit_num;
+    skip_until_basic_block=nullptr;
+again:
+    for(auto basic_block:func->basic_blocks)
     {
-        if(ic_with_info.intermediate_code.op==ic_op::CALL)
+        if(skip_until_basic_block)
         {
-            current_func=basic_block->belong_func_flow_graph->func;
-            called_func=(struct ic_func *)ic_with_info.intermediate_code.arg1.second;
-            funcs_called_directly_by_called_func=Symbol_table::get_instance()->get_func_direct_calls(called_func);
-            if(funcs_called_directly_by_called_func.find(called_func)==funcs_called_directly_by_called_func.end() && funcs_called_directly_by_called_func.find(current_func)==funcs_called_directly_by_called_func.end())
+            if(basic_block!=skip_until_basic_block)
             {
-                //只有当被调用的函数不是递归函数，而且也不会直接调用当前的函数的时候才能够进行函数内联
-                called_func_flow_graph=intermediate_codes_flow_graph_->get_func_flow_graph(called_func);
-                if(!called_func_flow_graph)
-                {
-                    return;
-                }
-                // TO-DO
+                continue;
             }
+            else
+            {
+                skip_until_basic_block=nullptr;
+            }
+        }
+        for(vector<struct quaternion_with_info>::iterator ic_with_info=basic_block->ic_sequence.begin();ic_with_info!=basic_block->ic_sequence.end();ic_with_info++)
+        {
+            if((*ic_with_info).intermediate_code.op==ic_op::CALL)
+            {
+                current_func=func->func;
+                called_func=(struct ic_func *)(*ic_with_info).intermediate_code.arg1.second;
+                funcs_called_directly_by_called_func=symbol_table->get_func_direct_calls(called_func);
+                if(funcs_called_directly_by_called_func.find(called_func)==funcs_called_directly_by_called_func.end() && funcs_called_directly_by_called_func.find(current_func)==funcs_called_directly_by_called_func.end())
+                {
+                    //只有当被调用的函数不是递归函数，而且也不会直接调用当前的函数，并且是用户定义的函数的时候才能够进行函数内联
+                    called_func_flow_graph=intermediate_codes_flow_graph_->get_func_flow_graph(called_func);
+                    if(!called_func_flow_graph)
+                    {
+                        goto next;
+                    }
+                    //目前由于全局寄存器分配还没有完成，所以暂时只对满足下列所有条件的函数进行内联：
+                    //（1）所有的形参在函数中都不会被改变
+                    //（2）要么函数调用的时候实参不能存在临时变量，要么被调用的函数只有一个基本块
+                    //（3）函数形参中没有数组（这个限制存粹是为了简单，和全局寄存器分配没有关系）
+                    //（4）如果函数调用有返回值，那么要么这个返回值不能是临时变量，要么被调用的函数只有一个出口（即该函数末尾）
+                    //（5）当前函数或者被调用的函数中没有涉及到浮点数（这个限制是为了防止带有浮点数的函数过长）
+                    called_func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_f_params(called_func);
+                    for(auto called_func_def_global_or_f_param:called_func_def_globals_and_f_params)
+                    {
+                        if(called_func_def_global_or_f_param->is_f_param())
+                        {
+                            goto next;
+                        }
+                    }
+                    r_params=(list<struct ic_data * > * )(*ic_with_info).intermediate_code.arg2.second;
+                    if(called_func_flow_graph->basic_blocks.size()>1)
+                    {
+                        for(auto r_param:(*r_params))
+                        {
+                            if(r_param->is_tmp_var())
+                            {
+                                goto next;
+                            }
+                        }
+                    }
+                    f_params=called_func->f_params;
+                    for(auto f_param:(*f_params))
+                    {
+                        if(f_param->is_array_var())
+                        {
+                            goto next;
+                        }
+                    }
+                    result=(struct ic_data *)(*ic_with_info).intermediate_code.result.second;
+                    called_func_exit_num=called_func_flow_graph->get_exit_num();
+                    if(result && result->is_tmp_var() && called_func_exit_num>1)
+                    {
+                        goto next;
+                    }
+                    for(auto current_basic_block:func->basic_blocks)
+                    {
+                        for(auto current_ic_with_info:current_basic_block->ic_sequence)
+                        {
+                            for(auto current_ic_with_info_releated_var:current_ic_with_info.get_all_datas())
+                            {
+                                if(current_ic_with_info_releated_var->get_data_type()==language_data_type::FLOAT)
+                                {
+                                    goto next;
+                                }
+                            }
+                        }
+                    }
+                    //先将要复制的流图中的变量和标签进行相应的替换，并更改其相应的作用域
+                    inline_func_scope=new ic_scope(current_func->scope);
+                    inline_func_scope->set_scope_type(ic_scope_type::INLINE_FUNC);
+                    inline_func_scope->func=called_func;
+                    for(auto called_basic_block:called_func_flow_graph->basic_blocks)
+                    {
+                        for(auto called_ic_with_info:called_basic_block->ic_sequence)
+                        {
+                            for(auto called_ic_with_info_releated_var:called_ic_with_info.get_all_datas())
+                            {
+                                if(called_ic_with_info_releated_var->get_data_type()==language_data_type::FLOAT)
+                                {
+                                    goto next;
+                                }
+                                if(old_and_new_vars_map.find(called_ic_with_info_releated_var)==old_and_new_vars_map.end())
+                                {
+                                    if(called_ic_with_info_releated_var->is_f_param() || called_ic_with_info_releated_var->is_global() || called_ic_with_info_releated_var->is_array_member())
+                                    {
+                                        continue;
+                                    }
+                                    else if(called_ic_with_info_releated_var->is_const())
+                                    {
+                                        new_var=symbol_table->const_entry(called_ic_with_info_releated_var->get_data_type(),called_ic_with_info_releated_var->get_value());
+                                    }
+                                    else if(called_ic_with_info_releated_var->is_tmp_var())
+                                    {
+                                        new_var=symbol_table->new_tmp_var(called_ic_with_info_releated_var->get_data_type(),called_ic_with_info_releated_var->dimensions_len,called_ic_with_info_releated_var->get_value(),called_ic_with_info_releated_var->type==ic_data_type::CONST_TMP_VAR);
+                                    }
+                                    else
+                                    {
+                                        new_var=symbol_table->new_var(called_ic_with_info_releated_var->get_var_name(),called_ic_with_info_releated_var->get_data_type(),called_ic_with_info_releated_var->dimensions_len,called_ic_with_info_releated_var->get_value(),called_ic_with_info_releated_var->type==ic_data_type::LOCAL_CONST_VAR,inline_func_scope);
+                                    }
+                                    old_and_new_vars_map.insert(make_pair(called_ic_with_info_releated_var,new_var));
+                                }
+                            }
+                            old_label=called_ic_with_info.get_related_label();
+                            if(old_label && old_and_new_labels_map.find(old_label)==old_and_new_labels_map.end())
+                            {
+                                old_and_new_labels_map.insert(make_pair(old_label,symbol_table->new_label()));
+                            }
+                        }
+                    }
+                    f_param_iterator=f_params->begin();
+                    r_param_iterator=r_params->begin();
+                    while(f_param_iterator!=f_params->end() && r_param_iterator!=r_params->end())
+                    {
+                        old_and_new_vars_map.insert(make_pair(*f_param_iterator,*r_param_iterator));
+                        f_param_iterator++;
+                        r_param_iterator++;
+                    }
+                    //将被调用的函数的流图复制一份，并将里面需要替换的变量和标签全部进行替换
+                    for(auto old_basic_block:called_func_flow_graph->basic_blocks)
+                    {
+                        new_basic_block=new ic_basic_block(*old_basic_block,func,old_and_new_vars_map,old_and_new_labels_map);
+                        copyed_basic_blocks.push_back(new_basic_block);
+                        old_and_new_ic_basic_block_map.insert(make_pair(old_basic_block,new_basic_block));
+                    }
+                    //再构建新拷贝出来的流图的跳转关系，并把拷贝出来的流图的所属函数流图进行更新
+                    for(auto copyed_basic_block:copyed_basic_blocks)
+                    {
+                        copyed_basic_block->set_sequential_next(old_and_new_ic_basic_block_map[copyed_basic_block->sequential_next]);
+                        copyed_basic_block->set_jump_next(old_and_new_ic_basic_block_map[copyed_basic_block->jump_next]);
+                    }
+                    //删除FUNC_DEFINE和END_FUNC_DEFINE中间代码
+                    if(copyed_basic_blocks.front()->ic_sequence.front().intermediate_code.op==ic_op::FUNC_DEFINE)
+                    {
+                        copyed_basic_blocks.front()->ic_sequence.erase(copyed_basic_blocks.front()->ic_sequence.begin());
+                    }
+                    if(copyed_basic_blocks.back()->ic_sequence.back().intermediate_code.op==ic_op::END_FUNC_DEFINE)
+                    {
+                        copyed_basic_blocks.back()->ic_sequence.pop_back();
+                    }
+                    //最后将复制完成的函数流图添加到当前函数流图中，再把所有的RET替换掉即可
+                    another_ic_with_info=basic_block->ic_sequence.begin();
+                    while(another_ic_with_info!=ic_with_info)
+                    {
+                        another_ic_with_info++;
+                    }
+                    another_ic_with_info=basic_block->ic_sequence.erase(another_ic_with_info);
+                    if(called_func_exit_num>1)
+                    {
+                        new_basic_block=new ic_basic_block(func);
+                        copyed_basic_blocks.push_back(new_basic_block);
+                        new_label=symbol_table->new_label();
+                        new_basic_block->add_ic(quaternion(ic_op::LABEL_DEFINE,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::LABEL,(void *)new_label));
+                    }
+                    else
+                    {
+                        new_basic_block=copyed_basic_blocks.back();
+                    }
+                    for(list<struct ic_basic_block * >::iterator copyed_basic_block=copyed_basic_blocks.begin();copyed_basic_block!=copyed_basic_blocks.end();copyed_basic_block++)
+                    {
+                        for(vector<struct quaternion_with_info>::iterator ic_with_info_in_copyed_basic_block=(*copyed_basic_block)->ic_sequence.begin();ic_with_info_in_copyed_basic_block!=(*copyed_basic_block)->ic_sequence.end();ic_with_info_in_copyed_basic_block++)
+                        {
+                            if((*ic_with_info_in_copyed_basic_block).intermediate_code.op==ic_op::RET)
+                            {
+                                if((*ic_with_info_in_copyed_basic_block).intermediate_code.result.second)
+                                {
+                                    (*ic_with_info_in_copyed_basic_block)=quaternion_with_info(quaternion(ic_op::ASSIGN,ic_operand::DATA,(*ic_with_info_in_copyed_basic_block).intermediate_code.result.second,ic_operand::NONE,nullptr,ic_operand::DATA,(void *)result));
+                                }
+                                else
+                                {
+                                    (*ic_with_info_in_copyed_basic_block)=quaternion_with_info(quaternion());
+                                }
+                                if(called_func_exit_num>1)
+                                {
+                                    if((*copyed_basic_block)!=copyed_basic_blocks.back())
+                                    {
+                                        (*copyed_basic_block)->ic_sequence.push_back(quaternion_with_info(quaternion(ic_op::JMP,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::LABEL,(void *)new_label)));
+                                        (*copyed_basic_block)->set_jump_next(new_basic_block);
+                                    }
+                                    else
+                                    {
+                                        (*copyed_basic_block)->set_sequential_next(new_basic_block);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    while(another_ic_with_info!=basic_block->ic_sequence.end())
+                    {
+                        new_basic_block_ic_sequence.push_back((*another_ic_with_info).intermediate_code);
+                        another_ic_with_info=basic_block->ic_sequence.erase(another_ic_with_info);
+                    }
+                    for(auto ic_in_new_basic_block:new_basic_block_ic_sequence)
+                    {
+                        new_basic_block->add_ic(ic_in_new_basic_block);
+                    }
+                    new_basic_block->set_sequential_next(basic_block->sequential_next);
+                    new_basic_block->set_jump_next(basic_block->jump_next);
+                    basic_block->set_sequential_next(copyed_basic_blocks.front()->sequential_next);
+                    basic_block->set_jump_next(copyed_basic_blocks.front()->jump_next);
+                    for(auto new_ic_with_info:copyed_basic_blocks.front()->ic_sequence)
+                    {
+                        basic_block->add_ic(new_ic_with_info.intermediate_code);
+                    }
+                    delete copyed_basic_blocks.front();
+                    copyed_basic_blocks.pop_front();
+                    for(list<struct ic_basic_block * >::iterator bb=func->basic_blocks.begin();bb!=func->basic_blocks.end();bb++)
+                    {
+                        if((*bb)==basic_block)
+                        {
+                            func->basic_blocks.insert(++bb,copyed_basic_blocks.cbegin(),copyed_basic_blocks.cend());;
+                            break;
+                        }
+                    }
+                    if(called_func_exit_num>1 && !copyed_basic_blocks.empty())
+                    {
+                        copyed_basic_blocks.pop_back();
+                    }
+                    //清理现场，准备下一次的函数内联
+                    if(copyed_basic_blocks.empty())
+                    {
+                        skip_until_basic_block=basic_block;
+                    }
+                    else
+                    {
+                        skip_until_basic_block=new_basic_block;
+                    }
+                    copyed_basic_blocks.clear();
+                    old_and_new_ic_basic_block_map.clear();
+                    old_and_new_vars_map.clear();
+                    old_and_new_labels_map.clear();
+                    new_basic_block_ic_sequence.clear();
+                    goto again;
+                }
+            }
+next:
+            ;
         }
     }
 }
@@ -1228,10 +1426,7 @@ void Ic_optimizer::local_optimize()
     {
         for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
         {
-            for(auto basic_block:func->basic_blocks)
-            {
-                function_inline(basic_block);
-            }
+            function_inline(func);
         }
     }
     //再进行DAG相关优化
@@ -1278,7 +1473,7 @@ func:要优化的函数流图
 */
 void Ic_optimizer::globale_constant_folding(struct ic_func_flow_graph * func)
 {
-    Symbol_table * symbol_table=Symbol_table::get_instance();
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     struct quaternion intermediate_code;
     struct ic_data * arg1,* res;
     OAA tmp;
@@ -1303,7 +1498,7 @@ void Ic_optimizer::globale_constant_folding(struct ic_func_flow_graph * func)
                             tmp.type_conversion(arg1->get_data_type(),use->get_data_type());
                             arg1=symbol_table->const_entry(use->get_data_type(),tmp);
                         }
-                        (*ic_with_info).replace_used_data(use,arg1);
+                        (*ic_with_info).replace_datas(use,arg1,true);
                         tag=true;
                     }
                 }

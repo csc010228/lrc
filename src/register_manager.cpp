@@ -1585,6 +1585,32 @@ struct event Register_manager::handle_GET_ALL_ARGUMENT_REGS()
     return event(event_type::RESPONSE_POINTER,(void *)argument_reg);
 }
 
+struct event Register_manager::handle_GET_CPU_ARGUMENT_REG_NUM()
+{
+    size_t cpu_argument_reg_num=0;
+    for(auto reg:regs_info_.reg_indexs)
+    {
+        if(reg.second.processor==reg_processor::CPU && reg.second.attr==reg_attr::ARGUMENT)
+        {
+            cpu_argument_reg_num++;
+        }
+    }
+    return event(event_type::RESPONSE_INT,(void *)cpu_argument_reg_num);
+}
+
+struct event Register_manager::handle_GET_VFP_ARGUMENT_REG_NUM()
+{
+    size_t vfp_argument_reg_num=0;
+    for(auto reg:regs_info_.reg_indexs)
+    {
+        if(reg.second.processor==reg_processor::VFP && reg.second.attr==reg_attr::ARGUMENT)
+        {
+            vfp_argument_reg_num++;
+        }
+    }
+    return event(event_type::RESPONSE_INT,(void *)vfp_argument_reg_num);
+}
+
 /*
 事件处理函数(由中介者进行调用)
 
@@ -1757,6 +1783,12 @@ struct event Register_manager::handler(struct event event)
             break;
         case event_type::GET_ALL_ARGUMENT_REGS:
             response=handle_GET_ALL_ARGUMENT_REGS();
+            break;
+        case event_type::GET_CPU_ARGUMENT_REG_NUM:
+            response=handle_GET_CPU_ARGUMENT_REG_NUM();
+            break;
+        case event_type::GET_VFP_ARGUMENT_REG_NUM:
+            response=handle_GET_VFP_ARGUMENT_REG_NUM();
             break;
         default:
             break;

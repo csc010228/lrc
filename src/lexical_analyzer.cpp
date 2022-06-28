@@ -397,11 +397,11 @@ Return
 */
 struct token * Lexical_analyzer::get_token(enum code_of_kind cok)
 {
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     struct token * result=new struct token;
     string token_string,*token_string_value;
     char ch;
     int token_len,i;
-    Symbol_table * symbol_table=Symbol_table::get_instance();
     result->code_of_kind=cok;
 
     if(cok==code_of_kind::CONST_CHAR || cok==code_of_kind::CONST_STRING || cok==code_of_kind::ID)

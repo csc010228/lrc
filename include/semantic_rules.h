@@ -72,6 +72,29 @@ struct quaternion
         
     };
 
+    quaternion(const struct quaternion & qua):op(qua.op),arg1(qua.arg1),arg2(qua.arg2),result(qua.result)
+    {
+        list<struct ic_data * > * new_r_params;
+        if(op==ic_op::CALL)
+        {
+            new_r_params=new list<struct ic_data * >;
+            for(auto r_param:*((list<struct ic_data * > *)qua.arg2.second))
+            {
+                new_r_params->push_back(r_param);
+            }
+            arg2.second=(void *)new_r_params;
+        }
+    };
+
+    //将该条中间代码使用的某一个数据替换成另一个数据
+    void replace_datas(struct ic_data * source,struct ic_data * destination,bool only_use_datas=false);
+
+    //将中间代码中涉及的所有数据都进行替换
+    void replace_all_vars(const map<struct ic_data *,struct ic_data *> & old_and_new_vars_map);
+
+    //把中间代码中涉及的所有标签都进行替换
+    void replace_all_labels(const map<struct ic_label *,struct ic_label *> & old_and_new_labels_map);
+
     enum ic_op op;                     //操作符
     pair<enum ic_operand,void *> arg1;                   //操作数1
     pair<enum ic_operand,void *> arg2;                   //操作数2

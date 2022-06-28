@@ -111,7 +111,7 @@ string output_ic_scope(struct ic_scope * scope)
         }
         else if(tmp_scope->is_inline_func())
         {
-            res=(scope_type_output_map.at(tmp_scope->type)+tmp_scope->func->name+"::"+res);
+            res=(scope_type_output_map.at(tmp_scope->type)+"_"+to_string(tmp_scope->index_for_output)+"_"+tmp_scope->func->name+"::"+res);
         }
         else
         {
@@ -410,6 +410,229 @@ map<ic_op,ic_output> ic_outputs={
 /*================================================================================================================================================================*/
 /*================================================================================================================================================================*/
 
+
+
+//===================================== struct quaternion =====================================//
+
+inline struct ic_data * replace_datas_in_var(struct ic_data * var,struct ic_data * source,struct ic_data * destination)
+{
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
+    if(var==source)
+    {
+        var=destination;
+    }
+    else if(var->is_array_member())
+    {
+        if(var->get_offset()==source)
+        {
+            if(var->is_array_var())
+            {
+                var=symbol_table->array_member_entry(var->get_belong_array(),var->dimensions_len->size(),destination);
+            }
+            else
+            {
+                var=symbol_table->array_member_not_array_var_entry(var->get_belong_array(),destination);
+            }
+        }
+        else if(var->get_belong_array()==source)
+        {
+            if(var->is_array_var())
+            {
+                var=symbol_table->array_member_entry(destination,var->dimensions_len->size(),var->get_offset());
+            }
+            else
+            {
+                var=symbol_table->array_member_not_array_var_entry(destination,var->get_offset());
+            }
+        }
+    }
+    return var;
+}
+
+void quaternion::replace_datas(struct ic_data * source,struct ic_data * destination,bool only_use_datas)
+{
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
+    list<struct ic_data * > * r_params,* new_r_params;
+    switch(op)
+    {
+        case ic_op::ASSIGN:
+        case ic_op::NOT:
+            arg1.second=(void *)replace_datas_in_var((struct ic_data *)arg1.second,source,destination);
+            if(!only_use_datas)
+            {
+                result.second=(void *)replace_datas_in_var((struct ic_data *)result.second,source,destination);
+            }
+            break;
+        case ic_op::ADD:
+        case ic_op::SUB:
+        case ic_op::MUL:
+        case ic_op::DIV:
+        case ic_op::MOD:
+        case ic_op::EQ:
+        case ic_op::UEQ:
+        case ic_op::GT:
+        case ic_op::LT:
+        case ic_op::GE:
+        case ic_op::LE:
+            arg1.second=(void *)replace_datas_in_var((struct ic_data *)arg1.second,source,destination);
+            arg2.second=(void *)replace_datas_in_var((struct ic_data *)arg2.second,source,destination);
+            if(!only_use_datas)
+            {
+                result.second=(void *)replace_datas_in_var((struct ic_data *)result.second,source,destination);
+            }
+            break;
+        case ic_op::IF_JMP:
+        case ic_op::IF_NOT_JMP:
+            arg1.second=(void *)replace_datas_in_var((struct ic_data *)arg1.second,source,destination);
+            break;
+        case ic_op::CALL:
+            r_params=(list<struct ic_data * > *)arg2.second;
+            new_r_params=new list<struct ic_data * >;
+            for(auto r_param:*r_params)
+            {
+                new_r_params->push_back(replace_datas_in_var(r_param,source,destination));
+            }
+            delete r_params;
+            arg2.second=(void *)new_r_params;
+            if(result.second && !only_use_datas)
+            {
+                result.second=(void *)replace_datas_in_var((struct ic_data *)result.second,source,destination);
+            }
+            break;
+        case ic_op::RET:
+            if(result.second)
+            {
+                result.second=(void *)replace_datas_in_var((struct ic_data *)result.second,source,destination);
+            }
+            break;
+        case ic_op::VAR_DEFINE:
+            if(!only_use_datas)
+            {
+                result.second=(void *)replace_datas_in_var((struct ic_data *)result.second,source,destination);
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+inline struct ic_data * replace_all_datas_in_var(struct ic_data * var,const map<struct ic_data *,struct ic_data *> & old_and_new_vars_map)
+{
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
+    if(old_and_new_vars_map.find(var)!=old_and_new_vars_map.end())
+    {
+        var=old_and_new_vars_map.at(var);
+    }
+    else if(var->is_array_member())
+    {
+        if(old_and_new_vars_map.find(var->get_offset())!=old_and_new_vars_map.end())
+        {
+            if(var->is_array_var())
+            {
+                var=symbol_table->array_member_entry(var->get_belong_array(),var->dimensions_len->size(),old_and_new_vars_map.at(var->get_offset()));
+            }
+            else
+            {
+                var=symbol_table->array_member_not_array_var_entry(var->get_belong_array(),old_and_new_vars_map.at(var->get_offset()));
+            }
+        }
+        if(old_and_new_vars_map.find(var->get_belong_array())!=old_and_new_vars_map.end())
+        {
+            if(var->is_array_var())
+            {
+                var=symbol_table->array_member_entry(old_and_new_vars_map.at(var->get_belong_array()),var->dimensions_len->size(),var->get_offset());
+            }
+            else
+            {
+                var=symbol_table->array_member_not_array_var_entry(old_and_new_vars_map.at(var->get_belong_array()),var->get_offset());
+            }
+        }
+    }
+    return var;
+}
+
+void quaternion::replace_all_vars(const map<struct ic_data *,struct ic_data *> & old_and_new_vars_map)
+{
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
+    list<struct ic_data * > * r_params,* new_r_params;
+    switch(op)
+    {
+        case ic_op::ASSIGN:
+        case ic_op::NOT:
+            arg1.second=(void *)replace_all_datas_in_var((struct ic_data *)arg1.second,old_and_new_vars_map);
+            result.second=(void *)replace_all_datas_in_var((struct ic_data *)result.second,old_and_new_vars_map);
+            break;
+        case ic_op::ADD:
+        case ic_op::SUB:
+        case ic_op::MUL:
+        case ic_op::DIV:
+        case ic_op::MOD:
+        case ic_op::EQ:
+        case ic_op::UEQ:
+        case ic_op::GT:
+        case ic_op::LT:
+        case ic_op::GE:
+        case ic_op::LE:
+            arg1.second=(void *)replace_all_datas_in_var((struct ic_data *)arg1.second,old_and_new_vars_map);
+            arg2.second=(void *)replace_all_datas_in_var((struct ic_data *)arg2.second,old_and_new_vars_map);
+            result.second=(void *)replace_all_datas_in_var((struct ic_data *)result.second,old_and_new_vars_map);
+            break;
+        case ic_op::IF_JMP:
+        case ic_op::IF_NOT_JMP:
+            arg1.second=(void *)replace_all_datas_in_var((struct ic_data *)arg1.second,old_and_new_vars_map);
+            break;
+        case ic_op::CALL:
+            r_params=(list<struct ic_data * > *)arg2.second;
+            new_r_params=new list<struct ic_data * >;
+            for(auto r_param:*r_params)
+            {
+                new_r_params->push_back(replace_all_datas_in_var(r_param,old_and_new_vars_map));
+            }
+            delete r_params;
+            arg2.second=(void *)new_r_params;
+            if(result.second)
+            {
+                result.second=(void *)replace_all_datas_in_var((struct ic_data *)result.second,old_and_new_vars_map);
+            }
+            break;
+        case ic_op::RET:
+            if(result.second)
+            {
+                result.second=(void *)replace_all_datas_in_var((struct ic_data *)result.second,old_and_new_vars_map);
+            }
+            break;
+        case ic_op::VAR_DEFINE:
+            result.second=(void *)replace_all_datas_in_var((struct ic_data *)result.second,old_and_new_vars_map);
+            break;
+        default:
+            break;
+    }
+}
+
+void quaternion::replace_all_labels(const map<struct ic_label *,struct ic_label *> & old_and_new_labels_map)
+{
+    struct ic_label * label;
+    switch(op)
+    {
+        case ic_op::JMP:
+        case ic_op::IF_JMP:
+        case ic_op::IF_NOT_JMP:
+        case ic_op::LABEL_DEFINE:
+            label=(struct ic_label * )result.second;
+            if(old_and_new_labels_map.find(label)!=old_and_new_labels_map.end())
+            {
+                result.second=(void *)old_and_new_labels_map.at(label);
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+//==========================================================================//
+
+
+
 //语法分析时的全局信息
 struct 
 {
@@ -461,7 +684,7 @@ Return
 */
 struct ic_data * unary_compute(ic_op op,struct ic_data * arg)
 {
-    Symbol_table * symbol_table=Symbol_table::get_instance();
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     struct ic_data * res=nullptr;
     OAA value;
     enum language_data_type data_type;
@@ -525,10 +748,10 @@ Return
 */
 struct ic_data * binary_compute(ic_op op,struct ic_data * arg1,struct ic_data * arg2)
 {
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     struct ic_data * res=nullptr;
     enum language_data_type arg1_data_type,arg2_data_type;
     OAA arg1_value,arg2_value;
-    Symbol_table * symbol_table=Symbol_table::get_instance();
     if(!arg1 || !arg2 || !arg1->is_const() || !arg2->is_const())
     {
         return res;
@@ -991,8 +1214,8 @@ long const_assign_var_to_array_member(struct ic_data * single_value,vector<OAA> 
 
 long const_array_init_assignment(vector<OAA> * init_value,stack<list<pair<bool,void * > > * > & init_values_stack,stack<size_t> & dimensions_len_stack,list<struct ic_data * > * dimensions_len,list<struct ic_data * >::iterator & dimensions_len_pointer,enum language_data_type array_data_type)
 {
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     long push_times=0;
-    Symbol_table * symbol_table=Symbol_table::get_instance();
     if(init_values_stack.empty() || init_values_stack.top()->size()==0 || (init_values_stack.top()->front().first==false && init_values_stack.top()->front().second==nullptr))
     {
         if(!init_values_stack.empty() && !init_values_stack.top()->empty() && (init_values_stack.top()->front().first==false && init_values_stack.top()->front().second==nullptr))
@@ -1376,8 +1599,8 @@ end_define_semantic_rule
 
 struct ic_data * get_first_in_depth_first(list<pair<bool,void * > > * tree,enum language_data_type array_data_type)
 {
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     struct ic_data * res;
-    Symbol_table * symbol_table=Symbol_table::get_instance();
     if(tree==nullptr)
     {
         res=def_const(array_data_type,0);
@@ -1453,8 +1676,8 @@ long assign_var_to_array_member(struct ic_data * single_value,vector<struct ic_d
 
 long array_init_assignment(vector<struct ic_data * > * init_value,stack<list<pair<bool,void * > > * > & init_values_stack,stack<size_t> & dimensions_len_stack,list<struct ic_data * > * dimensions_len,list<struct ic_data * >::iterator & dimensions_len_pointer,enum language_data_type array_data_type)
 {
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     long push_times=0;
-    Symbol_table * symbol_table=Symbol_table::get_instance();
     if(init_values_stack.empty() || init_values_stack.top()->size()==0 || (init_values_stack.top()->front().first==false && init_values_stack.top()->front().second==nullptr))
     {
         if(!init_values_stack.empty() && !init_values_stack.top()->empty() && (init_values_stack.top()->front().first==false && init_values_stack.top()->front().second==nullptr))
@@ -1690,10 +1913,24 @@ end_define_semantic_rule
 没有形参，返回值类型为基本类型的函数的定义
 */
 define_semantic_rule(___FUNC_DEF_2___)
+    struct ic_func * func=func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)));
+    struct ic_data * ret_value;
     //检查BLOCK中是否有return
     //检查BLOCK中是否还存在有不匹配的break和continue
     //目前无需实现
-    gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer))));
+    switch(func->return_type)
+    {
+        case language_data_type::INT:
+            ret_value=def_const(language_data_type::INT,((int)0));
+            break;
+        case language_data_type::FLOAT:
+            ret_value=def_const(language_data_type::FLOAT,((float)0.f));
+            break;
+        default:
+            break;
+    }
+    gen_zero_operand_code(ic_op::RET,ic_operand::DATA,ret_value);
+    gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func);
 end_define_semantic_rule
 
 /*
@@ -1710,10 +1947,24 @@ end_define_semantic_rule
 有形参，返回值类型为基本类型的函数的定义
 */
 define_semantic_rule(___FUNC_DEF_4___)
+    struct ic_func * func=func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)));
+    struct ic_data * ret_value;
     //检查BLOCK中是否有return
     //检查BLOCK中是否还存在有不匹配的break和continue
     //目前无需实现
-    gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer))));
+    switch(func->return_type)
+    {
+        case language_data_type::INT:
+            ret_value=def_const(language_data_type::INT,((int)0));
+            break;
+        case language_data_type::FLOAT:
+            ret_value=def_const(language_data_type::FLOAT,((float)0.f));
+            break;
+        default:
+            break;
+    }
+    gen_zero_operand_code(ic_op::RET,ic_operand::DATA,ret_value);
+    gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func);
 end_define_semantic_rule
 
 /*

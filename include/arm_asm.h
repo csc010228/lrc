@@ -338,7 +338,8 @@ struct flexoffset
     //查看是否是合法的expr
     static bool is_legal_expr(int expr)
     {
-        return (expr>=-4095 && expr <=4095);
+        return (expr>=-255 && expr <=4095);
+        //return (expr>=-4095 && expr <=4095);
         //return (expr>=-1020 && expr <=1020);
     };
 

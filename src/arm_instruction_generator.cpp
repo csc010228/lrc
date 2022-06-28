@@ -1109,6 +1109,7 @@ void Arm_instruction_generator::if_not_jmp_ic_to_arm_asm(struct ic_data * arg1,s
 */
 void Arm_instruction_generator::var_define_ic_to_arm_asm(struct ic_data * result)
 {
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     size_t zero_array_member_num=0,array_member_offset=0;
     vector<OAA> * array_init_values;
     reg_index Rd;
@@ -1116,7 +1117,6 @@ void Arm_instruction_generator::var_define_ic_to_arm_asm(struct ic_data * result
     pair<pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >,list<reg_index> * > * event_data_1;
     pair<struct ic_data *,struct ic_data * > * event_data_2;
     list<struct ic_data * > * r_params;
-    Symbol_table * symbol_table=Symbol_table::get_instance();
     if(result->is_pure_const())
     {
         return;

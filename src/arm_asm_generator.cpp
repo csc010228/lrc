@@ -63,6 +63,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
         //cout<<"instruction_generator_ send "<<(int)event.type<<endl;
         switch(event.type)
         {
+            case event_type::IS_FUNC_NEED_PASS_PARAMS_BY_STACK:
             case event_type::NEXT_IC:
                 res=intermediate_code_manager_->handler(event);
                 break;
@@ -214,6 +215,10 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::END_FUNC:
                 register_manager_->handler(event);
                 break;
+            case event_type::GET_CPU_ARGUMENT_REG_NUM:
+            case event_type::GET_VFP_ARGUMENT_REG_NUM:
+                res=register_manager_->handler(event);
+                break;
             default:
                 break;
         }
@@ -234,6 +239,9 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::GET_REG_BYTE_SIZE:
             case event_type::GET_ALL_ARGUMENT_REGS:
                 res=register_manager_->handler(event);
+                break;
+            case event_type::IS_FUNC_NEED_PASS_PARAMS_BY_STACK:
+                res=intermediate_code_manager_->handler(event);
                 break;
             default:
                 break;

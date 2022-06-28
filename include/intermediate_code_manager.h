@@ -34,6 +34,7 @@ protected:
     //事件处理函数
     struct event handle_NEXT_IC();
     struct event handle_IS_VAR_STILL_ALIVE(struct ic_data * var);
+    struct event handle_IS_FUNC_NEED_PASS_PARAMS_BY_STACK(struct ic_func * func);
 
 public:
     //构造函数

@@ -672,17 +672,17 @@ void arm_func_flow_graph::build_nexts_between_basic_blocks()
     //     }
     //     switch(basic_block->arm_sequence.back().)
     //     {
-    //         case arm_op::JMP:
+    //         case arm_op::B:
     //             need_set_sequential_next=false;
     //             basic_block->set_sequential_next(nullptr);
     //             basic_block->set_jump_next(label_basic_block_map.at((struct ic_label *)(basic_block->ic_sequence.back().intermediate_code.result.second)));
     //             break;
-    //         case ic_op::IF_JMP:
-    //         case ic_op::IF_NOT_JMP:
+    //         case ic_op::BL:
+    //         case ic_op::BLX:
     //             need_set_sequential_next=true;
     //             basic_block->set_jump_next(label_basic_block_map.at((struct ic_label *)(basic_block->ic_sequence.back().intermediate_code.result.second)));
     //             break;
-    //         case ic_op::RET:
+    //         case ic_op::BX:
     //         case ic_op::END_FUNC_DEFINE:
     //             need_set_sequential_next=false;
     //             basic_block->set_sequential_next(nullptr);

@@ -30,8 +30,9 @@ using namespace std;
 
 bool lrc(string source_program_filename,string target_filename,bool optimize,bool debug)
 {
+    //建立符号表
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     bool res=false;
-    Symbol_table * symbol_table;
     Pre_processor pre;
     Lexical_analyzer lex;
     Syntax_directed_translator translator;
@@ -41,9 +42,6 @@ bool lrc(string source_program_filename,string target_filename,bool optimize,boo
     list<struct quaternion> * intermediate_codes;
     struct ic_flow_graph * intermediate_codes_flow_graph;
     string source_file_content_after_pre_process;
-
-    //建立符号表
-    symbol_table=Symbol_table::get_instance();
 
     //添加语言内置的头文件
     pre.add_inner_header_files(1,SYSY_INNER_HEADER_FILE_NAME);
