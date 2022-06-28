@@ -111,7 +111,7 @@ string output_ic_scope(struct ic_scope * scope)
         }
         else if(tmp_scope->is_inline_func())
         {
-            res=(scope_type_output_map.at(tmp_scope->type)+"_"+to_string(tmp_scope->index_for_output)+"_"+tmp_scope->func->name+"::"+res);
+            res=(scope_type_output_map.at(tmp_scope->type)+tmp_scope->func->name+"-"+to_string(tmp_scope->index_for_output)+"::"+res);
         }
         else
         {

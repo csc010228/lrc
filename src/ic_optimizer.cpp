@@ -1127,6 +1127,7 @@ void Ic_optimizer::function_inline(struct ic_func_flow_graph * func)
     list<struct quaternion> new_basic_block_ic_sequence;
     size_t called_func_exit_num;
     skip_until_basic_block=nullptr;
+    size_t inline_var_num;
 again:
     for(auto basic_block:func->basic_blocks)
     {
@@ -1212,6 +1213,7 @@ again:
                     inline_func_scope=new ic_scope(current_func->scope);
                     inline_func_scope->set_scope_type(ic_scope_type::INLINE_FUNC);
                     inline_func_scope->func=called_func;
+                    inline_var_num=0;
                     for(auto called_basic_block:called_func_flow_graph->basic_blocks)
                     {
                         for(auto called_ic_with_info:called_basic_block->ic_sequence)
@@ -1220,6 +1222,7 @@ again:
                             {
                                 if(called_ic_with_info_releated_var->get_data_type()==language_data_type::FLOAT)
                                 {
+                                    old_and_new_vars_map.clear();
                                     goto next;
                                 }
                                 if(old_and_new_vars_map.find(called_ic_with_info_releated_var)==old_and_new_vars_map.end())
@@ -1238,7 +1241,7 @@ again:
                                     }
                                     else
                                     {
-                                        new_var=symbol_table->new_var(called_ic_with_info_releated_var->get_var_name(),called_ic_with_info_releated_var->get_data_type(),called_ic_with_info_releated_var->dimensions_len,called_ic_with_info_releated_var->get_value(),called_ic_with_info_releated_var->type==ic_data_type::LOCAL_CONST_VAR,inline_func_scope);
+                                        new_var=symbol_table->new_var(/*called_ic_with_info_releated_var->get_var_name()*/"<"+to_string(inline_var_num++)+">",called_ic_with_info_releated_var->get_data_type(),called_ic_with_info_releated_var->dimensions_len,called_ic_with_info_releated_var->get_value(),called_ic_with_info_releated_var->type==ic_data_type::LOCAL_CONST_VAR,inline_func_scope);
                                     }
                                     old_and_new_vars_map.insert(make_pair(called_ic_with_info_releated_var,new_var));
                                 }
@@ -1300,11 +1303,12 @@ again:
                     }
                     for(list<struct ic_basic_block * >::iterator copyed_basic_block=copyed_basic_blocks.begin();copyed_basic_block!=copyed_basic_blocks.end();copyed_basic_block++)
                     {
+for_iterator:
                         for(vector<struct quaternion_with_info>::iterator ic_with_info_in_copyed_basic_block=(*copyed_basic_block)->ic_sequence.begin();ic_with_info_in_copyed_basic_block!=(*copyed_basic_block)->ic_sequence.end();ic_with_info_in_copyed_basic_block++)
                         {
                             if((*ic_with_info_in_copyed_basic_block).intermediate_code.op==ic_op::RET)
                             {
-                                if((*ic_with_info_in_copyed_basic_block).intermediate_code.result.second)
+                                if((*ic_with_info_in_copyed_basic_block).intermediate_code.result.second && result)
                                 {
                                     (*ic_with_info_in_copyed_basic_block)=quaternion_with_info(quaternion(ic_op::ASSIGN,ic_operand::DATA,(*ic_with_info_in_copyed_basic_block).intermediate_code.result.second,ic_operand::NONE,nullptr,ic_operand::DATA,(void *)result));
                                 }
@@ -1318,6 +1322,7 @@ again:
                                     {
                                         (*copyed_basic_block)->ic_sequence.push_back(quaternion_with_info(quaternion(ic_op::JMP,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::LABEL,(void *)new_label)));
                                         (*copyed_basic_block)->set_jump_next(new_basic_block);
+                                        goto for_iterator;
                                     }
                                     else
                                     {

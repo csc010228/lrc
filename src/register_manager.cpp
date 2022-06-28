@@ -304,7 +304,7 @@ bool Register_manager::allocate_designated_reg(reg_index reg)
     {
         designated_reg.state=reg_state::ALLOCATING;
         temp=designated_reg.var_datas;
-        //需要先把寄存器中的
+        //需要先把寄存器中需要写回内存的数据进行写回
         for(auto var_data:temp)
         {
             if(var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY)
@@ -1299,14 +1299,7 @@ void Register_manager::handle_SAVE_REGS_WHEN_CALLING_FUNC()
                     delete event_data;
                     written_back_vars.insert(var_data.first);
                 }
-                //reg.second.set_value_NOT_DIRTY(var_data.first);
             }
-            // else if(var_data.second==reg_var_state::NOT_DIRTY && var_data.first->is_tmp_var() && tag)
-            // {
-            //     event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg.first);
-            //     notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
-            //     delete event_data;
-            // }
         }
     }
 }

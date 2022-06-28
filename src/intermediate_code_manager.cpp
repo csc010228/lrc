@@ -36,6 +36,38 @@ void Intermediate_code_manager::init(struct ic_flow_graph * intermediate_codes_f
     intermediate_codes_flow_graph_=intermediate_codes_flow_graph;
 }
 
+/*
+获取一个函数中所有的跨越基本块的临时变量
+
+Parameters
+----------
+func:要获取信息的函数基本块流图
+*/
+void Intermediate_code_manager::build_temp_vars_over_basic_blocks_info_in_func(struct ic_func_flow_graph * func)
+{
+    map<struct ic_data *,struct ic_basic_block * > temp_vars_s_basic_block;
+    for(auto basic_block:func->basic_blocks)
+    {
+        for(auto ic_with_info:basic_block->ic_sequence)
+        {
+            for(auto var_in_ic_with_info:ic_with_info.get_all_datas())
+            {
+                if(var_in_ic_with_info->is_tmp_var())
+                {
+                    if(temp_vars_s_basic_block.find(var_in_ic_with_info)==temp_vars_s_basic_block.end())
+                    {
+                        temp_vars_s_basic_block.insert(make_pair(var_in_ic_with_info,basic_block));
+                    }
+                    if(temp_vars_s_basic_block.at(var_in_ic_with_info)!=basic_block)
+                    {
+                        map_set_insert(temp_vars_over_basic_blocks_,func,var_in_ic_with_info);
+                    }
+                }
+            }
+        }
+    }
+}
+
 struct event Intermediate_code_manager::handle_NEXT_IC()
 {
     struct event res(event_type::RESPONSE_POINTER,nullptr);
@@ -59,6 +91,8 @@ struct event Intermediate_code_manager::handle_NEXT_IC()
             while(current_func_pos_!=intermediate_codes_flow_graph_->func_flow_graphs.end())
             {
                 notify(event(event_type::START_FUNC,(void *)(*current_func_pos_)->func));
+                //每当开始一个新的函数，就获取该函数中所有会跨越基本块的临时变量
+                build_temp_vars_over_basic_blocks_info_in_func(*current_func_pos_);
                 current_basic_block_pos_=(*current_func_pos_)->basic_blocks.begin();
                 while(current_basic_block_pos_!=(*current_func_pos_)->basic_blocks.end())
                 {

@@ -31,6 +31,12 @@ protected:
     //当前正在转换成汇编的中间代码
     struct quaternion_with_info current_ic_woth_info_;
 
+    //所有的跨越基本块的临时变量
+    map<struct ic_func_flow_graph * ,set<struct ic_data * > > temp_vars_over_basic_blocks_;
+
+    //获取一个函数中所有的跨越基本块的临时变量
+    void build_temp_vars_over_basic_blocks_info_in_func(struct ic_func_flow_graph * func);
+
     //事件处理函数
     struct event handle_NEXT_IC();
     struct event handle_IS_VAR_STILL_ALIVE(struct ic_data * var);

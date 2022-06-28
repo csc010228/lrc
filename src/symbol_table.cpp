@@ -411,7 +411,7 @@ ic_scope::ic_scope(struct ic_scope * father):type(ic_scope_type::ANONYMOUS),fath
 
 void ic_scope::set_scope_type(enum ic_scope_type type)
 {
-    if(this->type==ic_scope_type::ANONYMOUS || this->type==ic_scope_type::IF || this->type==ic_scope_type::ELSE || this->type==ic_scope_type::WHILE)
+    if(this->type==ic_scope_type::ANONYMOUS || this->type==ic_scope_type::IF || this->type==ic_scope_type::ELSE || this->type==ic_scope_type::WHILE || this->type==ic_scope_type::INLINE_FUNC)
     {
         if(this->father->different_type_children_num.find(type)==this->father->different_type_children_num.end())
         {
@@ -455,7 +455,7 @@ struct ic_data * ic_scope::get_var(string var_name)
 bool ic_scope::add_var(struct ic_data * new_var)
 {
     bool res=true;
-    string new_var_name=string(new_var->get_var_name());
+    string new_var_name=new_var->get_var_name();
     if(get_var(new_var_name)==nullptr)
     {
         new_var->scope=this;
