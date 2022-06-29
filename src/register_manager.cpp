@@ -533,7 +533,10 @@ void Register_manager::store_DIRTY_values_before_writing_var(struct ic_data * va
             for(auto var_data:temp)
             {
                 temp_var=var_data.first;
-                if(var_data.second==reg_var_state::DIRTY && temp_var!=var && (temp_var->check_ic_data_related(var) || (is_var_array_member && (temp_var->is_array_member() && !temp_var->is_array_var()) && temp_var->get_belong_array()==array && !(var->get_offset()->is_const() && temp_var->get_offset()->is_const() && var->get_offset()->get_value().int_data!=temp_var->get_offset()->get_value().int_data))))
+                if(var_data.second==reg_var_state::DIRTY && 
+                temp_var!=var && 
+                (temp_var->check_ic_data_related(var) || 
+                (is_var_array_member && (temp_var->is_array_member() && !temp_var->is_array_var()) && temp_var->get_belong_array()==array && !(var->get_offset()->is_const() && temp_var->get_offset()->is_const() && var->get_offset()->get_value().int_data!=temp_var->get_offset()->get_value().int_data))))
                 {
                     if(written_back_vars.find(var_data.first)==written_back_vars.end())
                     {
@@ -1028,7 +1031,7 @@ void Register_manager::handle_END_BASIC_BLOCK_WITHOUT_FLAG()
             temp=reg.second.var_datas;
             for(auto var_data:temp)
             {
-                if(var_data.second==reg_var_state::DIRTY)
+                if(var_data.second==reg_var_state::DIRTY || (var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS,(void *)var_data.first)).bool_data))
                 {
                     if(written_back_vars.find(var_data.first)==written_back_vars.end())
                     {
@@ -1218,7 +1221,7 @@ void Register_manager::handle_SAVE_REGS_WHEN_CALLING_FUNC()
         }
         for(auto var_data:temp)
         {
-            if(var_data.second==reg_var_state::DIRTY)
+            if(var_data.second==reg_var_state::DIRTY || (var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS,(void *)var_data.first)).bool_data))
             {
                 reg.second.set_value_NOT_DIRTY(var_data.first);
                 if(written_back_vars.find(var_data.first)==written_back_vars.end())

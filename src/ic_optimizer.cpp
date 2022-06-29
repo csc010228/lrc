@@ -1023,6 +1023,7 @@ void ic_func_flow_graph::build_vars_def_and_use_pos_info()
 size_t ic_func_flow_graph::get_exit_num() const
 {
     size_t res=0;
+    bool tag=false;
     for(auto basic_block:basic_blocks)
     {
         for(vector<struct quaternion_with_info>::reverse_iterator ic_with_info=basic_block->ic_sequence.rbegin();ic_with_info!=basic_block->ic_sequence.rend();ic_with_info++)
@@ -1033,6 +1034,18 @@ size_t ic_func_flow_graph::get_exit_num() const
                 break;
             }
         }
+    }
+    for(vector<struct quaternion_with_info>::reverse_iterator ic_with_info=basic_blocks.back()->ic_sequence.rbegin();ic_with_info!=basic_blocks.back()->ic_sequence.rend();ic_with_info++)
+    {
+        if((*ic_with_info).intermediate_code.op==ic_op::RET)
+        {
+            tag=true;
+            break;
+        }
+    }
+    if(!tag)
+    {
+        res++;
     }
     return res;
 }
@@ -1170,22 +1183,22 @@ again:
                         goto next;
                     }
                     //目前由于全局寄存器分配还没有完成，所以暂时只对满足下列所有条件的函数进行内联：
-                    //（1）要么所有的形参在函数中都不会被改变，要么被调用的函数只有一个基本块
-                    //（2）要么函数调用的时候实参不能存在临时变量，要么被调用的函数只有一个基本块
-                    //（3）函数形参中没有数组（这个限制是为了效率）
-                    //（4）如果函数调用有返回值，那么要么这个返回值不能是临时变量，要么被调用的函数只有一个出口（即该函数末尾）
-                    //（5）当前函数和被调用的函数中没有涉及到浮点数（这个限制是为了防止带有浮点数的函数过长）
+                    //（1）函数形参中没有数组（这个限制是为了效率）
+                    //（2）当前函数和被调用的函数中没有涉及到浮点数（这个限制是为了防止带有浮点数的函数过长）
+                    //（3）要么所有的形参在函数中都不会被改变，要么被调用的函数只有一个基本块
+                    //（4）要么函数调用的时候实参不能存在临时变量，要么被调用的函数只有一个基本块
+                    //（5）如果函数调用有返回值，那么要么这个返回值不能是临时变量，要么被调用的函数只有一个出口（即该函数末尾）
                     r_params=(list<struct ic_data * > * )(*ic_with_info).intermediate_code.arg2.second;
-                    if(called_func_flow_graph->basic_blocks.size()>1)
-                    {
-                        for(auto r_param:(*r_params))
-                        {
-                            if(r_param->is_tmp_var())
-                            {
-                                goto next;
-                            }
-                        }
-                    }
+                    // if(called_func_flow_graph->basic_blocks.size()>1)
+                    // {
+                    //     for(auto r_param:(*r_params))
+                    //     {
+                    //         if(r_param->is_tmp_var())
+                    //         {
+                    //             goto next;
+                    //         }
+                    //     }
+                    // }
                     f_params=called_func->f_params;
                     for(auto f_param:(*f_params))
                     {
@@ -1196,10 +1209,10 @@ again:
                     }
                     result=(struct ic_data *)(*ic_with_info).intermediate_code.result.second;
                     called_func_exit_num=called_func_flow_graph->get_exit_num();
-                    if(result && result->is_tmp_var() && called_func_exit_num>1)
-                    {
-                        goto next;
-                    }
+                    // if(result && result->is_tmp_var() && called_func_exit_num>1)
+                    // {
+                    //     goto next;
+                    // }
                     for(auto current_basic_block:func->basic_blocks)
                     {
                         for(auto current_ic_with_info:current_basic_block->ic_sequence)
@@ -1223,15 +1236,15 @@ again:
                     {
                         if(called_func_def_global_or_f_param->is_f_param())
                         {
-                            if(called_func_flow_graph->basic_blocks.size()>1)
-                            {
-                                old_and_new_vars_map.clear();
-                                goto next;
-                            }
-                            else
-                            {
+                            // if(called_func_flow_graph->basic_blocks.size()>1)
+                            // {
+                            //     old_and_new_vars_map.clear();
+                            //     goto next;
+                            // }
+                            // else
+                            // {
                                 old_and_new_vars_map.insert(make_pair(called_func_def_global_or_f_param,symbol_table->new_var(/*called_func_def_global_or_f_param->get_var_name()*/"<"+to_string(inline_var_num++)+">",called_func_def_global_or_f_param->get_data_type(),called_func_def_global_or_f_param->dimensions_len,called_func_def_global_or_f_param->get_value(),called_func_def_global_or_f_param->type==ic_data_type::CONST_FUNC_F_PARAM,inline_func_scope)));
-                            }
+                            // }
                         }
                     }
                     //将要复制的流图中的变量和标签进行相应的替换，并更改其相应的作用域
@@ -1354,7 +1367,7 @@ for_iterator:
                                 {
                                     if((*copyed_basic_block)!=copyed_basic_blocks.back())
                                     {
-                                        (*copyed_basic_block)->ic_sequence.push_back(quaternion_with_info(quaternion(ic_op::JMP,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::LABEL,(void *)new_label)));
+                                        (*copyed_basic_block)->add_ic(quaternion(ic_op::JMP,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::LABEL,(void *)new_label));
                                         (*copyed_basic_block)->set_jump_next(new_basic_block);
                                         goto for_iterator;
                                     }

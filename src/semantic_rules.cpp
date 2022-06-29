@@ -1914,22 +1914,9 @@ end_define_semantic_rule
 */
 define_semantic_rule(___FUNC_DEF_2___)
     struct ic_func * func=func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)));
-    struct ic_data * ret_value;
     //检查BLOCK中是否有return
     //检查BLOCK中是否还存在有不匹配的break和continue
     //目前无需实现
-    switch(func->return_type)
-    {
-        case language_data_type::INT:
-            ret_value=def_const(language_data_type::INT,((int)0));
-            break;
-        case language_data_type::FLOAT:
-            ret_value=def_const(language_data_type::FLOAT,((float)0.f));
-            break;
-        default:
-            break;
-    }
-    gen_zero_operand_code(ic_op::RET,ic_operand::DATA,ret_value);
     gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func);
 end_define_semantic_rule
 
@@ -1948,22 +1935,9 @@ end_define_semantic_rule
 */
 define_semantic_rule(___FUNC_DEF_4___)
     struct ic_func * func=func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)));
-    struct ic_data * ret_value;
     //检查BLOCK中是否有return
     //检查BLOCK中是否还存在有不匹配的break和continue
     //目前无需实现
-    switch(func->return_type)
-    {
-        case language_data_type::INT:
-            ret_value=def_const(language_data_type::INT,((int)0));
-            break;
-        case language_data_type::FLOAT:
-            ret_value=def_const(language_data_type::FLOAT,((float)0.f));
-            break;
-        default:
-            break;
-    }
-    gen_zero_operand_code(ic_op::RET,ic_operand::DATA,ret_value);
     gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func);
 end_define_semantic_rule
 
