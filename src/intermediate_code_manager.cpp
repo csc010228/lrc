@@ -202,7 +202,7 @@ struct event Intermediate_code_manager::handler(struct event event)
         case event_type::GET_TEMP_VARS_OVER_BASIC_BLOCK:
             res=handle_GET_TEMP_VARS_OVER_BASIC_BLOCK((struct ic_func *)event.pointer_data);
             break;
-        case event_type::ALLOCATE_IDLE_CPU_REG:
+        case event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS:
             res=handle_IS_TEMP_VAR_OVER_BASIC_BLOCKS((struct ic_data *)event.pointer_data);
             break;
         default:

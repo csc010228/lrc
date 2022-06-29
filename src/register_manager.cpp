@@ -247,38 +247,17 @@ bool Register_manager::allocate_designated_reg(reg_index reg)
         for(auto var_data:temp)
         {
             //如果一个寄存器关联着若干个变量，那么需要对这些变量进行判断，把需要写回内存的进行写回
-            // switch(var_data.second)
-            // {
-            //     case reg_var_state::ADDR:
-            //         //地址不需要写回内存
-            //         break;
-            //     case reg_var_state::NOT_DIRTY:
-            //         if(var_data.first->is_tmp_var())
-            //         {
-            //             //如果此时要被分配的寄存器中原本存放在临时变量的值的话，那么需要判断该临时变量之后是否仍旧活跃
-            //             //if(notify(event(event_type::IS_VAR_STILL_ALIVE,(void *)var)).bool_data)
-            //             //{
-            //                 //如果该临时变量仍旧是活跃的，那么需要将其入栈保存，否则的话就不用
-            //                 event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
-            //                 notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
-            //                 delete event_data;
-            //             //}
-            //         }
-            //         break;
-            //     case reg_var_state::DIRTY:
-            //         regs_info_.reg_indexs.at(reg).set_value_NOT_DIRTY(var_data.first);
-            //         //如果此时要获取的寄存器中存储的变量值是脏值，那么就要把该寄存器写回到内存中
-            //         event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
-            //         notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-            //         delete event_data;
-            //         break;
-            //     default:
-            //         break;
-            // }
             if(var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY)
             {
                 event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
-                notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
+                if(notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS,(void *)var_data.first)).bool_data)
+                {
+                    notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
+                }
+                else
+                {
+                    notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
+                }
                 delete event_data;
             }
             else if(var_data.second==reg_var_state::DIRTY)
@@ -289,12 +268,6 @@ bool Register_manager::allocate_designated_reg(reg_index reg)
                 notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
                 delete event_data;
             }
-            // else if((var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS,(void *)var_data.first)).bool_data))
-            // {
-            //     event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
-            //     notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-            //     delete event_data;
-            // }
         }
         //将这个寄存器上所有关联的常量值，变量值，变量地址全都解除关联
         regs_info_.unattach_reg_s_all_data(reg);

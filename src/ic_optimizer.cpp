@@ -653,31 +653,28 @@ void ic_basic_block::set_jump_next(struct ic_basic_block * next)
     jump_next=next;
 }
 
-void ic_basic_block::add_ic(struct quaternion ic)
+void ic_basic_block::add_ic_info(struct quaternion_with_info ic_with_info)
 {
     static Symbol_table * symbol_table=Symbol_table::get_instance();
-    static bool has_next_ic=true;
-    struct quaternion_with_info ic_with_def_use_info(ic);
     set<struct ic_data * > all_datas;
-    ic_sequence.push_back(ic_with_def_use_info);
-    if(ic_with_def_use_info.explicit_def!=nullptr)
+    if(ic_with_info.explicit_def!=nullptr)
     {
-        symbol_table->add_func_def_globals_and_f_params(belong_func_flow_graph->func,ic_with_def_use_info.explicit_def);
-        all_datas.insert(ic_with_def_use_info.explicit_def);
+        symbol_table->add_func_def_globals_and_f_params(belong_func_flow_graph->func,ic_with_info.explicit_def);
+        all_datas.insert(ic_with_info.explicit_def);
     }
-    for(auto vague_var:ic_with_def_use_info.vague_defs)
+    for(auto vague_var:ic_with_info.vague_defs)
     {
         symbol_table->add_func_def_globals_and_f_params(belong_func_flow_graph->func,vague_var);
         all_datas.insert(vague_var);
     }
-    for(auto use_var:ic_with_def_use_info.uses)
+    for(auto use_var:ic_with_info.uses)
     {
         symbol_table->add_func_use_globals_and_f_params(belong_func_flow_graph->func,use_var);
         all_datas.insert(use_var);
     }
-    if(ic.op==ic_op::CALL)
+    if(ic_with_info.intermediate_code.op==ic_op::CALL)
     {
-        symbol_table->add_func_direct_calls(belong_func_flow_graph->func,(struct ic_func *)ic.arg1.second);
+        symbol_table->add_func_direct_calls(belong_func_flow_graph->func,(struct ic_func *)ic_with_info.intermediate_code.arg1.second);
     }
     for(auto data:all_datas)
     {
@@ -701,6 +698,20 @@ void ic_basic_block::add_ic(struct quaternion ic)
             }
         }
     }
+}
+
+void ic_basic_block::add_ic(struct quaternion ic)
+{
+    struct quaternion_with_info ic_with_def_use_info(ic);
+    ic_sequence.push_back(ic_with_def_use_info);
+    add_ic_info(ic_with_def_use_info);
+}
+
+void ic_basic_block::add_ic_to_front(struct quaternion ic)
+{
+    struct quaternion_with_info ic_with_def_use_info(ic);
+    ic_sequence.insert(ic_sequence.begin(),ic_with_def_use_info);
+    add_ic_info(ic_with_def_use_info);
 }
 
 void ic_basic_block::clear_ic_sequence()
@@ -1119,6 +1130,7 @@ void Ic_optimizer::function_inline(struct ic_func_flow_graph * func)
     map<struct ic_basic_block *,struct ic_basic_block *> old_and_new_ic_basic_block_map;
     struct ic_basic_block * new_basic_block,* skip_until_basic_block;
     map<struct ic_data *,struct ic_data * > old_and_new_vars_map;
+    map<struct ic_data *,struct ic_data * > changed_f_params_map;
     map<struct ic_label *,struct ic_label * > old_and_new_labels_map;
     struct ic_data * new_var,* result;
     struct ic_scope * inline_func_scope;
@@ -1158,19 +1170,11 @@ again:
                         goto next;
                     }
                     //目前由于全局寄存器分配还没有完成，所以暂时只对满足下列所有条件的函数进行内联：
-                    //（1）所有的形参在函数中都不会被改变
+                    //（1）要么所有的形参在函数中都不会被改变，要么被调用的函数只有一个基本块
                     //（2）要么函数调用的时候实参不能存在临时变量，要么被调用的函数只有一个基本块
                     //（3）函数形参中没有数组（这个限制是为了效率）
                     //（4）如果函数调用有返回值，那么要么这个返回值不能是临时变量，要么被调用的函数只有一个出口（即该函数末尾）
-                    //（5）当前函数或者被调用的函数中没有涉及到浮点数（这个限制是为了防止带有浮点数的函数过长）
-                    called_func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_f_params(called_func);
-                    for(auto called_func_def_global_or_f_param:called_func_def_globals_and_f_params)
-                    {
-                        if(called_func_def_global_or_f_param->is_f_param())
-                        {
-                            goto next;
-                        }
-                    }
+                    //（5）当前函数和被调用的函数中没有涉及到浮点数（这个限制是为了防止带有浮点数的函数过长）
                     r_params=(list<struct ic_data * > * )(*ic_with_info).intermediate_code.arg2.second;
                     if(called_func_flow_graph->basic_blocks.size()>1)
                     {
@@ -1209,11 +1213,28 @@ again:
                             }
                         }
                     }
-                    //先将要复制的流图中的变量和标签进行相应的替换，并更改其相应的作用域
+                    //获取那些会被改变的被调用函数形参
                     inline_func_scope=new ic_scope(current_func->scope);
                     inline_func_scope->set_scope_type(ic_scope_type::INLINE_FUNC);
                     inline_func_scope->func=called_func;
                     inline_var_num=0;
+                    called_func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_f_params(called_func);
+                    for(auto called_func_def_global_or_f_param:called_func_def_globals_and_f_params)
+                    {
+                        if(called_func_def_global_or_f_param->is_f_param())
+                        {
+                            if(called_func_flow_graph->basic_blocks.size()>1)
+                            {
+                                old_and_new_vars_map.clear();
+                                goto next;
+                            }
+                            else
+                            {
+                                old_and_new_vars_map.insert(make_pair(called_func_def_global_or_f_param,symbol_table->new_var(/*called_func_def_global_or_f_param->get_var_name()*/"<"+to_string(inline_var_num++)+">",called_func_def_global_or_f_param->get_data_type(),called_func_def_global_or_f_param->dimensions_len,called_func_def_global_or_f_param->get_value(),called_func_def_global_or_f_param->type==ic_data_type::CONST_FUNC_F_PARAM,inline_func_scope)));
+                            }
+                        }
+                    }
+                    //将要复制的流图中的变量和标签进行相应的替换，并更改其相应的作用域
                     for(auto called_basic_block:called_func_flow_graph->basic_blocks)
                     {
                         for(auto called_ic_with_info:called_basic_block->ic_sequence)
@@ -1257,7 +1278,14 @@ again:
                     r_param_iterator=r_params->begin();
                     while(f_param_iterator!=f_params->end() && r_param_iterator!=r_params->end())
                     {
-                        old_and_new_vars_map.insert(make_pair(*f_param_iterator,*r_param_iterator));
+                        if(old_and_new_vars_map.find(*f_param_iterator)==old_and_new_vars_map.end())
+                        {
+                            old_and_new_vars_map.insert(make_pair(*f_param_iterator,*r_param_iterator));
+                        }
+                        else
+                        {
+                            changed_f_params_map.insert(make_pair(old_and_new_vars_map.at(*f_param_iterator),*r_param_iterator));
+                        }
                         f_param_iterator++;
                         r_param_iterator++;
                     }
@@ -1282,6 +1310,12 @@ again:
                     if(copyed_basic_blocks.back()->ic_sequence.back().intermediate_code.op==ic_op::END_FUNC_DEFINE)
                     {
                         copyed_basic_blocks.back()->ic_sequence.pop_back();
+                    }
+                    //将那些在内联函数中会被改变的函数形参进行处理
+                    new_basic_block=copyed_basic_blocks.front();
+                    for(auto changed_f_param:changed_f_params_map)
+                    {
+                        new_basic_block->add_ic_to_front(quaternion(ic_op::ASSIGN,ic_operand::DATA,(void *)changed_f_param.second,ic_operand::NONE,nullptr,ic_operand::DATA,(void *)changed_f_param.first));
                     }
                     //最后将复制完成的函数流图添加到当前函数流图中，再把所有的RET替换掉即可
                     another_ic_with_info=basic_block->ic_sequence.begin();
@@ -1374,6 +1408,7 @@ for_iterator:
                     }
                     copyed_basic_blocks.clear();
                     old_and_new_ic_basic_block_map.clear();
+                    changed_f_params_map.clear();
                     old_and_new_vars_map.clear();
                     old_and_new_labels_map.clear();
                     new_basic_block_ic_sequence.clear();

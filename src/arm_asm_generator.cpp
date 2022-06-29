@@ -65,6 +65,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
         {
             case event_type::IS_FUNC_NEED_PASS_PARAMS_BY_STACK:
             case event_type::NEXT_IC:
+            case event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS:
                 res=intermediate_code_manager_->handler(event);
                 break;
             case event_type::GET_CPU_REG_FOR_CONST:

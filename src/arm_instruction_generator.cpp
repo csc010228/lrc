@@ -1488,7 +1488,6 @@ void Arm_instruction_generator::handle_WRITE_CONST_TO_REG(OAA const_data,reg_ind
         {
             push_instruction(new Arm_cpu_data_process_instruction(arm_op::MOVT,arm_condition::NONE,reg,immed_16r(signed_int_to_unsigned_int.unsigned_int_data)));
         }
-        //push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,reg,to_string(const_int_data)));
     }
     else if(notify(event(event_type::IS_VFP_REG,(int)reg)).bool_data)
     {
@@ -1503,9 +1502,9 @@ void Arm_instruction_generator::handle_STORE_VAR_TO_MEM(struct ic_data * var,reg
     pair<reg_index,reg_index> * event_data_1;
     pair<struct ic_data * ,reg_index> * event_data_2;
 
-    if(var->is_const() || var->is_tmp_var() || (var->is_array_var() && !var->is_f_param()) || (var->is_array_member() && var->is_array_var()))
+    if(var->is_const() || (var->is_tmp_var() && !notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS,(void *)var)).bool_data) || (var->is_array_var() && !var->is_f_param()) || (var->is_array_member() && var->is_array_var()))
     {
-        //常量数据和临时变量不需要写回
+        //常量数据和不跨越基本块的临时变量不需要写回
         //对于数组变量来说，只有那些函数形参才能写回
         //如果一个变量即是数组，又是数组取元素，那么就意味着这个变量其实是一个数组取元素，只不过没有全部维度都用于取元素，这种变量也是不能写回的
         return;

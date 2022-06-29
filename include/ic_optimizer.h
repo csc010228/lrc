@@ -124,8 +124,14 @@ struct ic_basic_block
     //设置该基本块跳转执行的时候的下一个基本块
     void set_jump_next(struct ic_basic_block * next);
 
+    //添加一条中间代码的信息
+    void add_ic_info(struct quaternion_with_info ic_with_info);
+
     //往当前基本块中加入一条中间代码
     void add_ic(struct quaternion ic);
+
+    //往当前基本块的前面加入一条中间代码
+    void add_ic_to_front(struct quaternion ic);
 
     //清空当前的中间代码序列
     void clear_ic_sequence();
