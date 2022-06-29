@@ -60,7 +60,7 @@ void Intermediate_code_manager::build_temp_vars_over_basic_blocks_info_in_func(s
                     }
                     if(temp_vars_s_basic_block.at(var_in_ic_with_info)!=basic_block)
                     {
-                        map_set_insert(temp_vars_over_basic_blocks_,func,var_in_ic_with_info);
+                        map_set_insert(temp_vars_over_basic_blocks_,func->func,var_in_ic_with_info);
                     }
                 }
             }
@@ -164,6 +164,16 @@ struct event Intermediate_code_manager::handle_IS_FUNC_NEED_PASS_PARAMS_BY_STACK
     return event(event_type::RESPONSE_BOOL,false);
 }
 
+struct event Intermediate_code_manager::handle_GET_TEMP_VARS_OVER_BASIC_BLOCK(struct ic_func * func)
+{
+    return event(event_type::RESPONSE_POINTER,(void *)(&(temp_vars_over_basic_blocks_[func])));
+}
+
+struct event Intermediate_code_manager::handle_IS_TEMP_VAR_OVER_BASIC_BLOCKS(struct ic_data * var)
+{
+    return event(event_type::RESPONSE_BOOL,temp_vars_over_basic_blocks_[(*current_func_pos_)->func].find(var)!=temp_vars_over_basic_blocks_[(*current_func_pos_)->func].end());
+}
+
 /*
 事件处理函数(由中介者进行调用)
 
@@ -188,6 +198,12 @@ struct event Intermediate_code_manager::handler(struct event event)
             break;
         case event_type::IS_FUNC_NEED_PASS_PARAMS_BY_STACK:
             res=handle_IS_FUNC_NEED_PASS_PARAMS_BY_STACK((struct ic_func *)event.pointer_data);
+            break;
+        case event_type::GET_TEMP_VARS_OVER_BASIC_BLOCK:
+            res=handle_GET_TEMP_VARS_OVER_BASIC_BLOCK((struct ic_func *)event.pointer_data);
+            break;
+        case event_type::ALLOCATE_IDLE_CPU_REG:
+            res=handle_IS_TEMP_VAR_OVER_BASIC_BLOCKS((struct ic_data *)event.pointer_data);
             break;
         default:
             break;

@@ -53,14 +53,7 @@ void regs_info::attach_value_to_reg(struct ic_data * var,reg_index reg)
 {
     struct reg & designated_reg=reg_indexs.at(reg);
     unattach_reg_s_all_addr(reg);
-    if(var_value_regs_map.find(var)==var_value_regs_map.end())
-    {
-        var_value_regs_map.insert(make_pair(var,set<reg_index>()));
-    }
-    if(var_value_regs_map.at(var).find(reg)==var_value_regs_map.at(var).end())
-    {
-        var_value_regs_map.at(var).insert(reg);
-    }
+    map_set_insert(var_value_regs_map,var,reg);
     designated_reg.add_value(var);
 }
 
@@ -68,14 +61,7 @@ void regs_info::attach_value_to_reg(OAA const_value,reg_index reg)
 {
     struct reg & designated_reg=reg_indexs.at(reg);
     unattach_reg_s_all_addr(reg);
-    if(const_value_regs_map.find(const_value)==const_value_regs_map.end())
-    {
-        const_value_regs_map.insert(make_pair(const_value,set<reg_index>()));
-    }
-    if(const_value_regs_map.at(const_value).find(reg)==const_value_regs_map.at(const_value).end())
-    {
-        const_value_regs_map.at(const_value).insert(reg);
-    }
+    map_set_insert(const_value_regs_map,const_value,reg);
     designated_reg.add_value(const_value);
 }
 
@@ -83,65 +69,28 @@ void regs_info::attach_addr_to_reg(struct ic_data * var,reg_index reg)
 {
     struct reg & designated_reg=reg_indexs.at(reg);
     unattach_reg_s_all_addr(reg);
-    if(var_addr_regs_map.find(var)==var_addr_regs_map.end())
-    {
-        var_addr_regs_map.insert(make_pair(var,set<reg_index>()));
-    }
-    if(var_addr_regs_map.at(var).find(reg)==var_addr_regs_map.at(var).end())
-    {
-        var_addr_regs_map.at(var).insert(reg);
-    }
+    map_set_insert(var_addr_regs_map,var,reg);
     designated_reg.add_addr(var);
 }
 
 void regs_info::unattach_value_to_reg(struct ic_data * var,reg_index reg)
 {
     struct reg & designated_reg=reg_indexs.at(reg);
-    if(var_value_regs_map.find(var)!=var_value_regs_map.end())
-    {
-        if(var_value_regs_map.at(var).find(reg)!=var_value_regs_map.at(var).end())
-        {
-            var_value_regs_map.at(var).erase(reg);
-        }
-        if(var_value_regs_map.at(var).empty())
-        {
-            var_value_regs_map.erase(var);
-        }
-    }
+    map_set_erase(var_value_regs_map,var,reg);
     designated_reg.remove_value(var);
 }
 
 void regs_info::unattach_value_to_reg(OAA const_value,reg_index reg)
 {
     struct reg & designated_reg=reg_indexs.at(reg);
-    if(const_value_regs_map.find(const_value)!=const_value_regs_map.end())
-    {
-        if(const_value_regs_map.at(const_value).find(reg)!=const_value_regs_map.at(const_value).end())
-        {
-            const_value_regs_map.at(const_value).erase(reg);
-        }
-        if(const_value_regs_map.at(const_value).empty())
-        {
-            const_value_regs_map.erase(const_value);
-        }
-    }
+    map_set_erase(const_value_regs_map,const_value,reg);
     designated_reg.remove_value(const_value);
 }
 
 void regs_info::unattach_addr_to_reg(struct ic_data * var,reg_index reg)
 {
     struct reg & designated_reg=reg_indexs.at(reg);
-    if(var_addr_regs_map.find(var)!=var_addr_regs_map.end())
-    {
-        if(var_addr_regs_map.at(var).find(reg)!=var_value_regs_map.at(var).end())
-        {
-            var_addr_regs_map.at(var).erase(reg);
-        }
-        if(var_addr_regs_map.at(var).empty())
-        {
-            var_addr_regs_map.erase(var);
-        }
-    }
+    map_set_erase(var_addr_regs_map,var,reg);
     designated_reg.remove_addr(var);
 }
 
@@ -171,31 +120,11 @@ void regs_info::unattach_reg_s_all_data(reg_index reg)
         switch(var_data.second)
         {
             case reg_var_state::ADDR:
-                if(var_addr_regs_map.find(var_data.first)!=var_addr_regs_map.end())
-                {
-                    if(var_addr_regs_map.at(var_data.first).find(reg)!=var_addr_regs_map.at(var_data.first).end())
-                    {
-                        var_addr_regs_map.at(var_data.first).erase(reg);
-                    }
-                    if(var_addr_regs_map.at(var_data.first).empty())
-                    {
-                        var_addr_regs_map.erase(var_data.first);
-                    }
-                }
+                map_set_erase(var_addr_regs_map,var_data.first,reg);
                 break;
             case reg_var_state::DIRTY:
             case reg_var_state::NOT_DIRTY:
-                if(var_value_regs_map.find(var_data.first)!=var_value_regs_map.end())
-                {
-                    if(var_value_regs_map.at(var_data.first).find(reg)!=var_value_regs_map.at(var_data.first).end())
-                    {
-                        var_value_regs_map.at(var_data.first).erase(reg);
-                    }
-                    if(var_value_regs_map.at(var_data.first).empty())
-                    {
-                        var_value_regs_map.erase(var_data.first);
-                    }
-                }
+                map_set_erase(var_value_regs_map,var_data.first,reg);
                 break;
             default:
                 break;
@@ -305,15 +234,16 @@ bool Register_manager::allocate_designated_reg(reg_index reg)
         designated_reg.state=reg_state::ALLOCATING;
         temp=designated_reg.var_datas;
         //需要先把寄存器中需要写回内存的数据进行写回
-        for(auto var_data:temp)
-        {
-            if(var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY)
-            {
-                event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
-                notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
-                delete event_data;
-            }
-        }
+        //这里目前必须先把临时变量进栈，再把局部变量写回，因为临时变量的进栈会改变栈顶指针的位置，而局部变量的写回不会
+        // for(auto var_data:temp)
+        // {
+        //     if(var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && !notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS,(void *)var_data.first)).bool_data)
+        //     {
+        //         event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
+        //         notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
+        //         delete event_data;
+        //     }
+        // }
         for(auto var_data:temp)
         {
             //如果一个寄存器关联着若干个变量，那么需要对这些变量进行判断，把需要写回内存的进行写回
@@ -345,7 +275,13 @@ bool Register_manager::allocate_designated_reg(reg_index reg)
             //     default:
             //         break;
             // }
-            if(var_data.second==reg_var_state::DIRTY)
+            if(var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY)
+            {
+                event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
+                notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
+                delete event_data;
+            }
+            else if(var_data.second==reg_var_state::DIRTY)
             {
                 regs_info_.reg_indexs.at(reg).set_value_NOT_DIRTY(var_data.first);
                 //如果此时要获取的寄存器中存储的变量值是脏值，那么就要把该寄存器写回到内存中
@@ -353,6 +289,12 @@ bool Register_manager::allocate_designated_reg(reg_index reg)
                 notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
                 delete event_data;
             }
+            // else if((var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS,(void *)var_data.first)).bool_data))
+            // {
+            //     event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
+            //     notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
+            //     delete event_data;
+            // }
         }
         //将这个寄存器上所有关联的常量值，变量值，变量地址全都解除关联
         regs_info_.unattach_reg_s_all_data(reg);
@@ -393,7 +335,7 @@ reg_index Register_manager::allocate_idle_reg(reg_processor processor)
     
     for(auto reg:regs_info_.reg_indexs)
     {
-        if(reg.second.processor==processor && reg.second.writable && allocate_designated_reg(reg.first))
+        if(reg.second.processor==processor && (reg.second.attr==reg_attr::ARGUMENT || reg.second.attr==reg_attr::TEMP) && allocate_designated_reg(reg.first))
         {
             res=reg.first;
             break;
@@ -466,6 +408,8 @@ reg_index Register_manager::get_reg_for_const(OAA const_data,enum reg_processor 
     {
         //如果没有的话，那么就给该常数分配一个新的寄存器，并将该常数的值写入即可
         reg=allocate_idle_reg(processor);
+        //立刻把该寄存器设置为被当前的指令所使用
+        set_got_by_current_instruction(reg);
         event_data_1=new pair<OAA,reg_index>(const_data,reg);
         notify(event(event_type::WRITE_CONST_TO_REG,(void *)event_data_1));
         delete event_data_1;
@@ -478,18 +422,20 @@ reg_index Register_manager::get_reg_for_const(OAA const_data,enum reg_processor 
             if(regs_info_.reg_indexs.at(suspicious_reg).processor==processor)
             {
                 reg=suspicious_reg;
+                //立刻把该寄存器设置为被当前的指令所使用
+                set_got_by_current_instruction(reg);
                 goto end;
             }
         }
         reg=allocate_idle_reg(processor);
+        //立刻把该寄存器设置为被当前的指令所使用
+        set_got_by_current_instruction(reg);
         event_data_2=new pair<reg_index,reg_index>((*suspicious_regs.begin()),reg);
         notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data_2));
         delete event_data_2;
     }
     regs_info_.attach_value_to_reg(const_data,reg);
 end:
-    //把该寄存器设置为被当前的指令所使用
-    set_got_by_current_instruction(reg);
     return reg;
 }
 
@@ -544,6 +490,8 @@ reg_index Register_manager::get_reg_for_reading_var(struct ic_data * var,enum re
         }
         //再给该变量分配一个新的寄存器，并将该变量的值写入即可
         reg=allocate_idle_reg(processor);
+        //必须立刻把该寄存器设置为被当前的指令所使用，因为后面的LOAD_VAR_TO_REG也可能需要分配寄存器
+        set_got_by_current_instruction(reg);
         event_data_1=new pair<struct ic_data *,reg_index>(var,reg);
         notify(event(event_type::LOAD_VAR_TO_REG,(void *)event_data_1));
         delete event_data_1;
@@ -556,10 +504,14 @@ reg_index Register_manager::get_reg_for_reading_var(struct ic_data * var,enum re
             if(regs_info_.reg_indexs.at(suspicious_reg).processor==processor)
             {
                 reg=suspicious_reg;
+                //立刻把该寄存器设置为被当前的指令所使用
+                set_got_by_current_instruction(reg);
                 goto end;
             }
         }
         reg=allocate_idle_reg(processor);
+        //立刻把该寄存器设置为被当前的指令所使用
+        set_got_by_current_instruction(reg);
         event_data_2=new pair<reg_index,reg_index>((*suspicious_regs.begin()),reg);
         notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data_2));
         delete event_data_2;
@@ -567,8 +519,6 @@ reg_index Register_manager::get_reg_for_reading_var(struct ic_data * var,enum re
     regs_info_.unattach_reg_s_all_data(reg);
     regs_info_.attach_value_to_reg(var,reg);
 end:
-    //把该寄存器设置为被当前的指令所使用
-    set_got_by_current_instruction(reg);
     return reg;
 }
 
@@ -713,6 +663,8 @@ reg_index Register_manager::get_reg_for_var_addr(struct ic_data * var)
         //否则的话，分配一个新的空闲寄存器，将地址写入该寄存器
         //默认都把地址放在CPU寄存器中
         reg=allocate_idle_reg(reg_processor::CPU);
+        //必须立刻把该寄存器设置为被当前的指令所使用，因为后面的WRITE_ADDR_TO_REG也可能需要分配寄存器
+        set_got_by_current_instruction(reg);
         event_data=new pair<struct ic_data *,reg_index>(var,reg);
         notify(event(event_type::WRITE_ADDR_TO_REG,(void *)event_data));
         delete event_data;
@@ -721,9 +673,9 @@ reg_index Register_manager::get_reg_for_var_addr(struct ic_data * var)
     else
     {
         reg=(*suspicious_regs.begin());
+        //把该寄存器设置为被当前的指令所使用
+        set_got_by_current_instruction(reg);
     }
-    //把该寄存器设置为被当前的指令所使用
-    set_got_by_current_instruction(reg);
     return reg;
 }
 
@@ -750,6 +702,8 @@ void Register_manager::get_designated_reg_for_const(reg_index reg,OAA const_valu
     {
         //如果没有的话，将指定的寄存器中的内容写回，然后把变量写入该寄存器即可
         allocate_designated_reg(reg);
+        //必须立刻把该寄存器设置为被当前的指令所使用，因为后面的WRITE_CONST_TO_REG也有可能需要分配寄存器
+        set_got_by_current_instruction(reg);
         event_data_2=new pair<OAA,reg_index>(const_value,reg);
         notify(event(event_type::WRITE_CONST_TO_REG,(void *)event_data_2));
         delete event_data_2;
@@ -771,10 +725,10 @@ void Register_manager::get_designated_reg_for_const(reg_index reg,OAA const_valu
             delete event_data_1;
             notify(event(event_type::END_INSTRUCTION,nullptr));
         }
+        //把该寄存器设置为被当前的指令所使用
+        set_got_by_current_instruction(reg);
     }
     regs_info_.attach_value_to_reg(const_value,reg);
-    //把该寄存器设置为被当前的指令所使用
-    set_got_by_current_instruction(reg);
 }
 
 /*
@@ -830,6 +784,8 @@ void Register_manager::get_designated_reg_for_reading_var(reg_index reg,struct i
         }
         //再将指定的寄存器中的内容写回，然后把变量写入该寄存器即可
         allocate_designated_reg(reg);
+        //必须立刻把该寄存器设置为被当前的指令所使用，因为后面的LOAD_VAR_TO_REG也有可能需要分配寄存器
+        set_got_by_current_instruction(reg);
         event_data_2=new pair<struct ic_data *,reg_index>(var,reg);
         notify(event(event_type::LOAD_VAR_TO_REG,(void *)event_data_2));
         delete event_data_2;
@@ -852,10 +808,10 @@ void Register_manager::get_designated_reg_for_reading_var(reg_index reg,struct i
             delete event_data_1;
             notify(event(event_type::END_INSTRUCTION,nullptr));
         }
+        //把该寄存器设置为被当前的指令所使用
+        set_got_by_current_instruction(reg);
     }
     regs_info_.attach_value_to_reg(var,reg);
-    //把该寄存器设置为被当前的指令所使用
-    set_got_by_current_instruction(reg);
 }
 
 /*
@@ -1209,17 +1165,17 @@ void Register_manager::handle_START_INSRUCTION(set<reg_index> * regs_unaccessibl
 {
     if(regs_unaccessible)
     {
-        regs_info_.current_instructions_involved_regs.push_back(*regs_unaccessible);
+        regs_info_.current_instructions_involved_regs.push_front(*regs_unaccessible);
     }
     else
     {
-        regs_info_.current_instructions_involved_regs.push_back(set<reg_index>());
+        regs_info_.current_instructions_involved_regs.push_front(set<reg_index>());
     }
 }
 
 void Register_manager::handle_END_INSTRUCTION()
 {
-    regs_info_.current_instructions_involved_regs.pop_back();
+    regs_info_.current_instructions_involved_regs.pop_front();
 }
 
 void Register_manager::handle_FUNC_RET()
@@ -1604,6 +1560,14 @@ struct event Register_manager::handle_GET_VFP_ARGUMENT_REG_NUM()
     return event(event_type::RESPONSE_INT,(void *)vfp_argument_reg_num);
 }
 
+void Register_manager::handle_DISABLE_ALL_ADDR_REG()
+{
+    for(auto reg:regs_info_.reg_indexs)
+    {
+        regs_info_.unattach_reg_s_all_addr(reg.first);
+    }
+}
+
 /*
 事件处理函数(由中介者进行调用)
 
@@ -1782,6 +1746,9 @@ struct event Register_manager::handler(struct event event)
             break;
         case event_type::GET_VFP_ARGUMENT_REG_NUM:
             response=handle_GET_VFP_ARGUMENT_REG_NUM();
+            break;
+        case event_type::DISABLE_ALL_ADDR_REG:
+            handle_DISABLE_ALL_ADDR_REG();
             break;
         default:
             break;

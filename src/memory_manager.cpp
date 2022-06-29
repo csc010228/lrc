@@ -65,6 +65,12 @@ struct event Memory_manager::handle_READY_TO_PUSH_LOCAL_VARS(struct ic_func * fu
     size_t local_vars_total_byte_size=0,local_var_4_bytes_size,tmp_1;
     bool need_padding=false;
     list<struct ic_data * > local_vars=func->get_local_vars();
+    //把那些跨越了基本块的临时变量也作为局部变量进行处理
+    set<struct ic_data * > * temp_vars_over_basic_blocks=(set<struct ic_data * > * )notify(event(event_type::GET_TEMP_VARS_OVER_BASIC_BLOCK,(void *)func)).pointer_data;
+    for(auto temp_var_over_basic_blocks:(*temp_vars_over_basic_blocks))
+    {
+        local_vars.push_back(temp_var_over_basic_blocks);
+    }
     for(auto local_var:local_vars)
     {
         if(local_var->is_const() && !local_var->is_array_var())

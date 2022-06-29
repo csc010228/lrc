@@ -383,6 +383,7 @@ private:
     struct event handle_GET_ALL_ARGUMENT_REGS();
     struct event handle_GET_CPU_ARGUMENT_REG_NUM();
     struct event handle_GET_VFP_ARGUMENT_REG_NUM();
+    void handle_DISABLE_ALL_ADDR_REG();
 
 public:
     //构造函数

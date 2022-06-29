@@ -20,6 +20,22 @@ void map_set_insert(map<MAP_SET_KEY,set<MAP_SET_VALUE> > & target,const MAP_SET_
 }
 
 template<typename MAP_SET_KEY,typename MAP_SET_VALUE>
+void map_set_erase(map<MAP_SET_KEY,set<MAP_SET_VALUE> > & target,const MAP_SET_KEY & key,const MAP_SET_VALUE & value)
+{
+    if(target.find(key)!=target.end())
+    {
+        if(target.at(key).find(value)!=target.at(key).end())
+        {
+            target.at(key).erase(value);
+        }
+        if(target.at(key).empty())
+        {
+            target.erase(key);
+        }
+    }
+}
+
+template<typename MAP_SET_KEY,typename MAP_SET_VALUE>
 map<MAP_SET_KEY,set<MAP_SET_VALUE> > map_set_union(const map<MAP_SET_KEY,set<MAP_SET_VALUE> > & arg1,const map<MAP_SET_KEY,set<MAP_SET_VALUE> > & arg2)
 {
     map<MAP_SET_KEY,set<MAP_SET_VALUE> > res=arg1;

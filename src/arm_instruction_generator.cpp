@@ -1772,6 +1772,7 @@ void Arm_instruction_generator::handle_PUSH_TEMP_VAR_FROM_REG_TO_STACK(struct ic
             push_instruction(new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPUSH,arm_condition::NONE,arm_registers(1,reg)));
         }
         notify(event(event_type::PUSH_VAR_TO_STACK,(void *)var));
+        notify(event(event_type::DISABLE_ALL_ADDR_REG,nullptr));
     }
 }
 
@@ -1823,6 +1824,7 @@ void Arm_instruction_generator::handle_CALL_FUNC(string func_name,list<struct ic
             reg=(reg_index)notify(event(event_type::GET_VFP_REG_FOR_READING_VAR,(void *)r_param)).int_data;
             push_instruction(new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPUSH,arm_condition::NONE,arm_registers(1,reg)));
         }
+        notify(event(event_type::DISABLE_ALL_ADDR_REG,nullptr));
         notify(event(event_type::PUSH_ARGUMENT_TO_STACK_WHEN_CALLING_FUNC,(void *)r_param));
         notify(event(event_type::END_INSTRUCTION,nullptr));
     }
@@ -1895,6 +1897,7 @@ void Arm_instruction_generator::handle_CALL_ABI_FUNC(string func_name,list<struc
             reg=(reg_index)notify(event(event_type::GET_VFP_REG_FOR_READING_VAR,(void *)r_param)).int_data;
             push_instruction(new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPUSH,arm_condition::NONE,arm_registers(1,reg)));
         }
+        notify(event(event_type::DISABLE_ALL_ADDR_REG,nullptr));
         notify(event(event_type::PUSH_ARGUMENT_TO_STACK_WHEN_CALLING_FUNC,(void *)r_params));
         notify(event(event_type::END_INSTRUCTION,nullptr));
     }

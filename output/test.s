@@ -13,523 +13,6 @@
 	.align 1
 	.global	__aeabi_idiv
 	.global	__aeabi_idivmod
-	.global read_program
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	read_program, %function
-read_program:
-	push	{fp,lr}
-	nop
-	add	fp,sp,#8
-	sub	sp,sp,#20
-	bl	getch
-	add	r1,sp,#0
-	str	r0,[r1]
-.36:
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#62
-	beq	.37
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#60
-	beq	.37
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#43
-	beq	.37
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#45
-	beq	.37
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#91
-	beq	.37
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#93
-	beq	.37
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#46
-	beq	.37
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#44
-	beq	.37
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#35
-	beq	.37
-	bl	getch
-	add	r1,sp,#0
-	str	r0,[r1]
-	b	.36
-.37:
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	add	r1,sp,#16
-	str	r0,[r1]
-.2:
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	cmp	r0,#35
-	beq	.3
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	movw	r1,#:lower16:program
-	movt	r1,#:upper16:program
-	movw	r2,#:lower16:program_length
-	movt	r2,#:upper16:program_length
-	ldr	r2,[r2]
-	str	r0,[r1,r2,lsl 2]
-	bl	getch
-	add	r1,sp,#4
-	str	r0,[r1]
-.38:
-	add	r0,sp,#4
-	ldr	r0,[r0]
-	cmp	r0,#62
-	beq	.39
-	add	r0,sp,#4
-	ldr	r0,[r0]
-	cmp	r0,#60
-	beq	.39
-	add	r0,sp,#4
-	ldr	r0,[r0]
-	cmp	r0,#43
-	beq	.39
-	add	r0,sp,#4
-	ldr	r0,[r0]
-	cmp	r0,#45
-	beq	.39
-	add	r0,sp,#4
-	ldr	r0,[r0]
-	cmp	r0,#91
-	beq	.39
-	add	r0,sp,#4
-	ldr	r0,[r0]
-	cmp	r0,#93
-	beq	.39
-	add	r0,sp,#4
-	ldr	r0,[r0]
-	cmp	r0,#46
-	beq	.39
-	add	r0,sp,#4
-	ldr	r0,[r0]
-	cmp	r0,#44
-	beq	.39
-	add	r0,sp,#4
-	ldr	r0,[r0]
-	cmp	r0,#35
-	beq	.39
-	bl	getch
-	add	r1,sp,#4
-	str	r0,[r1]
-	b	.38
-.39:
-	add	r0,sp,#4
-	ldr	r0,[r0]
-	add	r1,sp,#16
-	str	r0,[r1]
-	movw	r0,#:lower16:program_length
-	movt	r0,#:upper16:program_length
-	ldr	r0,[r0]
-	add	r2,r0,#1
-	movw	r0,#:lower16:program_length
-	movt	r0,#:upper16:program_length
-	str	r2,[r0]
-	b	.2
-.3:
-	bl	getch
-	cmp	r0,#105
-	beq	.4
-	add	sp,sp,#20
-	nop
-	pop	{fp,pc}
-.4:
-	bl	getint
-	push	{r0}
-	movw	r1,#:lower16:input_length
-	movt	r1,#:upper16:input_length
-	str	r0,[r1]
-	bl	getch
-	push	{r0}
-	movw	r0,#0
-	add	r1,sp,#20
-	str	r0,[r1]
-	add	sp,sp,#8
-.5:
-	add	r0,sp,#12
-	ldr	r0,[r0]
-	movw	r1,#:lower16:input_length
-	movt	r1,#:upper16:input_length
-	ldr	r1,[r1]
-	cmp	r0,r1
-	bge	.6
-	bl	getch
-	push	{r0}
-	movw	r1,#:lower16:input
-	movt	r1,#:upper16:input
-	add	r2,sp,#16
-	ldr	r2,[r2]
-	str	r0,[r1,r2,lsl 2]
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	add	r3,r0,#1
-	add	r0,sp,#16
-	str	r3,[r0]
-	add	sp,sp,#4
-	b	.5
-.6:
-	add	sp,sp,#20
-	nop
-	pop	{fp,pc}
-	.size	read_program, .-read_program
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
-	.global run_program
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	run_program, %function
-run_program:
-	push	{fp,lr}
-	nop
-	add	fp,sp,#8
-	sub	sp,sp,#2080
-	add	r0,sp,#20
-	movw	r1,#0
-	movw	r2,#2048
-	bl	memset
-	movw	r0,#0
-	movw	r1,#:lower16:output_length
-	movt	r1,#:upper16:output_length
-	str	r0,[r1]
-	movw	r1,#2072
-	add	r1,sp,r1
-	str	r0,[r1]
-	movw	r1,#2068
-	add	r1,sp,r1
-	str	r0,[r1]
-	movw	r1,#2076
-	add	r1,sp,r1
-	str	r0,[r1]
-	add	r1,sp,#16
-	str	r0,[r1]
-.7:
-	movw	r0,#2072
-	add	r0,sp,r0
-	ldr	r0,[r0]
-	movw	r1,#:lower16:program_length
-	movt	r1,#:upper16:program_length
-	ldr	r1,[r1]
-	cmp	r0,r1
-	bge	.33
-	movw	r0,#:lower16:program
-	movt	r0,#:upper16:program
-	movw	r1,#2072
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	cmp	r0,#62
-	add	r1,sp,#12
-	str	r0,[r1]
-	bne	.8
-	movw	r0,#2068
-	add	r0,sp,r0
-	ldr	r0,[r0]
-	add	r1,r0,#1
-	movw	r0,#2068
-	add	r0,sp,r0
-	str	r1,[r0]
-	b	.32
-.8:
-	add	r0,sp,#12
-	ldr	r0,[r0]
-	cmp	r0,#60
-	bne	.9
-	movw	r0,#2068
-	add	r0,sp,r0
-	ldr	r0,[r0]
-	sub	r1,r0,#1
-	movw	r0,#2068
-	add	r0,sp,r0
-	str	r1,[r0]
-	b	.31
-.9:
-	add	r0,sp,#12
-	ldr	r0,[r0]
-	cmp	r0,#43
-	bne	.10
-	movw	r0,#:lower16:tape
-	movt	r0,#:upper16:tape
-	movw	r1,#2068
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	add	r2,r0,#1
-	movw	r0,#:lower16:tape
-	movt	r0,#:upper16:tape
-	str	r2,[r0,r1,lsl 2]
-	b	.30
-.10:
-	add	r0,sp,#12
-	ldr	r0,[r0]
-	cmp	r0,#45
-	bne	.11
-	movw	r0,#:lower16:tape
-	movt	r0,#:upper16:tape
-	movw	r1,#2068
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	sub	r2,r0,#1
-	movw	r0,#:lower16:tape
-	movt	r0,#:upper16:tape
-	str	r2,[r0,r1,lsl 2]
-	b	.29
-.11:
-	add	r0,sp,#12
-	ldr	r0,[r0]
-	cmp	r0,#91
-	bne	.18
-	movw	r0,#:lower16:tape
-	movt	r0,#:upper16:tape
-	movw	r1,#2068
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	cmp	r0,#0
-	beq	.12
-	movw	r0,#2072
-	add	r0,sp,r0
-	ldr	r0,[r0]
-	add	r1,sp,#20
-	add	r2,sp,#16
-	ldr	r2,[r2]
-	str	r0,[r1,r2,lsl 2]
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	add	r3,r0,#1
-	add	r0,sp,#16
-	str	r3,[r0]
-	b	.17
-.12:
-	movw	r0,#1
-	add	r1,sp,#0
-	str	r0,[r1]
-.13:
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#0
-	ble	.16
-	movw	r0,#2072
-	add	r0,sp,r0
-	ldr	r0,[r0]
-	add	r1,r0,#1
-	movw	r0,#:lower16:program
-	movt	r0,#:upper16:program
-	ldr	r0,[r0,r1,lsl 2]
-	cmp	r0,#93
-	movw	r0,#2072
-	add	r0,sp,r0
-	str	r1,[r0]
-	bne	.14
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	sub	r1,r0,#1
-	add	r0,sp,#0
-	str	r1,[r0]
-.14:
-	movw	r0,#:lower16:program
-	movt	r0,#:upper16:program
-	movw	r1,#2072
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	cmp	r0,#91
-	bne	.15
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	add	r1,r0,#1
-	add	r0,sp,#0
-	str	r1,[r0]
-.15:
-	b	.13
-.16:
-.17:
-	b	.28
-.18:
-	add	r0,sp,#12
-	ldr	r0,[r0]
-	cmp	r0,#93
-	bne	.21
-	movw	r0,#:lower16:tape
-	movt	r0,#:upper16:tape
-	movw	r1,#2068
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	cmp	r0,#0
-	bne	.19
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	sub	r1,r0,#1
-	add	r0,sp,#16
-	str	r1,[r0]
-	b	.20
-.19:
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	sub	r1,r0,#1
-	add	r0,sp,#20
-	ldr	r0,[r0,r1,lsl 2]
-	push	{r1}
-	movw	r1,#2076
-	add	r1,sp,r1
-	str	r0,[r1]
-	add	sp,sp,#4
-.20:
-	b	.27
-.21:
-	add	r0,sp,#12
-	ldr	r0,[r0]
-	cmp	r0,#46
-	bne	.22
-	movw	r0,#:lower16:tape
-	movt	r0,#:upper16:tape
-	movw	r1,#2068
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	movw	r1,#:lower16:output
-	movt	r1,#:upper16:output
-	movw	r2,#:lower16:output_length
-	movt	r2,#:upper16:output_length
-	ldr	r2,[r2]
-	str	r0,[r1,r2,lsl 2]
-	movw	r0,#:lower16:output_length
-	movt	r0,#:upper16:output_length
-	ldr	r0,[r0]
-	add	r3,r0,#1
-	movw	r0,#:lower16:output_length
-	movt	r0,#:upper16:output_length
-	str	r3,[r0]
-	b	.26
-.22:
-	add	r0,sp,#12
-	ldr	r0,[r0]
-	cmp	r0,#44
-	bne	.25
-	movw	r0,#2076
-	add	r0,sp,r0
-	ldr	r0,[r0]
-	movw	r1,#:lower16:input_length
-	movt	r1,#:upper16:input_length
-	ldr	r1,[r1]
-	cmp	r0,r1
-	blt	.23
-	movw	r0,#0
-	movw	r1,#:lower16:tape
-	movt	r1,#:upper16:tape
-	movw	r2,#2068
-	add	r2,sp,r2
-	ldr	r2,[r2]
-	str	r0,[r1,r2,lsl 2]
-	b	.24
-.23:
-	movw	r0,#:lower16:input
-	movt	r0,#:upper16:input
-	movw	r1,#2076
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	movw	r2,#:lower16:tape
-	movt	r2,#:upper16:tape
-	movw	r3,#2068
-	add	r3,sp,r3
-	ldr	r3,[r3]
-	str	r0,[r2,r3,lsl 2]
-	add	r0,r1,#1
-	movw	r1,#2076
-	add	r1,sp,r1
-	str	r0,[r1]
-.24:
-.25:
-.26:
-.27:
-.28:
-.29:
-.30:
-.31:
-.32:
-	movw	r0,#2072
-	add	r0,sp,r0
-	ldr	r0,[r0]
-	add	r1,r0,#1
-	movw	r0,#2072
-	add	r0,sp,r0
-	str	r1,[r0]
-	b	.7
-.33:
-	add	sp,sp,#2080
-	nop
-	pop	{fp,pc}
-	.size	run_program, .-run_program
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
-	.global output_
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	output_, %function
-output_:
-	push	{fp,lr}
-	nop
-	add	fp,sp,#8
-	sub	sp,sp,#4
-	movw	r0,#0
-	add	r1,sp,#0
-	str	r0,[r1]
-.34:
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	movw	r1,#:lower16:output_length
-	movt	r1,#:upper16:output_length
-	ldr	r1,[r1]
-	cmp	r0,r1
-	bge	.35
-	movw	r0,#:lower16:output
-	movt	r0,#:upper16:output
-	add	r1,sp,#0
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	bl	putch
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	add	r1,r0,#1
-	add	r0,sp,#0
-	str	r1,[r0]
-	b	.34
-.35:
-	add	sp,sp,#4
-	nop
-	pop	{fp,pc}
-	.size	output_, .-output_
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
 	.global main
 	.syntax unified
 	.thumb
@@ -540,471 +23,129 @@ main:
 	push	{fp,lr}
 	nop
 	add	fp,sp,#8
-	movw	r0,#2104
-	sub	sp,sp,r0
-	bl	getch
-	add	r1,sp,#16
+	sub	sp,sp,#128
+	movw	r0,#3
+	movw	r1,#:lower16:L
+	movt	r1,#:upper16:L
 	str	r0,[r1]
-.40:
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	cmp	r0,#62
-	beq	.41
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	cmp	r0,#60
-	beq	.41
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	cmp	r0,#43
-	beq	.41
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	cmp	r0,#45
-	beq	.41
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	cmp	r0,#91
-	beq	.41
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	cmp	r0,#93
-	beq	.41
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	cmp	r0,#46
-	beq	.41
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	cmp	r0,#44
-	beq	.41
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	cmp	r0,#35
-	beq	.41
-	bl	getch
-	add	r1,sp,#16
+	movw	r1,#:lower16:N
+	movt	r1,#:upper16:N
 	str	r0,[r1]
-	b	.40
-.41:
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	add	r1,sp,#12
+	movw	r1,#:lower16:M
+	movt	r1,#:upper16:M
 	str	r0,[r1]
-.42:
-	add	r0,sp,#12
-	ldr	r0,[r0]
-	cmp	r0,#35
-	beq	.43
-	add	r0,sp,#12
-	ldr	r0,[r0]
-	movw	r1,#:lower16:program
-	movt	r1,#:upper16:program
-	movw	r2,#:lower16:program_length
-	movt	r2,#:upper16:program_length
-	ldr	r2,[r2]
-	str	r0,[r1,r2,lsl 2]
-	bl	getch
-	add	r1,sp,#8
-	str	r0,[r1]
-.44:
-	add	r0,sp,#8
-	ldr	r0,[r0]
-	cmp	r0,#62
-	beq	.45
-	add	r0,sp,#8
-	ldr	r0,[r0]
-	cmp	r0,#60
-	beq	.45
-	add	r0,sp,#8
-	ldr	r0,[r0]
-	cmp	r0,#43
-	beq	.45
-	add	r0,sp,#8
-	ldr	r0,[r0]
-	cmp	r0,#45
-	beq	.45
-	add	r0,sp,#8
-	ldr	r0,[r0]
-	cmp	r0,#91
-	beq	.45
-	add	r0,sp,#8
-	ldr	r0,[r0]
-	cmp	r0,#93
-	beq	.45
-	add	r0,sp,#8
-	ldr	r0,[r0]
-	cmp	r0,#46
-	beq	.45
-	add	r0,sp,#8
-	ldr	r0,[r0]
-	cmp	r0,#44
-	beq	.45
-	add	r0,sp,#8
-	ldr	r0,[r0]
-	cmp	r0,#35
-	beq	.45
-	bl	getch
-	add	r1,sp,#8
-	str	r0,[r1]
-	b	.44
-.45:
-	add	r0,sp,#8
-	ldr	r0,[r0]
-	add	r1,sp,#12
-	str	r0,[r1]
-	movw	r0,#:lower16:program_length
-	movt	r0,#:upper16:program_length
-	ldr	r0,[r0]
-	add	r2,r0,#1
-	movw	r0,#:lower16:program_length
-	movt	r0,#:upper16:program_length
-	str	r2,[r0]
-	b	.42
-.43:
-	bl	getch
-	cmp	r0,#105
-	beq	.46
-	b	.49
-.46:
-	bl	getint
-	push	{r0}
-	movw	r1,#:lower16:input_length
-	movt	r1,#:upper16:input_length
-	str	r0,[r1]
-	bl	getch
-	push	{r0}
 	movw	r0,#0
-	add	r1,sp,#8
+	add	r1,sp,#4
 	str	r0,[r1]
-	add	sp,sp,#8
-.47:
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	movw	r1,#:lower16:input_length
-	movt	r1,#:upper16:input_length
-	ldr	r1,[r1]
-	cmp	r0,r1
-	bge	.48
-	bl	getch
+.2:
+	add	r1,sp,#4
+	ldr	r0,[r1]
+	cmp	r0,#3
+	bge	.3
+	add	r1,sp,#4
+	ldr	r0,[r1]
+	add	r1,r0,#1
+	add	r2,sp,#116
+	str	r0,[r2,r0,lsl 2]
+	add	r2,sp,#104
+	str	r0,[r2,r0,lsl 2]
+	add	r2,sp,#92
+	str	r0,[r2,r0,lsl 2]
+	add	r2,sp,#80
+	str	r0,[r2,r0,lsl 2]
+	add	r2,sp,#68
+	str	r0,[r2,r0,lsl 2]
+	add	r2,sp,#56
+	str	r0,[r2,r0,lsl 2]
+	add	r0,sp,#4
+	str	r1,[r0]
+	b	.2
+.3:
+	add	r0,sp,#8
 	push	{r0}
-	movw	r1,#:lower16:input
-	movt	r1,#:upper16:input
-	add	r2,sp,#4
-	ldr	r2,[r2]
-	str	r0,[r1,r2,lsl 2]
-	add	r0,sp,#4
-	ldr	r0,[r0]
-	add	r3,r0,#1
-	add	r0,sp,#4
-	str	r3,[r0]
-	add	sp,sp,#4
-	b	.47
-.48:
-	b	.49
-.49:
+	add	r0,sp,#24
+	push	{r0}
 	add	r0,sp,#40
-	movw	r1,#0
-	movw	r2,#2048
-	bl	memset
-	movw	r0,#116
-	bl	_sysy_starttime
-	movw	r0,#0
-	movw	r1,#2092
-	add	r1,sp,r1
+	push	{r0}
+	add	r0,sp,#68
+	push	{r0}
+	add	r0,sp,#84
+	push	{r0}
+	add	r0,sp,#136
+	add	r1,sp,#124
+	add	r2,sp,#112
+	add	r3,sp,#100
+	bl	sub
+	add	sp,sp,#20
+	add	r1,sp,#4
 	str	r0,[r1]
-	add	r1,sp,#2096
-	str	r0,[r1]
-	movw	r1,#2088
-	add	r1,sp,r1
-	str	r0,[r1]
-	add	r1,sp,#36
-	str	r0,[r1]
-	movw	r1,#:lower16:output_length
-	movt	r1,#:upper16:output_length
-	str	r0,[r1]
-.50:
-	add	r0,sp,#2096
-	ldr	r0,[r0]
-	movw	r1,#:lower16:program_length
-	movt	r1,#:upper16:program_length
-	ldr	r1,[r1]
-	cmp	r0,r1
-	bge	.51
-	movw	r0,#:lower16:program
-	movt	r0,#:upper16:program
-	add	r1,sp,#2096
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	cmp	r0,#62
+.4:
+	add	r1,sp,#4
+	ldr	r0,[r1]
+	cmp	r0,#3
+	bge	.5
 	add	r1,sp,#32
-	str	r0,[r1]
-	bne	.52
-	movw	r0,#2092
-	add	r0,sp,r0
-	ldr	r0,[r0]
+	add	r3,sp,#4
+	ldr	r2,[r3]
+	ldr	r0,[r1,r2,lsl 2]
+	bl	putint
+	add	r1,sp,#4
+	ldr	r0,[r1]
 	add	r1,r0,#1
-	movw	r0,#2092
-	add	r0,sp,r0
+	add	r0,sp,#4
 	str	r1,[r0]
-	b	.53
-.52:
-	add	r0,sp,#32
-	ldr	r0,[r0]
-	cmp	r0,#60
-	bne	.54
-	movw	r0,#2092
-	add	r0,sp,r0
-	ldr	r0,[r0]
-	sub	r1,r0,#1
-	movw	r0,#2092
-	add	r0,sp,r0
-	str	r1,[r0]
-	b	.55
-.54:
-	add	r0,sp,#32
-	ldr	r0,[r0]
-	cmp	r0,#43
-	bne	.56
-	movw	r0,#:lower16:tape
-	movt	r0,#:upper16:tape
-	movw	r1,#2092
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	add	r2,r0,#1
-	movw	r0,#:lower16:tape
-	movt	r0,#:upper16:tape
-	str	r2,[r0,r1,lsl 2]
-	b	.57
-.56:
-	add	r0,sp,#32
-	ldr	r0,[r0]
-	cmp	r0,#45
-	bne	.58
-	movw	r0,#:lower16:tape
-	movt	r0,#:upper16:tape
-	movw	r1,#2092
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	sub	r2,r0,#1
-	movw	r0,#:lower16:tape
-	movt	r0,#:upper16:tape
-	str	r2,[r0,r1,lsl 2]
-	b	.59
-.58:
-	add	r0,sp,#32
-	ldr	r0,[r0]
-	cmp	r0,#91
-	bne	.60
-	movw	r0,#:lower16:tape
-	movt	r0,#:upper16:tape
-	movw	r1,#2092
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	cmp	r0,#0
-	beq	.61
-	add	r0,sp,#2096
-	ldr	r0,[r0]
-	add	r1,sp,#40
-	add	r2,sp,#36
-	ldr	r2,[r2]
-	str	r0,[r1,r2,lsl 2]
-	add	r0,sp,#36
-	ldr	r0,[r0]
-	add	r3,r0,#1
-	add	r0,sp,#36
-	str	r3,[r0]
-	b	.62
-.61:
-	movw	r0,#1
-	add	r1,sp,#24
-	str	r0,[r1]
-.63:
-	add	r0,sp,#24
-	ldr	r0,[r0]
-	cmp	r0,#0
-	ble	.64
-	add	r0,sp,#2096
-	ldr	r0,[r0]
-	add	r1,r0,#1
-	movw	r0,#:lower16:program
-	movt	r0,#:upper16:program
-	ldr	r0,[r0,r1,lsl 2]
-	cmp	r0,#93
-	add	r0,sp,#2096
-	str	r1,[r0]
-	bne	.65
-	add	r0,sp,#24
-	ldr	r0,[r0]
-	sub	r1,r0,#1
-	add	r0,sp,#24
-	str	r1,[r0]
-.65:
-	movw	r0,#:lower16:program
-	movt	r0,#:upper16:program
-	add	r1,sp,#2096
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	cmp	r0,#91
-	bne	.66
-	add	r0,sp,#24
-	ldr	r0,[r0]
-	add	r1,r0,#1
-	add	r0,sp,#24
-	str	r1,[r0]
-.66:
-	b	.63
-.64:
-.62:
-	b	.67
-.60:
-	add	r0,sp,#32
-	ldr	r0,[r0]
-	cmp	r0,#93
-	bne	.68
-	movw	r0,#:lower16:tape
-	movt	r0,#:upper16:tape
-	movw	r1,#2092
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	cmp	r0,#0
-	bne	.69
-	add	r0,sp,#36
-	ldr	r0,[r0]
-	sub	r1,r0,#1
-	add	r0,sp,#36
-	str	r1,[r0]
-	b	.70
-.69:
-	add	r0,sp,#36
-	ldr	r0,[r0]
-	sub	r1,r0,#1
-	add	r0,sp,#40
-	ldr	r0,[r0,r1,lsl 2]
-	push	{r1}
-	movw	r1,#2100
-	add	r1,sp,r1
-	str	r0,[r1]
-	add	sp,sp,#4
-.70:
-	b	.71
-.68:
-	add	r0,sp,#32
-	ldr	r0,[r0]
-	cmp	r0,#46
-	bne	.72
-	movw	r0,#:lower16:tape
-	movt	r0,#:upper16:tape
-	movw	r1,#2092
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	movw	r1,#:lower16:output
-	movt	r1,#:upper16:output
-	movw	r2,#:lower16:output_length
-	movt	r2,#:upper16:output_length
-	ldr	r2,[r2]
-	str	r0,[r1,r2,lsl 2]
-	movw	r0,#:lower16:output_length
-	movt	r0,#:upper16:output_length
-	ldr	r0,[r0]
-	add	r3,r0,#1
-	movw	r0,#:lower16:output_length
-	movt	r0,#:upper16:output_length
-	str	r3,[r0]
-	b	.73
-.72:
-	add	r0,sp,#32
-	ldr	r0,[r0]
-	cmp	r0,#44
-	bne	.74
-	movw	r0,#2088
-	add	r0,sp,r0
-	ldr	r0,[r0]
-	movw	r1,#:lower16:input_length
-	movt	r1,#:upper16:input_length
-	ldr	r1,[r1]
-	cmp	r0,r1
-	blt	.75
+	b	.4
+.5:
 	movw	r0,#0
-	movw	r1,#:lower16:tape
-	movt	r1,#:upper16:tape
-	movw	r2,#2092
-	add	r2,sp,r2
-	ldr	r2,[r2]
-	str	r0,[r1,r2,lsl 2]
-	b	.76
-.75:
-	movw	r0,#:lower16:input
-	movt	r0,#:upper16:input
-	movw	r1,#2088
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
-	movw	r2,#:lower16:tape
-	movt	r2,#:upper16:tape
-	movw	r3,#2092
-	add	r3,sp,r3
-	ldr	r3,[r3]
-	str	r0,[r2,r3,lsl 2]
-	add	r0,r1,#1
-	movw	r1,#2088
-	add	r1,sp,r1
+	add	r1,sp,#4
 	str	r0,[r1]
-.76:
-.74:
-.73:
-.71:
-.67:
-.59:
-.57:
-.55:
-.53:
-	add	r0,sp,#2096
-	ldr	r0,[r0]
-	add	r1,r0,#1
-	add	r0,sp,#2096
-	str	r1,[r0]
-	b	.50
-.51:
-	movw	r0,#118
-	bl	_sysy_stoptime
-	movw	r0,#0
-	movw	r1,#2100
-	add	r1,sp,r1
 	str	r0,[r1]
-.77:
-	movw	r0,#2100
-	add	r0,sp,r0
-	ldr	r0,[r0]
-	movw	r1,#:lower16:output_length
-	movt	r1,#:upper16:output_length
-	ldr	r1,[r1]
-	cmp	r0,r1
-	bge	.78
-	movw	r0,#:lower16:output
-	movt	r0,#:upper16:output
-	movw	r1,#2100
-	add	r1,sp,r1
-	ldr	r1,[r1]
-	ldr	r0,[r0,r1,lsl 2]
+	movw	r0,#10
 	bl	putch
-	movw	r0,#2100
-	add	r0,sp,r0
-	ldr	r0,[r0]
+.6:
+	add	r1,sp,#4
+	ldr	r0,[r1]
+	cmp	r0,#3
+	bge	.7
+	add	r1,sp,#20
+	add	r3,sp,#4
+	ldr	r2,[r3]
+	ldr	r0,[r1,r2,lsl 2]
+	bl	putint
+	add	r1,sp,#4
+	ldr	r0,[r1]
 	add	r1,r0,#1
-	movw	r0,#2100
-	add	r0,sp,r0
+	add	r0,sp,#4
 	str	r1,[r0]
-	b	.77
-.78:
+	b	.6
+.7:
 	movw	r0,#0
-	movw	r1,#2104
-	add	sp,sp,r1
+	add	r1,sp,#4
+	str	r0,[r1]
+	str	r0,[r1]
+	movw	r0,#10
+	bl	putch
+.8:
+	add	r1,sp,#4
+	ldr	r0,[r1]
+	cmp	r0,#3
+	bge	.9
+	add	r1,sp,#8
+	add	r3,sp,#4
+	ldr	r2,[r3]
+	ldr	r0,[r1,r2,lsl 2]
+	bl	putint
+	add	r1,sp,#4
+	ldr	r0,[r1]
+	add	r1,r0,#1
+	add	r0,sp,#4
+	str	r1,[r0]
+	b	.8
+.9:
+	movw	r0,#10
+	bl	putch
+	movw	r0,#0
+	add	sp,sp,#128
 	nop
 	pop	{fp,pc}
 	.size	main, .-main
@@ -1012,116 +153,78 @@ main:
 	.align 1
 	.global	__aeabi_idiv
 	.global	__aeabi_idivmod
-	.global get_bf_char
+	.global sub
 	.syntax unified
 	.thumb
 	.thumb_func
 	.fpu vfp
-	.type	get_bf_char, %function
-get_bf_char:
-	push	{fp,lr}
+	.type	sub, %function
+sub:
+	push	{r4,r5,fp,lr}
 	nop
-	add	fp,sp,#8
+	add	fp,sp,#16
+	push	{r0,r1,r2,r3}
 	sub	sp,sp,#4
-	bl	getch
+	movw	r0,#0
 	add	r1,sp,#0
 	str	r0,[r1]
 .0:
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#62
-	beq	.1
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#60
-	beq	.1
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#43
-	beq	.1
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#45
-	beq	.1
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#91
-	beq	.1
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#93
-	beq	.1
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#46
-	beq	.1
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#44
-	beq	.1
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	cmp	r0,#35
-	beq	.1
-	bl	getch
 	add	r1,sp,#0
-	str	r0,[r1]
+	ldr	r0,[r1]
+	cmp	r0,#3
+	bge	.1
+	add	r2,sp,#4
+	ldr	r1,[r2]
+	add	r3,sp,#0
+	ldr	r2,[r3]
+	ldr	r0,[r1,r2,lsl 2]
+	add	r3,sp,#16
+	ldr	r2,[r3]
+	add	r4,sp,#0
+	ldr	r3,[r4]
+	ldr	r1,[r2,r3,lsl 2]
+	sub	r2,r0,r1
+	push	{r2}
+	add	r4,fp,#8
+	ldr	r3,[r4]
+	add	r5,sp,#4
+	ldr	r4,[r5]
+	str	r2,[r3,r4,lsl 2]
+	add	r2,sp,#12
+	ldr	r1,[r2]
+	ldr	r0,[r1,r4,lsl 2]
+	add	r3,fp,#0
+	ldr	r2,[r3]
+	ldr	r1,[r2,r4,lsl 2]
+	sub	r2,r0,r1
+	push	{r2}
+	add	r4,fp,#12
+	ldr	r3,[r4]
+	add	r5,sp,#8
+	ldr	r4,[r5]
+	str	r2,[r3,r4,lsl 2]
+	add	r2,sp,#20
+	ldr	r1,[r2]
+	ldr	r0,[r1,r4,lsl 2]
+	add	r3,fp,#4
+	ldr	r2,[r3]
+	ldr	r1,[r2,r4,lsl 2]
+	sub	r2,r0,r1
+	add	r0,r4,#1
+	add	r3,fp,#16
+	ldr	r1,[r3]
+	str	r2,[r1,r4,lsl 2]
+	str	r0,[r5]
+	add	sp,sp,#8
 	b	.0
 .1:
-	add	r0,sp,#0
-	ldr	r0,[r0]
-	add	sp,sp,#4
+	movw	r0,#0
+	add	sp,sp,#20
 	nop
-	pop	{fp,pc}
-	.size	get_bf_char, .-get_bf_char
-	.global program_length
-	.data 
-	.align 2
-	.type program_length,%object
-	.size program_length,4
-program_length:
-	.word 0
-	.global program
-	.data 
-	.align 2
-	.type program,%object
-	.size program,262144
-program:
-	.space 262144
-	.global tape
-	.data 
-	.align 2
-	.type tape,%object
-	.size tape,262144
-tape:
-	.space 262144
-	.global input
-	.data 
-	.align 2
-	.type input,%object
-	.size input,262144
-input:
-	.space 262144
-	.global input_length
-	.data 
-	.align 2
-	.type input_length,%object
-	.size input_length,4
-input_length:
-	.word 0
-	.global output
-	.data 
-	.align 2
-	.type output,%object
-	.size output,262144
-output:
-	.space 262144
-	.global output_length
-	.data 
-	.align 2
-	.type output_length,%object
-	.size output_length,4
-output_length:
-	.word 0
+	pop	{r4,r5,fp,pc}
+	.size	sub, .-sub
+	.comm N,4,4
+	.comm M,4,4
+	.comm L,4,4
 	.ident	"GCC: (Raspbian 8.3.0-6+rpi1) 8.3.0"
 	.section	.note.GNU-stack,"",%progbits
