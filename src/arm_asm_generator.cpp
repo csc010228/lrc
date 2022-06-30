@@ -60,7 +60,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
     
     if(sender==instruction_generator_)
     {
-        // cout<<"instruction_generator_ send "<<(int)event.type<<endl;
+        //cout<<"instruction_generator_ send "<<(int)event.type<<endl;
         switch(event.type)
         {
             case event_type::IS_FUNC_NEED_PASS_PARAMS_BY_STACK:
@@ -156,7 +156,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
     }
     else if(sender==register_manager_)
     {
-        // cout<<"register_manager_ send "<<(int)event.type<<endl;
+        //cout<<"register_manager_ send "<<(int)event.type<<endl;
         switch(event.type)
         {
             case event_type::STORE_VAR_TO_MEM:
@@ -185,7 +185,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
     }
     else if(sender==memory_manager_)
     {
-        // cout<<"memory_manager_ send "<<(int)event.type<<endl;
+        //cout<<"memory_manager_ send "<<(int)event.type<<endl;
         switch(event.type)
         {
             case event_type::GET_REG_BYTE_SIZE:
@@ -207,7 +207,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
     }
     else if(sender==intermediate_code_manager_)
     {
-        // cout<<"intermediate_code_manager_ send "<<(int)event.type<<endl;
+        //cout<<"intermediate_code_manager_ send "<<(int)event.type<<endl;
         switch(event.type)
         {
             case event_type::START_BASIC_BLOCK:
@@ -231,7 +231,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
     }
     else if(sender==asm_optimizer_)
     {
-        // cout<<"asm_optimizer_ send "<<(int)event.type<<endl;
+        //cout<<"asm_optimizer_ send "<<(int)event.type<<endl;
         switch(event.type)
         {
             case event_type::IS_CPU_REG:

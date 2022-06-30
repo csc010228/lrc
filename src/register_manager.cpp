@@ -504,7 +504,6 @@ var:要写入寄存器的变量
 */
 void Register_manager::store_DIRTY_values_before_writing_var(struct ic_data * var)
 {
-    set<reg_index> suspicious_regs;
     pair<struct ic_data *,reg_index> * event_data;
     map<struct ic_data * ,enum reg_var_state> temp;
     set<struct ic_data * > written_back_vars;
@@ -1215,7 +1214,14 @@ void Register_manager::handle_SAVE_REGS_WHEN_CALLING_FUNC()
             if(var_data.second==reg_var_state::NOT_DIRTY && var_data.first->is_tmp_var() && tag)
             {
                 event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg.first);
-                notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
+                if(notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS,(void *)var_data.first)).bool_data)
+                {
+                    notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
+                }
+                else
+                {
+                    notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
+                }
                 delete event_data;
             }
         }
