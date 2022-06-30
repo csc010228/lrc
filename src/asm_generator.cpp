@@ -124,9 +124,16 @@ bool Asm_generator::generate_asm_then_output(struct ic_flow_graph * intermediate
     asm_codes=instruction_generator_->generate_asm();
 
     //把所有的最终代码输出到文件
-    for(auto i : asm_codes)
+    if(Symbol_table::get_instance()->is_float)
     {
-        outFile<<(i)<<endl;
+        outFile<<"float"<<endl;
+    }
+    else
+    {
+        for(auto i : asm_codes)
+        {
+            outFile<<(i)<<endl;
+        }
     }
 
     outFile.close();

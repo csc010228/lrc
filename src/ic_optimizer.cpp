@@ -1482,6 +1482,24 @@ void Ic_optimizer::local_optimize()
             function_inline(func);
         }
     }
+    for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
+    {
+        for(auto current_basic_block:func->basic_blocks)
+        {
+            for(auto current_ic_with_info:current_basic_block->ic_sequence)
+            {
+                for(auto current_ic_with_info_releated_var:current_ic_with_info.get_all_datas())
+                {
+                    if(current_ic_with_info_releated_var->get_data_type()==language_data_type::FLOAT)
+                    {
+                        Symbol_table::get_instance()->is_float=true;
+                        goto t;
+                    }
+                }
+            }
+        }
+    }
+t:
     //再进行DAG相关优化
     for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
     {

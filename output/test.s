@@ -53,9 +53,9 @@ insert:
 	movt	r2,#:upper16:hashmod
 	ldr	r1,[r2]
 	bl	__aeabi_idivmod
-	push	{r1}
-	add	r2,sp,#8
+	add	r2,sp,#4
 	str	r1,[r2]
+	push	{r1}
 	movw	r1,#:lower16:head
 	movt	r1,#:upper16:head
 	add	r3,sp,#0
@@ -68,15 +68,15 @@ insert:
 	movt	r1,#:upper16:cnt
 	ldr	r0,[r1]
 	add	r1,r0,#1
-	movw	r2,#:lower16:head
-	movt	r2,#:upper16:head
-	add	r4,sp,#4
-	ldr	r3,[r4]
-	str	r1,[r2,r3,lsl 2]
 	movw	r2,#:lower16:cnt
 	movt	r2,#:upper16:cnt
 	str	r1,[r2]
 	push	{r1}
+	movw	r2,#:lower16:head
+	movt	r2,#:upper16:head
+	add	r4,sp,#8
+	ldr	r3,[r4]
+	str	r1,[r2,r3,lsl 2]
 	add	r1,sp,#12
 	ldr	r0,[r1]
 	movw	r1,#:lower16:key
@@ -388,15 +388,15 @@ main:
 	movt	r1,#:upper16:cnt
 	ldr	r0,[r1]
 	add	r1,r0,#1
-	push	{r1}
-	movw	r2,#:lower16:head
-	movt	r2,#:upper16:head
-	add	r4,sp,#28
-	ldr	r3,[r4]
-	str	r1,[r2,r3,lsl 2]
 	movw	r2,#:lower16:cnt
 	movt	r2,#:upper16:cnt
 	str	r1,[r2]
+	movw	r2,#:lower16:head
+	movt	r2,#:upper16:head
+	add	r4,sp,#24
+	ldr	r3,[r4]
+	str	r1,[r2,r3,lsl 2]
+	push	{r1}
 	movw	r1,#:lower16:keys
 	movt	r1,#:upper16:keys
 	add	r3,sp,#20
@@ -458,10 +458,10 @@ main:
 	movt	r1,#:upper16:cnt
 	ldr	r0,[r1]
 	add	r1,r0,#1
-	push	{r1}
 	movw	r2,#:lower16:cnt
 	movt	r2,#:upper16:cnt
 	str	r1,[r2]
+	push	{r1}
 	movw	r1,#:lower16:nextvalue
 	movt	r1,#:upper16:nextvalue
 	add	r3,sp,#24
