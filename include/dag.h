@@ -105,12 +105,11 @@ struct DAG_node
     //判断该DAG节点是否只和一个临时变量关联
     bool is_related_to_a_temp_var();
 
-    //set<struct DAG_node * > fathers;                //该节点的若干个父节点
-    map<struct DAG_node * ,size_t> fathers;
-    list<struct DAG_node * > children;              //该节点的若干个儿子节点
-    list<struct ic_data * > related_datas;           //该节点关联的数据
-    void * special_data;                            //特殊的数据，比如说调用的函数，跳转到的标签等等
-    enum ic_op related_op;                          //该节点关联的操作
+    map<struct DAG_node * ,size_t> fathers;             //该节点的若干个父节点
+    list<struct DAG_node * > children;                  //该节点的若干个儿子节点
+    list<struct ic_data * > related_datas;              //该节点关联的数据
+    void * special_data;                                //特殊的数据，比如说调用的函数，跳转到的标签等等
+    enum ic_op related_op;                              //该节点关联的操作
 };
 
 //DAG的类
