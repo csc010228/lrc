@@ -344,8 +344,6 @@ public:
 
     //获取一个函数会直接调用的所有函数
     set<struct ic_func * > get_func_direct_calls(struct ic_func * func);
-
-    bool is_float;
 };
 
 
