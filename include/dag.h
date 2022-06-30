@@ -57,6 +57,9 @@ struct DAG_node
     //根据一个操作符和一个数据构造一个DAG节点
     DAG_node(enum ic_op op,struct ic_data * data,list<struct DAG_node * > children,void * special_data=nullptr);
 
+    //将该DAG节点和它的所有孩子DAG节点的关联删除
+    void delete_all_relateion_with_all_children();
+
     //向该DAG节点中添加相关的数据
     void add_data(struct ic_data * data);
 
@@ -78,10 +81,32 @@ struct DAG_node
     //如果该节点有两个孩子节点，那么获取其右孩子节点，否则的话返回nullptr
     struct DAG_node * get_right_child();
 
+    //给该节点添加一个父亲节点
+    void add_a_father(struct DAG_node * father);
+
+    //删除该节点的某一个父亲节点
+    void delete_a_father(struct DAG_node * father);
+
+    //获取父亲节点的数量
+    size_t get_fathers_num();
+
+    //如果该节点有两个孩子节点，那么更改其左节点，否则的话不做修改
+    void change_left_child(struct DAG_node * node);
+
+    //如果该节点有两个孩子节点，那么更改其右节点，否则的话不做修改
+    void change_right_child(struct DAG_node * node);
+
     //获取该节点关联的数据的数据类型
     enum language_data_type get_related_data_type();
 
-    set<struct DAG_node * > fathers;                //该节点的若干个父节点
+    //判断该DAG节点是否只和一个常数关联
+    bool is_related_to_a_const(enum language_data_type data_type=language_data_type::VOID);
+
+    //判断该DAG节点是否只和一个临时变量关联
+    bool is_related_to_a_temp_var();
+
+    //set<struct DAG_node * > fathers;                //该节点的若干个父节点
+    map<struct DAG_node * ,size_t> fathers;
     list<struct DAG_node * > children;              //该节点的若干个儿子节点
     list<struct ic_data * > related_datas;           //该节点关联的数据
     void * special_data;                            //特殊的数据，比如说调用的函数，跳转到的标签等等
@@ -169,6 +194,12 @@ private:
 
     //进行DAG节点的建立和节点之间关系的建立
     bool build_DAG_node_and_relation(enum ic_op op,struct ic_data * result,struct ic_data * arg1,struct ic_data * arg2=nullptr);
+
+    //尝试将一个DAG树中的多个加法转换成乘法
+    void a_lot_of_adds_to_multi_in_a_DAG_tree(struct DAG_node * father_node);
+
+    //将多个加法转换成乘法
+    void a_lot_of_adds_to_multi();
 
 public:
     //构造函数

@@ -9,6 +9,29 @@
 #ifndef __UTIL_H
 #define __UTIL_H
 
+template<typename DATA_TYPE>
+void data_exchange(DATA_TYPE & x,DATA_TYPE & y)
+{
+    DATA_TYPE temp;
+    temp=x;
+    x=y;
+    y=temp;
+}
+
+template<typename MAP_KEY,typename MAP_VALUE>
+set<MAP_KEY> map_key_intersection(const map<MAP_KEY,MAP_VALUE> & map1,const map<MAP_KEY,MAP_VALUE> & map2)
+{
+    set<MAP_KEY> res;
+    for(auto member:map1)
+    {
+        if(map2.find(member.first)!=map2.end())
+        {
+            res.insert(member.first);
+        }
+    }
+    return res;
+}
+
 template<typename MAP_SET_KEY,typename MAP_SET_VALUE>
 void map_set_insert(map<MAP_SET_KEY,set<MAP_SET_VALUE> > & target,const MAP_SET_KEY & key,const MAP_SET_VALUE & value)
 {

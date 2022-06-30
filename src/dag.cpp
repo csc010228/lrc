@@ -21,12 +21,21 @@ DAG_node::DAG_node(enum ic_op op,struct ic_data * data,list<struct DAG_node * > 
 {
     for(auto child:children)
     {
-        child->fathers.insert(this);
+        child->add_a_father(this);
     }
     if(data)
     {
         add_data(data);
     }
+}
+
+void DAG_node::delete_all_relateion_with_all_children()
+{
+    for(auto child:children)
+    {
+        child->delete_a_father(this);
+    }
+    children.clear();
 }
 
 void DAG_node::add_data(struct ic_data * data)
@@ -94,6 +103,60 @@ struct DAG_node * DAG_node::get_right_child()
     return nullptr;
 }
 
+void DAG_node::add_a_father(struct DAG_node * father)
+{
+    if(fathers.find(father)==fathers.end())
+    {
+        fathers.insert(make_pair(father,0));
+    }
+    fathers.at(father)++;
+}
+
+void DAG_node::delete_a_father(struct DAG_node * father)
+{
+    if(fathers.find(father)!=fathers.end())
+    {
+        if(fathers.at(father)==0 || fathers.at(father)==1)
+        {
+            fathers.erase(father);
+        }
+        else
+        {
+            fathers.at(father)--;
+        }
+    }
+}
+
+size_t DAG_node::get_fathers_num()
+{
+    size_t res=0;
+    for(auto father:fathers)
+    {
+        res+=father.second;
+    }
+    return res;
+}
+
+void DAG_node::change_left_child(struct DAG_node * node)
+{
+    if(children.size()==2)
+    {
+        (*children.begin())->delete_a_father(this);
+        (*children.begin())=node;
+        (*children.begin())->add_a_father(this);
+    }
+}
+
+void DAG_node::change_right_child(struct DAG_node * node)
+{
+    if(children.size()==2)
+    {
+        (*(++children.begin()))->delete_a_father(this);
+        (*(++children.begin()))=node;
+        (*(++children.begin()))->add_a_father(this);
+    }
+}
+
 enum language_data_type DAG_node::get_related_data_type()
 {
     struct ic_data * data=get_first_data();
@@ -102,6 +165,16 @@ enum language_data_type DAG_node::get_related_data_type()
         return data->get_data_type();
     }
     return language_data_type::VOID;
+}
+
+bool DAG_node::is_related_to_a_const(enum language_data_type data_type)
+{
+    return (related_datas.size()==1 && related_datas.front()->is_const() && (data_type==language_data_type::VOID || related_datas.front()->get_data_type()==data_type));
+}
+
+bool DAG_node::is_related_to_a_temp_var()
+{
+    return (related_datas.size()==1 && related_datas.front()->is_tmp_var());
 }
 
 //==========================================================================//
@@ -618,7 +691,8 @@ bool DAG::common_expression_delete(enum ic_op op,struct ic_data * result,struct 
         arg2=copy_progagation(arg2);
         arg2_node=get_DAG_node(arg2);
         //查看两个操作数经过复制传播之后是否具有公共子表达式
-        set_intersection(arg1_node->fathers.begin(),arg1_node->fathers.end(),arg2_node->fathers.begin(),arg2_node->fathers.end(),inserter(common_fathers,common_fathers.begin()));
+        common_fathers=map_key_intersection(arg1_node->fathers,arg2_node->fathers);
+        //set_intersection(arg1_node->fathers.begin(),arg1_node->fathers.end(),arg2_node->fathers.begin(),arg2_node->fathers.end(),inserter(common_fathers,common_fathers.begin()));
         for(auto father:common_fathers)
         {
             if(op==father->related_op && (father->get_left_child()==arg1_node && father->get_right_child()==arg2_node) || (father->get_left_child()==arg2_node && father->get_right_child()==arg1_node))
@@ -632,9 +706,9 @@ bool DAG::common_expression_delete(enum ic_op op,struct ic_data * result,struct 
     {
         for(auto father:arg1_node->fathers)
         {
-            if(op==father->related_op)
+            if(op==father.first->related_op)
             {
-                attach_data_to_node(result,father);
+                attach_data_to_node(result,father.first);
                 return true;
             }
         }
@@ -657,9 +731,57 @@ bool DAG::build_DAG_node_and_relation(enum ic_op op,struct ic_data * result,stru
     return true;
 }
 
+void DAG::a_lot_of_adds_to_multi_in_a_DAG_tree(struct DAG_node * father_node)
+{
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
+    struct DAG_node * left_child,* right_child,* left_child_s_left_child,* left_child_s_right_child;
+    if(father_node->related_op==ic_op::ADD)
+    {
+        left_child=father_node->get_left_child();
+        right_child=father_node->get_right_child();
+        a_lot_of_adds_to_multi_in_a_DAG_tree(left_child);
+        a_lot_of_adds_to_multi_in_a_DAG_tree(right_child);
+        if(left_child==right_child)
+        {
+            father_node->change_right_child(get_DAG_node(symbol_table->const_entry(language_data_type::INT,OAA((int)2))));
+            father_node->related_op=ic_op::MUL;
+            return;
+        }
+        switch(left_child->related_op)
+        {
+            case ic_op::MUL:
+                left_child_s_left_child=left_child->get_left_child();
+                left_child_s_right_child=left_child->get_right_child();
+                if(left_child_s_left_child->is_related_to_a_const(language_data_type::INT))
+                {
+                    data_exchange(left_child_s_left_child,left_child_s_right_child);
+                }
+                if(left_child_s_right_child->is_related_to_a_const(language_data_type::INT) && left_child_s_left_child==right_child && left_child->is_related_to_a_temp_var() && left_child->get_fathers_num()==1)
+                {
+                    father_node->change_left_child(left_child_s_left_child);
+                    father_node->change_right_child(get_DAG_node(symbol_table->const_entry(language_data_type::INT,OAA((int)(left_child_s_right_child->related_datas.front()->get_value().int_data+1)))));
+                    father_node->related_op=ic_op::MUL;
+                }
+                break;
+            default:
+                return;
+                break;
+        }
+    }
+}
+
+void DAG::a_lot_of_adds_to_multi()
+{
+    for(auto father_node:nodes_order_)
+    {
+        a_lot_of_adds_to_multi_in_a_DAG_tree(father_node);
+    }
+}
+
 void DAG::optimize()
 {
-    
+    //将多个加法转换成乘法
+    a_lot_of_adds_to_multi();
 }
 
 list<struct quaternion> DAG::to_basic_block()
