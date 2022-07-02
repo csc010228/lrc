@@ -715,22 +715,22 @@ list<string> arm_func_flow_graph::to_string()
 {
     string func_name=function->name;
     list<string> res;
-    res.push_back("\t.text");
-    res.push_back("\t.align 1");
-    res.push_back("\t.global	__aeabi_idiv");
-    res.push_back("\t.global	__aeabi_idivmod");
-    res.push_back("\t.global "+func_name);
-    res.push_back("\t.syntax unified");
-    res.push_back("\t.thumb");
-    res.push_back("\t.thumb_func");
-    res.push_back("\t.fpu vfp");
-    res.push_back("\t.type	"+func_name+", %function");
-    res.push_back(func_name+":");
+    // res.push_back("\t.text");
+    // res.push_back("\t.align 1");
+    // res.push_back("\t.global	__aeabi_idiv");
+    // res.push_back("\t.global	__aeabi_idivmod");
+    // res.push_back("\t.global "+func_name);
+    // res.push_back("\t.syntax unified");
+    // res.push_back("\t.thumb");
+    // res.push_back("\t.thumb_func");
+    // res.push_back("\t.fpu vfp");
+    // res.push_back("\t.type	"+func_name+", %function");
+    // res.push_back(func_name+":");
     for(auto i:basic_blocks)
     {
         res.splice(res.end(),i->to_string());
     }
-    res.push_back("\t.size	"+func_name+", .-"+func_name);
+    // res.push_back("\t.size	"+func_name+", .-"+func_name);
     return res;
 }
 
@@ -762,26 +762,26 @@ void arm_flow_graph::add_arm_asm_to_global(Arm_asm_file_line * arm_asm)
 list<string> arm_flow_graph::to_string()
 {
     list<string> res,tmp;
-    res.push_back("\t.arch armv7");
-    res.push_back("\t.eabi_attribute 28, 1");
-    res.push_back("\t.eabi_attribute 20, 1");
-    res.push_back("\t.eabi_attribute 21, 1");
-    res.push_back("\t.eabi_attribute 23, 3");
-    res.push_back("\t.eabi_attribute 24, 1");
-    res.push_back("\t.eabi_attribute 25, 1");
-    res.push_back("\t.eabi_attribute 26, 2");
-    res.push_back("\t.eabi_attribute 30, 6");
-    res.push_back("\t.eabi_attribute 34, 1");
-    res.push_back("\t.eabi_attribute 18, 4");
+    // res.push_back("\t.arch armv7");
+    // res.push_back("\t.eabi_attribute 28, 1");
+    // res.push_back("\t.eabi_attribute 20, 1");
+    // res.push_back("\t.eabi_attribute 21, 1");
+    // res.push_back("\t.eabi_attribute 23, 3");
+    // res.push_back("\t.eabi_attribute 24, 1");
+    // res.push_back("\t.eabi_attribute 25, 1");
+    // res.push_back("\t.eabi_attribute 26, 2");
+    // res.push_back("\t.eabi_attribute 30, 6");
+    // res.push_back("\t.eabi_attribute 34, 1");
+    // res.push_back("\t.eabi_attribute 18, 4");
     for(auto i:func_flow_graphs)
     {
         tmp=i->to_string();
         res.splice(res.end(),tmp);
     }
     tmp=global_basic_block.to_string();
-    res.splice(res.end(),tmp);
-    res.push_back("\t.ident	\"GCC: (Raspbian 8.3.0-6+rpi1) 8.3.0\"");
-    res.push_back("\t.section	.note.GNU-stack,\"\",%progbits");
+    // res.splice(res.end(),tmp);
+    // res.push_back("\t.ident	\"GCC: (Raspbian 8.3.0-6+rpi1) 8.3.0\"");
+    // res.push_back("\t.section	.note.GNU-stack,\"\",%progbits");
     return res;
 }
 
