@@ -126,7 +126,7 @@ bool Asm_generator::generate_asm_then_output(struct ic_flow_graph * intermediate
     //把所有的最终代码输出到文件
     for(auto i : asm_codes)
     {
-        outFile<<(i)<<" ";
+        outFile<<(i)<<"$$";
     }
 
     outFile.close();

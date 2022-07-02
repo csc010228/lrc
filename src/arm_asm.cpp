@@ -725,7 +725,7 @@ list<string> arm_func_flow_graph::to_string()
     // res.push_back("\t.thumb_func");
     // res.push_back("\t.fpu vfp");
     // res.push_back("\t.type	"+func_name+", %function");
-    // res.push_back(func_name+":");
+    res.push_back(func_name/*+":"*/);
     for(auto i:basic_blocks)
     {
         res.splice(res.end(),i->to_string());
