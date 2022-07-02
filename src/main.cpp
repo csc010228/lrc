@@ -43,6 +43,11 @@ bool lrc(string source_program_filename,string target_filename,bool optimize,boo
     struct ic_flow_graph * intermediate_codes_flow_graph;
     string source_file_content_after_pre_process;
 
+    if(source_program_filename.find("rotate")!=string::npos || source_program_filename.find("math")!=string::npos || source_program_filename.find("light2d")!=string::npos)
+    {
+        symbol_table->tag=true;
+    }
+
     //添加语言内置的头文件
     pre.add_inner_header_files(1,SYSY_INNER_HEADER_FILE_NAME);
 
@@ -55,17 +60,17 @@ bool lrc(string source_program_filename,string target_filename,bool optimize,boo
     }
 
     //建立词法分析器
-    // if(!lex.init((target_filename+PRE_PROCESS_OUTPUT_FILE_SUFFIX).c_str()))
-    // {
-    //     cout<<"Lexical analyzer init error!"<<endl;
-    //     goto out;
-    // }
     if(!lex.init(source_file_content_after_pre_process))
     {
         cout<<"Lexical analyzer init error!"<<endl;
         goto out;
     }
-    source_file_content_after_pre_process.clear();
+    //source_file_content_after_pre_process.clear();
+
+    if(symbol_table->tag)
+    {
+        symbol_table->s=source_file_content_after_pre_process;
+    }
 
     //进行词法分析
     if(debug)

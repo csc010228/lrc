@@ -482,6 +482,7 @@ Symbol_table的私有构造函数
 */
 Symbol_table::Symbol_table():tmp_vars_num_(0),labels_num_(0),current_scope_(nullptr),current_func_(nullptr)
 {
+    tag=false;
     list<struct ic_data * > * dimensions_len;
     //把库中的函数进行定义
     //int getint()
