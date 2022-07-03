@@ -1494,6 +1494,7 @@ void Arm_instruction_generator::handle_WRITE_CONST_TO_REG(OAA const_data,reg_ind
         push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,precision::S,reg,::to_string(const_data.int_data)));
     }
 }
+
 void Arm_instruction_generator::handle_STORE_VAR_TO_MEM(struct ic_data * var,reg_index reg)
 {
     size_t var_stack_pos_from_sp;

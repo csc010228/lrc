@@ -201,7 +201,7 @@ struct operand2
     //查看传入的immed_8r是否合法
     static bool is_legal_immed_8r(int immed_8r)
     {
-        unsigned int mask=255;
+        /*unsigned int mask=255;
         for(size_t i=0;i<24;i++)
         {
             if((immed_8r & mask)==immed_8r)
@@ -218,7 +218,8 @@ struct operand2
             }
             mask=((mask<<1) | 0x00000000000000000000000000000001);
         }
-        return false;
+        return false;*/
+        return (immed_8r<=255 && immed_8r>=0);
     };
 
     //转换成字符串
@@ -338,7 +339,8 @@ struct flexoffset
     //查看是否是合法的expr
     static bool is_legal_expr(int expr)
     {
-        return (expr>=-255 && expr <=4095);
+        return (expr>=-255 && expr <=255);
+        //return (expr>=-255 && expr <=4095);
         //return (expr>=-4095 && expr <=4095);
         //return (expr>=-1020 && expr <=1020);
     };
@@ -353,15 +355,6 @@ struct flexoffset
         struct Rm_shift Rm_shift;
     };
     
-};
-
-//single register load and store的类型
-enum class arm_single_register_load_and_store_type
-{
-    ZERO_OFFSET,
-    PRE_INDEXED_OFFSET,
-    PROGRAM_RELATIVE,
-    POST_INDEXED_OFFSET
 };
 
 //arm寄存器组
@@ -664,7 +657,7 @@ public:
     bool is_func() const;
 
     //转换成字符串
-    string to_string(bool is_define) const;
+    string to_string(bool is_define=true) const;
 
     //转换成字符串
     string to_string() const;
@@ -853,6 +846,15 @@ public:
 
     //转换成字符串
     string to_string() const;
+};
+
+//single register load and store的类型
+enum class arm_single_register_load_and_store_type
+{
+    ZERO_OFFSET,
+    PRE_INDEXED_OFFSET,
+    PROGRAM_RELATIVE,
+    POST_INDEXED_OFFSET
 };
 
 //arm的single register load and store类型的instruction

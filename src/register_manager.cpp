@@ -442,7 +442,7 @@ reg_index Register_manager::get_reg_for_reading_var(struct ic_data * var,enum re
     //首先检查此时是否有寄存器中已经存放了这个变量
     if(suspicious_regs.empty())
     {
-        //如果没有的话，需要判断这个变量是不是一个数组取元素，如果是的话，那么需要先遍历所有的寄存器，将和该数组的所有数组取元素的脏值先写回内存
+        //如果没有的话，需要判断这个变量是不是一个数组取元素，如果是的话，那么需要先遍历所有的寄存器，将该数组的所有数组取元素的脏值先写回内存
         if(var->is_array_member())
         {
             belong_array=var->get_belong_array();
