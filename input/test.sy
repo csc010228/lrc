@@ -1,5 +1,14 @@
-int main()
-{
-    putfloat(3.14);
+// Check the priority between time and plus
+int main() {
+    float a;
+    a = 20;
+    float b;
+    b = 5;
+    float c;
+    c = 6;
+    float d;
+    d = -4;
+    a = a + c * d - b % (a + d) / a;
+    putfloat(a);
     return 0;
 }
