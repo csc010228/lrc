@@ -38,6 +38,7 @@
         "iosfwd": "cpp",
         "queue": "cpp",
         "stack": "cpp",
-        "__string": "cpp"
+        "__string": "cpp",
+        "cmath": "cpp"
     }
 }

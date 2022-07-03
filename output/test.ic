@@ -1,11 +1,4 @@
 int main (  )  : 
-	CALL		getint (  )  --> (int)@0
-	int main::a
-	ASSIGN		@0 --> main::a
-	NOT		main::a --> (int)@1
-	IF_NOT_JMP		@1 --> .0
-	CALL		putint ( 23 ) 
-.0 : 
-	CALL		putint ( 24 ) 
+	CALL		putfloat ( 3.140000 ) 
 	RET		0
 

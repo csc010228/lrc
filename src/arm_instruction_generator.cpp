@@ -521,10 +521,17 @@ void Arm_instruction_generator::div_ic_to_arm_asm(struct ic_data * arg1,struct i
 /*
 根据一条MOD中间代码生成最终的arm汇编代码
 */
+#include<iostream>
+using namespace std;
 void Arm_instruction_generator::mod_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result)
 {
     list<struct ic_data * > * r_params;
     pair<pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >,list<reg_index> * > * event_data;
+    if(arg1->get_data_type()==language_data_type::FLOAT || arg2->get_data_type()==language_data_type::FLOAT || result->get_data_type()==language_data_type::FLOAT)
+    {
+        cout<<"\t\t\tFLOAT MOD!!!"<<endl;
+        exit(-1);
+    }
     //不能对浮点数进行mod
     r_params=new list<struct ic_data * >;
     event_data=new pair<pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >,list<reg_index> * >;
@@ -576,12 +583,12 @@ void Arm_instruction_generator::not_ic_to_arm_asm(struct ic_data * arg1,struct i
             delete event_data;
             notify(event(event_type::END_INSTRUCTION,nullptr));
 
-            notify(event(event_type::START_INSTRUCTION,nullptr));
-            Rd=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_WRITING_VAR,(void *)result)).int_data;
-            push_pseudo_instruction(new Arm_pseudo_instruction("eq","e"));
-            push_instruction(new Arm_cpu_data_process_instruction(arm_op::MOV,arm_condition::EQ,false,Rd,operand2((int)1)));
-            push_instruction(new Arm_cpu_data_process_instruction(arm_op::MOV,arm_condition::NE,false,Rd,operand2((int)0)));
-            notify(event(event_type::END_INSTRUCTION,nullptr));
+            // notify(event(event_type::START_INSTRUCTION,nullptr));
+            // Rd=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_WRITING_VAR,(void *)result)).int_data;
+            // push_pseudo_instruction(new Arm_pseudo_instruction("eq","e"));
+            // push_instruction(new Arm_cpu_data_process_instruction(arm_op::MOV,arm_condition::EQ,false,Rd,operand2((int)1)));
+            // push_instruction(new Arm_cpu_data_process_instruction(arm_op::MOV,arm_condition::NE,false,Rd,operand2((int)0)));
+            // notify(event(event_type::END_INSTRUCTION,nullptr));
             break;
         case language_data_type::FLOAT:
             notify(event(event_type::START_INSTRUCTION,nullptr));
@@ -593,12 +600,12 @@ void Arm_instruction_generator::not_ic_to_arm_asm(struct ic_data * arg1,struct i
             delete event_data;
             notify(event(event_type::END_INSTRUCTION,nullptr));
 
-            notify(event(event_type::START_INSTRUCTION,nullptr));
-            Rd=(reg_index)notify(event(event_type::GET_VFP_REG_FOR_WRITING_VAR,(void *)result)).int_data;
-            push_pseudo_instruction(new Arm_pseudo_instruction("eq","e"));
-            push_instruction(new Arm_vfp_register_transfer_instruction(arm_condition::EQ,Rd,1.f));
-            push_instruction(new Arm_vfp_data_process_instruction(arm_op::VSUB,arm_condition::NE,precision::S,Rd,Rd,Rd));
-            notify(event(event_type::END_INSTRUCTION,nullptr));
+            // notify(event(event_type::START_INSTRUCTION,nullptr));
+            // Rd=(reg_index)notify(event(event_type::GET_VFP_REG_FOR_WRITING_VAR,(void *)result)).int_data;
+            // push_pseudo_instruction(new Arm_pseudo_instruction("eq","e"));
+            // push_instruction(new Arm_vfp_register_transfer_instruction(arm_condition::EQ,Rd,1.f));
+            // push_instruction(new Arm_vfp_data_process_instruction(arm_op::VSUB,arm_condition::NE,precision::S,Rd,Rd,Rd));
+            // notify(event(event_type::END_INSTRUCTION,nullptr));
             break;
         default:
             break;
@@ -1475,6 +1482,8 @@ void Arm_instruction_generator::push_directive(Arm_directive * directive)
 
 void Arm_instruction_generator::handle_WRITE_CONST_TO_REG(OAA const_data,reg_index reg)
 {
+    reg_index cpu_reg;
+    set<reg_index> regs_unaccessible;
     if(notify(event(event_type::IS_CPU_REG,(int)reg)).bool_data)
     {
         union {
@@ -1491,7 +1500,17 @@ void Arm_instruction_generator::handle_WRITE_CONST_TO_REG(OAA const_data,reg_ind
     }
     else if(notify(event(event_type::IS_VFP_REG,(int)reg)).bool_data)
     {
-        push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,precision::S,reg,::to_string(const_data.int_data)));
+        union {
+            float float_data;
+            unsigned int unsigned_int_data;
+        } signed_float_to_unsigned_int;
+        signed_float_to_unsigned_int.float_data=const_data.float_data;
+        regs_unaccessible.insert(reg);
+        notify(event(event_type::START_INSTRUCTION,(void *)&regs_unaccessible));
+        cpu_reg=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_CONST,(void *)&const_data)).int_data;
+        notify(event(event_type::END_INSTRUCTION,nullptr));
+        push_instruction(new Arm_vfp_register_transfer_instruction(arm_op::VMOV,arm_condition::NONE,reg,cpu_reg));
+        //push_pseudo_instruction(new Arm_pseudo_instruction(arm_condition::NONE,precision::S,reg,::to_string(const_data.int_data)));
     }
 }
 
