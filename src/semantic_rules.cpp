@@ -1097,7 +1097,6 @@ end_define_semantic_rule
 define_semantic_rule(___B_TYPE_2___)
     set_syntax_symbol_attribute(B_TYPE,b_type,int,(int)language_data_type::FLOAT);
     set_global_info(data_type,language_data_type::FLOAT);
-    exit(-1);
 end_define_semantic_rule
 
 /*
