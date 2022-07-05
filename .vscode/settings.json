@@ -39,6 +39,17 @@
         "queue": "cpp",
         "stack": "cpp",
         "__string": "cpp",
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "atomic": "cpp",
+        "bitset": "cpp",
+        "chrono": "cpp",
+        "cstddef": "cpp",
+        "__memory": "cpp",
+        "limits": "cpp",
+        "optional": "cpp",
+        "ratio": "cpp",
+        "system_error": "cpp",
+        "utility": "cpp",
+        "variant": "cpp"
     }
 }

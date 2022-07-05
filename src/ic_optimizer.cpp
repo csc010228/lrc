@@ -197,6 +197,17 @@ void quaternion_with_info::simplify()
             {
                 intermediate_code=(quaternion(ic_op::ASSIGN,ic_operand::DATA,arg1,ic_operand::NONE,nullptr,ic_operand::DATA,result));
             }
+            else if((arg1->is_const() && ((arg1->get_data_type()==language_data_type::INT && arg1->get_value().int_data==0) || (arg1->get_data_type()==language_data_type::FLOAT && arg1->get_value().float_data==0.0f))) || (arg2->is_const() && ((arg2->get_data_type()==language_data_type::INT && arg2->get_value().int_data==0) || (arg2->get_data_type()==language_data_type::FLOAT && arg2->get_value().float_data==0.0f))))
+            {
+                if(result->get_data_type()==language_data_type::INT)
+                {
+                    intermediate_code=(quaternion(ic_op::ASSIGN,ic_operand::DATA,symbol_table->const_entry(result->get_data_type(),OAA((int)0)),ic_operand::NONE,nullptr,ic_operand::DATA,result));
+                }
+                else if(result->get_data_type()==language_data_type::FLOAT)
+                {
+                    intermediate_code=(quaternion(ic_op::ASSIGN,ic_operand::DATA,symbol_table->const_entry(result->get_data_type(),OAA((float)0.0f)),ic_operand::NONE,nullptr,ic_operand::DATA,result));
+                }
+            }
             else if(arg1->is_const() && arg2->is_const())
             {
                 if(arg1->get_data_type()==language_data_type::INT)

@@ -118,16 +118,12 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
                 break;
             case event_type::READY_TO_PUSH_F_PARAM_PASSED_BY_REGS_AND_LOCAL_VARS_AND_TEMP_VARS_OVER_BASIC_BLOCK:
             case event_type::READY_TO_PUSH_TEMP_VARS:
-            // case event_type::READY_TO_POP_LOCAL_VARS:
-            // case event_type::READY_TO_POP_F_PARAM_CPU_REGS:
-            // case event_type::READY_TO_POP_F_PARAM_VFP_REGS:
             case event_type::READY_TO_POP_WHEN_RET:
             case event_type::READY_TO_POP_CONTEXT_RECOVERED_CPU_REGS:
             case event_type::READY_TO_POP_CONTEXT_RECOVERED_VFP_REGS:
             case event_type::GET_VAR_STACK_POS_FROM_SP:
             case event_type::GET_VAR_STACK_POS_FROM_FP:
             case event_type::PUSH_VAR_TO_STACK:
-            // case event_type::READY_TO_POP_TEMP_VARS:
             case event_type::PUSH_ARGUMENT_TO_STACK_WHEN_CALLING_FUNC:
             case event_type::PADDING_WHEN_CALL_FUNC:
             case event_type::CHECK_TEMP_VAR_IN_STACK:

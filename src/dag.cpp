@@ -630,16 +630,18 @@ bool DAG::algebraic_simplify(enum ic_op op,struct ic_data * result,struct ic_dat
         generate_ASSIGN_in_DAG(result,arg1);
         return true;
     }
-    else if(op==ic_op::MUL && arg1->is_const() && ((arg1->get_data_type()==language_data_type::INT && arg1->get_value().int_data==0) || (arg1->get_data_type()==language_data_type::FLOAT && arg1->get_value().float_data==0.f)))
+    else if(op==ic_op::MUL && ((arg1->is_const() && ((arg1->get_data_type()==language_data_type::INT && arg1->get_value().int_data==0) || (arg1->get_data_type()==language_data_type::FLOAT && arg1->get_value().float_data==0.f))) && (arg2->is_const() && ((arg2->get_data_type()==language_data_type::INT && arg2->get_value().int_data==0) || (arg2->get_data_type()==language_data_type::FLOAT && arg2->get_value().float_data==0.f))))) 
     {
-        //x=0*x
-        generate_ASSIGN_in_DAG(result,arg2);
-        return true;
-    }
-    else if(op==ic_op::MUL && arg2->is_const() && ((arg2->get_data_type()==language_data_type::INT && arg2->get_value().int_data==0) || (arg2->get_data_type()==language_data_type::FLOAT && arg2->get_value().float_data==0.f)))
-    {
-        //x=x*0
-        generate_ASSIGN_in_DAG(result,arg1);
+        //0=0*x
+        //0=x*0
+        if(result->get_data_type()==language_data_type::INT)
+        {
+            generate_ASSIGN_in_DAG(result,symbol_table->const_entry(result->get_data_type(),OAA((int)0)));
+        }
+        else if(result->get_data_type()==language_data_type::FLOAT)
+        {
+            generate_ASSIGN_in_DAG(result,symbol_table->const_entry(result->get_data_type(),OAA((float)0.0f)));
+        }
         return true;
     }
     else if(op==ic_op::EQ && arg1==arg2)
