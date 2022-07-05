@@ -41,8 +41,9 @@ protected:
     struct event handle_NEXT_IC();
     struct event handle_IS_VAR_STILL_ALIVE(struct ic_data * var);
     struct event handle_IS_FUNC_NEED_PASS_PARAMS_BY_STACK(struct ic_func * func);
-    struct event handle_GET_TEMP_VARS_OVER_BASIC_BLOCK(struct ic_func * func);
-    struct event handle_IS_TEMP_VAR_OVER_BASIC_BLOCKS(struct ic_data * var);
+    struct event handle_GET_TEMP_VARS_OVER_BASIC_BLOCK_IN_CURRENT_FUNC();
+    struct event handle_IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC(struct ic_data * var);
+    struct event handle_GET_TEMP_VARS_IN_CURRENT_BASIC_BLOCK();
 
 public:
     //构造函数

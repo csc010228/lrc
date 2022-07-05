@@ -296,7 +296,7 @@ private:
     bool allocate_designated_reg(reg_index reg);
 
     //新分配一个空闲的寄存器
-    reg_index allocate_idle_reg(reg_processor processor);
+    reg_index allocate_idle_reg(reg_processor processor,bool get_an_empty_reg=false);
 
     //将某一个寄存器设置为正在被当前的指令所使用
     void set_got_by_current_instruction(reg_index reg);
@@ -305,7 +305,7 @@ private:
     bool is_got_by_current_instruction(reg_index reg);
 
     //为某一个int常量获取一个寄存器
-    reg_index get_reg_for_const(OAA const_data,enum reg_processor processor);
+    reg_index get_reg_for_const(OAA const_data,enum reg_processor processor,bool get_an_empty_reg=false);
 
     //为了读取某一个变量而获取一个寄存器
     reg_index get_reg_for_reading_var(struct ic_data * var,enum reg_processor processor);
@@ -351,6 +351,7 @@ private:
     void handle_CLEAR_FLAG();
     void handle_RETURN_VAR(struct ic_data * var);
     struct event handle_GET_CPU_REG_FOR_CONST(OAA const_data);
+    struct event handle_GET_AN_EMPTY_CPU_REG_FOR_CONST(OAA const_data);
     struct event handle_GET_VFP_REG_FOR_CONST(OAA const_data);
     struct event handle_GET_CPU_REG_FOR_READING_VAR(struct ic_data * var_data);
     struct event handle_GET_CPU_REG_FOR_WRITING_VAR(struct ic_data * var_data);

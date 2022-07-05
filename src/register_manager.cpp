@@ -237,7 +237,7 @@ bool Register_manager::allocate_designated_reg(reg_index reg)
         //这里目前必须先把临时变量进栈，再把局部变量写回，因为临时变量的进栈会改变栈顶指针的位置，而局部变量的写回不会
         // for(auto var_data:temp)
         // {
-        //     if(var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && !notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS,(void *)var_data.first)).bool_data)
+        //     if(var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && !notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data)
         //     {
         //         event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
         //         notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
@@ -250,14 +250,15 @@ bool Register_manager::allocate_designated_reg(reg_index reg)
             if(var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY)
             {
                 event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
-                if(notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS,(void *)var_data.first)).bool_data)
-                {
-                    notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-                }
-                else
-                {
-                    notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
-                }
+                // if(notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data)
+                // {
+                //     notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
+                // }
+                // else
+                // {
+                //     notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
+                // }
+                notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
                 delete event_data;
             }
             else if(var_data.second==reg_var_state::DIRTY)
@@ -280,11 +281,16 @@ bool Register_manager::allocate_designated_reg(reg_index reg)
 /*
 新分配一个空闲的寄存器
 
+Prarmaters
+----------
+process:要获取的寄存器的类型
+get_an_empty_reg:如果指定为true，表示要获取一个没有被使用过的寄存器
+
 Return
 ------
 返回获取到的寄存器的编号
 */
-reg_index Register_manager::allocate_idle_reg(reg_processor processor)
+reg_index Register_manager::allocate_idle_reg(reg_processor processor,bool get_an_empty_reg)
 {
     reg_index res;
     // switch(processor)
@@ -308,7 +314,7 @@ reg_index Register_manager::allocate_idle_reg(reg_processor processor)
     
     for(auto reg:regs_info_.reg_indexs)
     {
-        if(reg.second.processor==processor && (reg.second.attr==reg_attr::ARGUMENT || reg.second.attr==reg_attr::TEMP) && allocate_designated_reg(reg.first))
+        if(reg.second.processor==processor && (reg.second.attr==reg_attr::ARGUMENT || reg.second.attr==reg_attr::TEMP) && (!get_an_empty_reg || reg.second.state==reg_state::EMPTY) && allocate_designated_reg(reg.first))
         {
             res=reg.first;
             break;
@@ -363,12 +369,13 @@ Parameters
 ----------
 const_data:要获取的常数值
 processor:要获取的寄存器所在的处理器
+get_an_empty_reg:是否要获取一个没有使用过的寄存器
 
 Return
 ------
 返回获取到的寄存器编号
 */
-reg_index Register_manager::get_reg_for_const(OAA const_data,enum reg_processor processor)
+reg_index Register_manager::get_reg_for_const(OAA const_data,enum reg_processor processor,bool get_an_empty_reg)
 {
     pair<OAA,reg_index> * event_data_1;
     pair<reg_index,reg_index> * event_data_2;
@@ -380,7 +387,7 @@ reg_index Register_manager::get_reg_for_const(OAA const_data,enum reg_processor 
     if(suspicious_regs.empty())
     {
         //如果没有的话，那么就给该常数分配一个新的寄存器，并将该常数的值写入即可
-        reg=allocate_idle_reg(processor);
+        reg=allocate_idle_reg(processor,get_an_empty_reg);
         //立刻把该寄存器设置为被当前的指令所使用
         set_got_by_current_instruction(reg);
         event_data_1=new pair<OAA,reg_index>(const_data,reg);
@@ -400,7 +407,7 @@ reg_index Register_manager::get_reg_for_const(OAA const_data,enum reg_processor 
                 goto end;
             }
         }
-        reg=allocate_idle_reg(processor);
+        reg=allocate_idle_reg(processor,get_an_empty_reg);
         //立刻把该寄存器设置为被当前的指令所使用
         set_got_by_current_instruction(reg);
         event_data_2=new pair<reg_index,reg_index>((*suspicious_regs.begin()),reg);
@@ -855,6 +862,11 @@ struct event Register_manager::handle_GET_CPU_REG_FOR_CONST(OAA const_data)
     return event(event_type::RESPONSE_INT,(int)get_reg_for_const(const_data,reg_processor::CPU));
 }
 
+struct event Register_manager::handle_GET_AN_EMPTY_CPU_REG_FOR_CONST(OAA const_data)
+{
+    return event(event_type::RESPONSE_INT,(int)get_reg_for_const(const_data,reg_processor::CPU,true));
+}
+
 struct event Register_manager::handle_GET_VFP_REG_FOR_CONST(OAA const_data)
 {
     return event(event_type::RESPONSE_INT,(int)get_reg_for_const(const_data,reg_processor::VFP));
@@ -988,6 +1000,7 @@ void Register_manager::handle_FUNC_DEFINE(struct ic_func * func)
             {
                 reg=regs_info_.reg_names.at("r"+to_string(int_f_params_num));
                 regs_info_.attach_value_to_reg(f_param,reg);
+                regs_info_.reg_indexs.at(reg).set_value_DIRTY(f_param);
                 int_f_params_num++;
             }
         }
@@ -998,6 +1011,7 @@ void Register_manager::handle_FUNC_DEFINE(struct ic_func * func)
             {
                 reg=regs_info_.reg_names.at("s"+to_string(float_f_params_num));
                 regs_info_.attach_value_to_reg(f_param,reg);
+                regs_info_.reg_indexs.at(reg).set_value_DIRTY(f_param);
                 float_f_params_num++;
             }
         }
@@ -1030,7 +1044,7 @@ void Register_manager::handle_END_BASIC_BLOCK_WITHOUT_FLAG()
             temp=reg.second.var_datas;
             for(auto var_data:temp)
             {
-                if(var_data.second==reg_var_state::DIRTY || (var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS,(void *)var_data.first)).bool_data))
+                if(var_data.second==reg_var_state::DIRTY || (var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data))
                 {
                     if(written_back_vars.find(var_data.first)==written_back_vars.end())
                     {
@@ -1214,20 +1228,21 @@ void Register_manager::handle_SAVE_REGS_WHEN_CALLING_FUNC()
             if(var_data.second==reg_var_state::NOT_DIRTY && var_data.first->is_tmp_var() && tag)
             {
                 event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg.first);
-                if(notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS,(void *)var_data.first)).bool_data)
-                {
-                    notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-                }
-                else
-                {
-                    notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
-                }
+                // if(notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data)
+                // {
+                //     notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
+                // }
+                // else
+                // {
+                //     notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
+                // }
+                notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
                 delete event_data;
             }
         }
         for(auto var_data:temp)
         {
-            if(var_data.second==reg_var_state::DIRTY || (var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS,(void *)var_data.first)).bool_data))
+            if(var_data.second==reg_var_state::DIRTY || (var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data))
             {
                 reg.second.set_value_NOT_DIRTY(var_data.first);
                 if(written_back_vars.find(var_data.first)==written_back_vars.end())
@@ -1620,6 +1635,9 @@ struct event Register_manager::handler(struct event event)
             break;
         case event_type::GET_CPU_REG_FOR_CONST:
             response=handle_GET_CPU_REG_FOR_CONST(*((OAA *)event.pointer_data));
+            break;
+        case event_type::GET_AN_EMPTY_CPU_REG_FOR_CONST:
+            response=handle_GET_AN_EMPTY_CPU_REG_FOR_CONST(*((OAA *)event.pointer_data));
             break;
         case event_type::GET_VFP_REG_FOR_CONST:
             response=handle_GET_VFP_REG_FOR_CONST(*((OAA *)event.pointer_data));

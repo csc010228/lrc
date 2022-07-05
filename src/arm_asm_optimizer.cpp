@@ -165,7 +165,8 @@ void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph 
     Arm_vfp_multiple_registers_load_and_store_instruction * enter_vpush=nullptr,* exit_vpop=nullptr;
     set<Arm_cpu_multiple_registers_load_and_store_instruction * > exit_pops;
     set<Arm_vfp_multiple_registers_load_and_store_instruction * > exit_vpops;
-    Arm_cpu_data_process_instruction * cpu_data_process_instruction,* assign_fp=nullptr;;
+    set<Arm_cpu_data_process_instruction * > add_sps;
+    Arm_cpu_data_process_instruction * cpu_data_process_instruction,* assign_fp=nullptr,* sub_sp=nullptr,* add_sp=nullptr;
     Arm_cpu_single_register_load_and_store_instruction * cpu_single_register_load_and_store_instruction;
     Arm_vfp_single_register_load_and_store_instruction * vfp_single_register_load_and_store_instruction;
     Arm_instruction * instruction;
@@ -175,9 +176,7 @@ void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph 
     int fp_sp_deviation=0;
     reg_index pc=(reg_index)notify(event(event_type::GET_PC_REG,nullptr)).int_data,sp=(reg_index)notify(event(event_type::GET_SP_REG,nullptr)).int_data,lr=(reg_index)notify(event(event_type::GET_LR_REG,nullptr)).int_data,fp=(reg_index)notify(event(event_type::GET_FP_REG,nullptr)).int_data;
     bool tag=false;
-    bool func_need_pass_params_by_stack;
-    //先查看一下这个函数是否需要使用到寄存器传参
-    func_need_pass_params_by_stack=notify(event(event_type::IS_FUNC_NEED_PASS_PARAMS_BY_STACK,(void *)(arm_func->function))).bool_data;
+    size_t push_cpu_regs_bytes=0,used_vfp_temp_regs_bytes=0,f_params_push_regs_bytes=0;
     //统计整个函数中用到的所有的寄存器
     for(auto basic_block:arm_func->basic_blocks)
     {
@@ -201,6 +200,7 @@ void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph 
                         {
                             exit_pops.insert(exit_pop);
                             exit_vpops.insert(exit_vpop);
+                            add_sps.insert(add_sp);
                             goto next;
                         }
                         else
@@ -238,12 +238,22 @@ void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph 
                     case arm_op::TEQ:
                     case arm_op::MOV:
                     case arm_op::MVN:
-                        if(assign_fp==nullptr && instruction->get_op()==arm_op::ADD)
+                        cpu_data_process_instruction=dynamic_cast<Arm_cpu_data_process_instruction *>(instruction);
+                        if(sub_sp==nullptr && instruction->get_op()==arm_op::SUB && cpu_data_process_instruction->get_destination_registers().get_only_member()==sp && cpu_data_process_instruction->get_source_registers().get_only_member()==sp)
                         {
-                            assign_fp=dynamic_cast<Arm_cpu_data_process_instruction *>(instruction);
+                            sub_sp=cpu_data_process_instruction;
                             goto next;
                         }
-                        cpu_data_process_instruction=dynamic_cast<Arm_cpu_data_process_instruction *>(instruction);
+                        if(assign_fp==nullptr && instruction->get_op()==arm_op::ADD && cpu_data_process_instruction->get_destination_registers().get_only_member()==fp && cpu_data_process_instruction->get_source_registers().get_only_member()==sp)
+                        {
+                            assign_fp=cpu_data_process_instruction;
+                            goto next;
+                        }
+                        if(instruction->get_op()==arm_op::ADD && cpu_data_process_instruction->get_destination_registers().get_only_member()==sp && cpu_data_process_instruction->get_source_registers().get_only_member()==sp)
+                        {
+                            add_sp=cpu_data_process_instruction;
+                            goto next;
+                        }
                         if(cpu_data_process_instruction->get_operand2().type==operand2_type::RM_SHIFT)
                         {
                             used_regs.insert(cpu_data_process_instruction->get_operand2().Rm_shift.Rm);
@@ -303,6 +313,27 @@ next:
     pop_cpu_regs.push_back(fp);
     push_cpu_regs.push_back(lr);
     pop_cpu_regs.push_back(pc);
+    //这里要求所有的函数都是8bytes栈对齐的
+    for(auto reg:push_cpu_regs)
+    {
+        push_cpu_regs_bytes+=notify(event(event_type::GET_REG_BYTE_SIZE,(int)reg)).int_data;
+    }
+    for(auto reg:used_vfp_temp_regs)
+    {
+        used_vfp_temp_regs_bytes+=notify(event(event_type::GET_REG_BYTE_SIZE,(int)reg)).int_data;
+    }
+    if((push_cpu_regs_bytes+used_vfp_temp_regs_bytes)%8!=0)
+    {
+        sub_sp->change_operand2_to_immed_8r(8-((push_cpu_regs_bytes+used_vfp_temp_regs_bytes)%8));
+    }
+    else
+    {
+        sub_sp->change_operand2_to_immed_8r(0);
+    }
+    for(auto add_sp_for_padding:add_sps)
+    {
+        add_sp_for_padding->change_operand2_to_immed_8r(sub_sp->get_operand2().immed_8r);
+    }
     for(auto basic_block:arm_func->basic_blocks)
     {
         for(list<Arm_asm_file_line * >::iterator arm_asm=basic_block->arm_sequence.begin();arm_asm!=basic_block->arm_sequence.end();arm_asm++)
@@ -334,14 +365,16 @@ next:
             else if(assign_fp==*arm_asm)
             {
                 delete *arm_asm;
-                for(auto reg:push_cpu_regs)
-                {
-                    fp_sp_deviation+=notify(event(event_type::GET_REG_BYTE_SIZE,(int)reg)).int_data;
-                }
-                for(auto reg:used_vfp_temp_regs)
-                {
-                    fp_sp_deviation+=notify(event(event_type::GET_REG_BYTE_SIZE,(int)reg)).int_data;
-                }
+                // for(auto reg:push_cpu_regs)
+                // {
+                //     fp_sp_deviation+=notify(event(event_type::GET_REG_BYTE_SIZE,(int)reg)).int_data;
+                // }
+                fp_sp_deviation+=push_cpu_regs_bytes;
+                // for(auto reg:used_vfp_temp_regs)
+                // {
+                //     fp_sp_deviation+=notify(event(event_type::GET_REG_BYTE_SIZE,(int)reg)).int_data;
+                // }
+                fp_sp_deviation+=used_vfp_temp_regs_bytes;
                 if(fp_sp_deviation==0)
                 {
                     *arm_asm=new Arm_cpu_data_process_instruction(arm_op::MOV,arm_condition::NONE,false,fp,operand2(sp));

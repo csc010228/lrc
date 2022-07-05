@@ -801,6 +801,15 @@ public:
         return operand2_;
     };
 
+    //更改operand2
+    inline void change_operand2_to_immed_8r(int new_immed_8r)
+    {
+        if(operand2_.type==operand2_type::IMMED_8R)
+        {
+            operand2_.immed_8r=new_immed_8r;
+        }
+    };
+
     //更改影响标志位
     inline void set_update_flags(bool new_update_flags)
     {

@@ -1,19 +1,9 @@
+void test ( int test::a , int test::b , int test::c , int test::d , int test::e )  : 
+	CALL		putfloat ( 3.140000 ) 
+	RET
+
 int main (  )  : 
-	float main::a
-	ASSIGN		20 --> main::a
-	float main::b
-	ASSIGN		5 --> main::b
-	float main::c
-	ASSIGN		6 --> main::c
-	float main::d
-	ASSIGN		-4 --> main::d
-	MUL		main::c , main::d --> (float)@0
-	ADD		main::a , @0 --> (float)@1
-	ADD		main::a , main::d --> (float)@2
-	MOD		main::b , @2 --> (float)@3
-	DIV		@3 , main::a --> (float)@4
-	SUB		@1 , @4 --> (float)@5
-	ASSIGN		@5 --> main::a
-	CALL		putfloat ( main::a ) 
+	int main::k
+	CALL		test ( 1 , 2 , 3 , 4 , 5 ) 
 	RET		0
 

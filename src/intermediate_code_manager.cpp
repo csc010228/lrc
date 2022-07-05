@@ -96,7 +96,7 @@ struct event Intermediate_code_manager::handle_NEXT_IC()
                 current_basic_block_pos_=(*current_func_pos_)->basic_blocks.begin();
                 while(current_basic_block_pos_!=(*current_func_pos_)->basic_blocks.end())
                 {
-                    notify(event(event_type::START_BASIC_BLOCK,nullptr));
+                    notify(event(event_type::START_BASIC_BLOCK,(void *)(*current_basic_block_pos_)));
                     current_ic_with_info_pos_=(*current_basic_block_pos_)->ic_sequence.begin();
 not_first_pos:
                     while(current_ic_with_info_pos_!=(*current_basic_block_pos_)->ic_sequence.end())
@@ -164,14 +164,30 @@ struct event Intermediate_code_manager::handle_IS_FUNC_NEED_PASS_PARAMS_BY_STACK
     return event(event_type::RESPONSE_BOOL,false);
 }
 
-struct event Intermediate_code_manager::handle_GET_TEMP_VARS_OVER_BASIC_BLOCK(struct ic_func * func)
+struct event Intermediate_code_manager::handle_GET_TEMP_VARS_OVER_BASIC_BLOCK_IN_CURRENT_FUNC()
 {
-    return event(event_type::RESPONSE_POINTER,(void *)(&(temp_vars_over_basic_blocks_[func])));
+    return event(event_type::RESPONSE_POINTER,(void *)(&(temp_vars_over_basic_blocks_[(*current_func_pos_)->func])));
 }
 
-struct event Intermediate_code_manager::handle_IS_TEMP_VAR_OVER_BASIC_BLOCKS(struct ic_data * var)
+struct event Intermediate_code_manager::handle_IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC(struct ic_data * var)
 {
     return event(event_type::RESPONSE_BOOL,temp_vars_over_basic_blocks_[(*current_func_pos_)->func].find(var)!=temp_vars_over_basic_blocks_[(*current_func_pos_)->func].end());
+}
+
+struct event Intermediate_code_manager::handle_GET_TEMP_VARS_IN_CURRENT_BASIC_BLOCK()
+{
+    set<struct ic_data * > * temp_vars_in_basic_block=new set<struct ic_data * >;
+    for(auto ic_with_info:(*current_basic_block_pos_)->ic_sequence)
+    {
+        for(auto var:ic_with_info.get_all_datas())
+        {
+            if(var->is_tmp_var() && temp_vars_in_basic_block->find(var)==temp_vars_in_basic_block->end())
+            {
+                temp_vars_in_basic_block->insert(var);
+            }
+        }
+    }
+    return event(event_type::RESPONSE_POINTER,(void *)temp_vars_in_basic_block);
 }
 
 /*
@@ -199,11 +215,14 @@ struct event Intermediate_code_manager::handler(struct event event)
         case event_type::IS_FUNC_NEED_PASS_PARAMS_BY_STACK:
             res=handle_IS_FUNC_NEED_PASS_PARAMS_BY_STACK((struct ic_func *)event.pointer_data);
             break;
-        case event_type::GET_TEMP_VARS_OVER_BASIC_BLOCK:
-            res=handle_GET_TEMP_VARS_OVER_BASIC_BLOCK((struct ic_func *)event.pointer_data);
+        case event_type::GET_TEMP_VARS_OVER_BASIC_BLOCK_IN_CURRENT_FUNC:
+            res=handle_GET_TEMP_VARS_OVER_BASIC_BLOCK_IN_CURRENT_FUNC();
             break;
-        case event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS:
-            res=handle_IS_TEMP_VAR_OVER_BASIC_BLOCKS((struct ic_data *)event.pointer_data);
+        case event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC:
+            res=handle_IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC((struct ic_data *)event.pointer_data);
+            break;
+        case event_type::GET_TEMP_VARS_IN_CURRENT_BASIC_BLOCK:
+            res=handle_GET_TEMP_VARS_IN_CURRENT_BASIC_BLOCK();
             break;
         default:
             break;

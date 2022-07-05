@@ -32,20 +32,25 @@ private:
         list<pair<stack_pos,struct ic_data * > > f_params_passed_by_stack_as_callee;
         list<pair<stack_pos,reg_index> > context_saved_cpu_regs_as_callee;
         list<pair<stack_pos,reg_index> > context_saved_vfp_regs_as_callee;
+        size_t padding_bytes_after_context_saved_regs;
         list<pair<stack_pos,struct ic_data * > > f_params_passed_by_cpu_regs_as_callee;
         list<pair<stack_pos,struct ic_data * > > f_params_passed_by_vfp_regs_as_callee;
         list<pair<stack_pos,struct ic_data * > > local_vars;
+        size_t padding_bytes_after_local_vars;
         list<pair<stack_pos,struct ic_data * > > temp_vars;
+        size_t padding_bytes_after_temp_vars;
+        size_t padding_bytes_before_f_params_passed_by_stack_as_caller;
         list<pair<stack_pos,struct ic_data * > > f_params_passed_by_stack_as_caller;
-        size_t padding_bytes;
         stack_pos stack_pointer,frame_pointer;
 
         void clear()
         {
             stack_pointer=0;
             frame_pointer=0;
-            padding_bytes=0;
-            f_params_passed_by_cpu_regs_as_callee.clear();
+            padding_bytes_after_context_saved_regs=0;
+            padding_bytes_after_local_vars=0;
+            padding_bytes_after_temp_vars=0;
+            padding_bytes_before_f_params_passed_by_stack_as_caller=0;
             context_saved_cpu_regs_as_callee.clear();
             context_saved_vfp_regs_as_callee.clear();
             f_params_passed_by_cpu_regs_as_callee.clear();
@@ -53,6 +58,30 @@ private:
             local_vars.clear();
             temp_vars.clear();
             f_params_passed_by_stack_as_caller.clear();
+        };
+
+        void set_padding_bytes_after_context_saved_regs(size_t padding_bytes)
+        {
+            padding_bytes_after_context_saved_regs=padding_bytes;
+            stack_pointer+=padding_bytes;
+        };
+
+        void set_padding_bytes_after_temp_vars(size_t padding_bytes)
+        {
+            padding_bytes_after_temp_vars=padding_bytes;
+            stack_pointer+=padding_bytes;
+        };
+
+        void set_padding_bytes_after_local_vars(size_t padding_bytes)
+        {
+            padding_bytes_after_local_vars=padding_bytes;
+            stack_pointer+=padding_bytes;
+        };
+
+        void set_padding_bytes_before_f_params_passed_by_stack_as_caller(size_t padding_bytes)
+        {
+            padding_bytes_before_f_params_passed_by_stack_as_caller=padding_bytes;
+            stack_pointer+=padding_bytes;
         };
 
         void push_to_f_params_passed_by_stack_as_callee(struct ic_data * var)
@@ -107,23 +136,29 @@ private:
 
     //事件处理函数
     void handle_FUNC_DEFINE(struct ic_func * func);
-    struct event handle_READY_TO_PUSH_LOCAL_VARS(struct ic_func * func);
+    struct event handle_READY_TO_PUSH_F_PARAM_PASSED_BY_REGS_AND_LOCAL_VARS_AND_TEMP_VARS_OVER_BASIC_BLOCK(struct ic_func * func);
+    struct event handle_READY_TO_PUSH_TEMP_VARS(set<struct ic_data * > * temp_vars);
     void handle_READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS(list<reg_index> * regs);
     void handle_READY_TO_PUSH_CONTEXT_SAVED_VFP_REGS(list<reg_index> * regs);
     struct event handle_GET_CURRENT_FUNC_STACK_SIZE();
     void handle_READY_TO_PUSH_F_PARAM_CPU_REGS(list<struct ic_data * > * f_params);
     void handle_READY_TO_PUSH_F_PARAM_VFP_REGS(list<struct ic_data * > * f_params);
     struct event handle_READY_TO_POP_CONTEXT_RECOVERED_CPU_REGS();
+    struct event handle_CACULATE_PADDING_BYTES_BEFORE_LOCAL_VARS_IN_CURRENT_FUNC();
+    struct event handle_GET_PADDING_BYTES_BEFORE_LOCAL_VARS_IN_CURRENT_FUNC();
     struct event handle_READY_TO_POP_CONTEXT_RECOVERED_VFP_REGS();
-    struct event handle_READY_TO_POP_TEMP_VARS();
-    struct event handle_READY_TO_POP_LOCAL_VARS();
-    struct event handle_READY_TO_POP_F_PARAM_CPU_REGS();
-    struct event handle_READY_TO_POP_F_PARAM_VFP_REGS();
+    // struct event handle_READY_TO_POP_TEMP_VARS();
+    // struct event handle_READY_TO_POP_LOCAL_VARS();
+    // struct event handle_READY_TO_POP_F_PARAM_CPU_REGS();
+    // struct event handle_READY_TO_POP_F_PARAM_VFP_REGS();
+    struct event handle_READY_TO_POP_WHEN_RET();
     struct event handle_GET_VAR_STACK_POS_FROM_SP(struct ic_data * var);
     struct event handle_GET_VAR_STACK_POS_FROM_FP(struct ic_data * var);
     void handle_PUSH_VAR_TO_STACK(struct ic_data * var);
     void handle_PUSH_ARGUMENT_TO_STACK_WHEN_CALLING_FUNC(struct ic_data * argument);
+    void handle_PADDING_WHEN_CALL_FUNC(int padding_bytes);
     struct event handle_RET_FROM_CALLED_FUNC();
+    struct event handle_RET_FROM_CALLED_ABI_FUNC();
     struct event handle_CHECK_TEMP_VAR_IN_STACK(struct ic_data * var);
     void handle_END_BASIC_BLOCK();
     void handle_END_BASIC_BLOCK_WITHOUT_FLAG();

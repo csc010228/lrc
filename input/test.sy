@@ -1,14 +1,12 @@
-// Check the priority between time and plus
-int main() {
-    float a;
-    a = 20;
-    float b;
-    b = 5;
-    float c;
-    c = 6;
-    float d;
-    d = -4;
-    a = a + c * d - b % (a + d) / a;
-    putfloat(a);
+void test(int a,int b,int c,int d,int e)
+{
+    putfloat(3.14);
+}
+
+
+int main()
+{
+    int k;
+    test(1,2,3,4,5);
     return 0;
 }

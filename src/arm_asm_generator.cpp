@@ -65,10 +65,13 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
         {
             case event_type::IS_FUNC_NEED_PASS_PARAMS_BY_STACK:
             case event_type::NEXT_IC:
-            case event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS:
+            case event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC:
+            case event_type::GET_TEMP_VARS_IN_CURRENT_BASIC_BLOCK:
+            case event_type::GET_TEMP_VARS_OVER_BASIC_BLOCK_IN_CURRENT_FUNC:
                 res=intermediate_code_manager_->handler(event);
                 break;
             case event_type::GET_CPU_REG_FOR_CONST:
+            case event_type::GET_AN_EMPTY_CPU_REG_FOR_CONST:
             case event_type::GET_VFP_REG_FOR_CONST:
             case event_type::GET_CPU_REG_FOR_READING_VAR:
             case event_type::GET_CPU_REG_FOR_WRITING_VAR:
@@ -113,20 +116,25 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
                 memory_manager_->handler(event);
                 register_manager_->handler(event);
                 break;
-            case event_type::READY_TO_PUSH_LOCAL_VARS:
-            case event_type::READY_TO_POP_LOCAL_VARS:
-            case event_type::READY_TO_POP_F_PARAM_CPU_REGS:
-            case event_type::READY_TO_POP_F_PARAM_VFP_REGS:
+            case event_type::READY_TO_PUSH_F_PARAM_PASSED_BY_REGS_AND_LOCAL_VARS_AND_TEMP_VARS_OVER_BASIC_BLOCK:
+            case event_type::READY_TO_PUSH_TEMP_VARS:
+            // case event_type::READY_TO_POP_LOCAL_VARS:
+            // case event_type::READY_TO_POP_F_PARAM_CPU_REGS:
+            // case event_type::READY_TO_POP_F_PARAM_VFP_REGS:
+            case event_type::READY_TO_POP_WHEN_RET:
             case event_type::READY_TO_POP_CONTEXT_RECOVERED_CPU_REGS:
             case event_type::READY_TO_POP_CONTEXT_RECOVERED_VFP_REGS:
             case event_type::GET_VAR_STACK_POS_FROM_SP:
             case event_type::GET_VAR_STACK_POS_FROM_FP:
             case event_type::PUSH_VAR_TO_STACK:
-            case event_type::READY_TO_POP_TEMP_VARS:
+            // case event_type::READY_TO_POP_TEMP_VARS:
             case event_type::PUSH_ARGUMENT_TO_STACK_WHEN_CALLING_FUNC:
+            case event_type::PADDING_WHEN_CALL_FUNC:
             case event_type::CHECK_TEMP_VAR_IN_STACK:
             case event_type::IS_F_PARAM_PASSED_BY_STACK:
             case event_type::GET_CURRENT_FUNC_STACK_SIZE:
+            case event_type::CACULATE_PADDING_BYTES_BEFORE_LOCAL_VARS_IN_CURRENT_FUNC:
+            case event_type::GET_PADDING_BYTES_BEFORE_LOCAL_VARS_IN_CURRENT_FUNC:
                 res=memory_manager_->handler(event);
                 break;
             case event_type::READY_TO_PUSH_F_PARAM_CPU_REGS:
@@ -163,7 +171,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::LOAD_VAR_TO_REG:
             case event_type::WRITE_CONST_TO_REG:
             case event_type::WRITE_ADDR_TO_REG:
-            case event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK:
+            //case event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK:
             case event_type::MOVE_DATA_BETWEEN_REGS:
                 instruction_generator_->handler(event);
                 break;
@@ -176,7 +184,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
                 register_manager_->handler(event);
                 break;
             case event_type::IS_VAR_STILL_ALIVE:
-            case event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS:
+            case event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC:
                 res=intermediate_code_manager_->handler(event);
                 break;
             default:
@@ -198,7 +206,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::POP_STACK:
                 instruction_generator_->handler(event);
                 break;
-            case event_type::GET_TEMP_VARS_OVER_BASIC_BLOCK:
+            case event_type::GET_TEMP_VARS_OVER_BASIC_BLOCK_IN_CURRENT_FUNC:
                 res=intermediate_code_manager_->handler(event);
                 break;
             default:

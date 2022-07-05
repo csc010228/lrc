@@ -24,6 +24,9 @@ protected:
     //arm汇编的流图
     struct arm_flow_graph arm_flow_graph_;
 
+    //当前基本块是否处于开始状态
+    bool is_current_basic_block_starting_;
+
     //生成汇编文件序列,并将其赋值给父类Instruction_generator的asm_codes_成员
     void generate_asm_codes();
 
@@ -34,7 +37,7 @@ protected:
     void ic_to_arm_asm(struct quaternion intermediate_code);
     //获得一个operand2
     struct operand2 get_operand2(struct ic_data * ic_data,enum operand2_shift_op shift_op=operand2_shift_op::NONE,unsigned int n=0);
-    struct operand2 get_operand2(int const_int_value);
+    struct operand2 get_operand2(int const_int_value,bool get_an_empty_reg=false);
     //获取一个flexoffset
     struct flexoffset get_flexoffset(int offset);
     struct flexoffset get_flexoffset(struct ic_data * ic_data,enum flexoffset_shift_op shift_op=flexoffset_shift_op::NONE,unsigned int shift_num=0,bool is_negative=false);
@@ -93,6 +96,9 @@ protected:
     //根据一条RET中间代码生成最终的arm汇编代码
     void ret_ic_to_arm_asm(struct ic_data * result);
 
+    //把当前一个基本块开始的部分转换成arm汇编代码
+    void start_basic_block_to_arm_asm();
+
     //把一行instruction插入到当前汇编文件的最后
     inline void push_instruction(Arm_instruction * instruction);
     //把一行pseudo instruction插入到当前汇编文件的最后
@@ -107,6 +113,7 @@ protected:
     //事件处理函数
     void handle_WRITE_CONST_TO_REG(OAA const_data,reg_index reg);
     void handle_STORE_VAR_TO_MEM(struct ic_data * var,reg_index reg);
+    void handle_STORE_TEMP_VAR_TO_MEM(struct ic_data * var,reg_index reg);
     void handle_LOAD_VAR_TO_REG(struct ic_data * var,reg_index reg);
     void handle_WRITE_ADDR_TO_REG(struct ic_data * var,reg_index reg);
     void handle_PUSH_TEMP_VAR_FROM_REG_TO_STACK(struct ic_data * var,reg_index reg);
@@ -116,7 +123,7 @@ protected:
     void handle_ASSIGN_VAR(struct ic_data * from,struct ic_data * to);
     void handle_POP_STACK(size_t pop_size);
     void handle_START_FUNC(struct ic_func * func);
-    void handle_START_BASIC_BLOCK();
+    void handle_START_BASIC_BLOCK(struct ic_basic_block * basic_block);
 
 public:
     //构造函数
