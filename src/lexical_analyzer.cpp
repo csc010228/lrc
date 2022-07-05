@@ -430,10 +430,10 @@ struct token * Lexical_analyzer::get_token(enum code_of_kind cok)
             break;
         case code_of_kind::CONST_INT:
             result->attribute_value.int_value=strtol(token_string.c_str(),nullptr,base_);
-            exit(-1);
             break;
         case code_of_kind::CONST_FLOAT:
             result->attribute_value.float_value=strtof(token_string.c_str(),nullptr);
+            exit(-1);
             break;
         case code_of_kind::CONST_CHAR:
             ch=token_string.at(1);
