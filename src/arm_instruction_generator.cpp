@@ -1278,25 +1278,8 @@ void Arm_instruction_generator::func_define_ic_to_arm_asm(struct ic_func * resul
     delete context_saved_regs;
     //再计算fp寄存器的值
     push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,fp,sp,get_operand2(notify(event(event_type::GET_CURRENT_FUNC_STACK_SIZE,nullptr)).int_data)));
-    //接着把存放在r0-r3中的前4*32bits的整型函数参数入栈保存，入栈的顺序是从r3到r0（此时函数的后面的参数如果有的话已经由函数的调用者将其入栈了）
-    // f_param_regs=(list<reg_index> *)notify(event(event_type::READY_TO_PUSH_F_PARAM_CPU_REGS,(void *)result)).pointer_data;
-    // if(!f_param_regs->empty())
-    // {
-    //     push_instruction(new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::PUSH,arm_condition::NONE,arm_registers(*f_param_regs)));
-    // }
-    // delete f_param_regs;
-    // //再把存放在s0-s15中的前16*32bits的浮点函数参数入栈保存，入栈的顺序是s15到s0
-    // f_param_regs=(list<reg_index> *)notify(event(event_type::READY_TO_PUSH_F_PARAM_VFP_REGS,(void *)result)).pointer_data;
-    // if(!f_param_regs->empty())
-    // {
-    //     push_instruction(new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPUSH,arm_condition::NONE,arm_registers(*f_param_regs)));
-    // }
-    // delete f_param_regs;
     padding_bytes=notify(event(event_type::CACULATE_PADDING_BYTES_BEFORE_LOCAL_VARS_IN_CURRENT_FUNC,nullptr)).int_data;
-    // if(padding_bytes>0)
-    // {
-        push_instruction(new Arm_cpu_data_process_instruction(arm_op::SUB,arm_condition::NONE,false,sp,sp,get_operand2((int)padding_bytes)));
-    // }
+    push_instruction(new Arm_cpu_data_process_instruction(arm_op::SUB,arm_condition::NONE,false,sp,sp,get_operand2((int)padding_bytes)));
     //最后在栈中为函数的函数形参，局部变量以及那些会跨越基本块的临时变量开辟空间
     local_vars_total_byte_size=notify(event(event_type::READY_TO_PUSH_F_PARAM_PASSED_BY_REGS_AND_LOCAL_VARS_AND_TEMP_VARS_OVER_BASIC_BLOCK,(void *)result)).int_data;
     if(local_vars_total_byte_size>0)
@@ -1364,18 +1347,7 @@ void Arm_instruction_generator::ret_ic_to_arm_asm(struct ic_data * result)
         notify(event(event_type::RETURN_VAR,(void *)result));
     }
     notify(event(event_type::END_INSTRUCTION,nullptr));
-    //把使用到的临时变量退栈
-    // cout<<stack_offset<<endl;
-    // stack_offset+=notify(event(event_type::READY_TO_POP_TEMP_VARS,nullptr)).int_data;
-    // cout<<stack_offset<<endl;
-    // //然后把函数的局部变量退栈
-    // stack_offset+=notify(event(event_type::READY_TO_POP_LOCAL_VARS,nullptr)).int_data;
-    // cout<<stack_offset<<endl;
-    // //再把函数的前16*32bits的浮点型参数出栈
-    // stack_offset+=notify(event(event_type::READY_TO_POP_F_PARAM_VFP_REGS,nullptr)).int_data;
-    // cout<<stack_offset<<endl;
-    // //接着把函数的前4*4bytes的整型参数出栈
-    // stack_offset+=notify(event(event_type::READY_TO_POP_F_PARAM_CPU_REGS,nullptr)).int_data;
+    //把使用到的临时变量，局部变量，前16*32bits的浮点型参数，前4*4bytes的整型参数以及padding退栈
     stack_offset=notify(event(event_type::READY_TO_POP_WHEN_RET,nullptr)).int_data;
     if(stack_offset>0)
     {
@@ -1407,7 +1379,6 @@ void Arm_instruction_generator::ret_ic_to_arm_asm(struct ic_data * result)
                 //如果此时没有寄存器中存放着stack_offset的值，那么就需要给该值新分配一个寄存器
                 const_reg=(reg_index)notify(event(event_type::ALLOCATE_IDLE_CPU_REG,nullptr)).int_data;
                 //分配完之后还要再得到新的stack_offset，因为上面的ALLOCATE_IDLE_REG可能会使得新的临时变量入栈，从而栈顶的位置发送变化
-                //stack_offset=(size_t)(notify(event(event_type::READY_TO_POP_TEMP_VARS,nullptr)).int_data+notify(event(event_type::READY_TO_POP_LOCAL_VARS,nullptr)).int_data+notify(event(event_type::READY_TO_POP_F_PARAM_VFP_REGS,nullptr)).int_data+notify(event(event_type::READY_TO_POP_F_PARAM_CPU_REGS,nullptr)).int_data);
                 stack_offset=notify(event(event_type::READY_TO_POP_WHEN_RET,nullptr)).int_data;
                 //然后把新的stack_offset值写入寄存器中
                 event_data=new pair<OAA,reg_index>(OAA((int)stack_offset),const_reg);
@@ -1568,9 +1539,9 @@ void Arm_instruction_generator::handle_STORE_VAR_TO_MEM(struct ic_data * var,reg
     pair<reg_index,reg_index> * event_data_1;
     pair<struct ic_data * ,reg_index> * event_data_2;
 
-    if(var->is_const()/* || (var->is_tmp_var() && !notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var)).bool_data)*/ || (var->is_array_var() && !var->is_f_param()) || (var->is_array_member() && var->is_array_var()))
+    if(var->is_const() || (var->is_array_var() && !var->is_f_param()) || (var->is_array_member() && var->is_array_var()))
     {
-        //常量数据和不跨越基本块的临时变量不需要写回
+        //常量数据不需要写回
         //对于数组变量来说，只有那些函数形参才能写回
         //如果一个变量即是数组，又是数组取元素，那么就意味着这个变量其实是一个数组取元素，只不过没有全部维度都用于取元素，这种变量也是不能写回的
         return;
@@ -1913,10 +1884,6 @@ void Arm_instruction_generator::handle_CALL_FUNC(string func_name,list<struct ic
     pop_stack_size=notify(event(event_type::RET_FROM_CALLED_FUNC,(void *)event_data)).int_data;
     delete event_data;
     //调用者需要把入栈的参数清理掉即可
-    // if(r_params_passed_by_stack_bytes%8!=0)
-    // {
-    //     pop_stack_size+=4;
-    // }
     if(pop_stack_size!=0)
     {
         //此时需要将存放返回值的寄存器设置为不可获取的
@@ -2000,10 +1967,6 @@ void Arm_instruction_generator::handle_CALL_ABI_FUNC(string func_name,list<struc
     pop_stack_size=notify(event(event_type::RET_FROM_CALLED_ABI_FUNC,(void *)event_data_1)).int_data;
     delete event_data_1;
     //调用者需要把入栈的参数清理掉即可
-    // if(r_params_passed_by_stack_bytes%8!=0)
-    // {
-    //     pop_stack_size+=4;
-    // }
     if(pop_stack_size!=0)
     {
         //此时需要将存放返回值的寄存器设置为不可获取的
@@ -2165,9 +2128,6 @@ struct event Arm_instruction_generator::handler(struct event event)
         case event_type::WRITE_ADDR_TO_REG:
             handle_WRITE_ADDR_TO_REG(((pair<struct ic_data *,reg_index> *)event.pointer_data)->first,((pair<struct ic_data *,reg_index> *)event.pointer_data)->second);
             break;
-        // case event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK:
-        //     handle_PUSH_TEMP_VAR_FROM_REG_TO_STACK(((pair<struct ic_data *,reg_index> *)event.pointer_data)->first,((pair<struct ic_data *,reg_index> *)event.pointer_data)->second);
-        //     break;
         case event_type::CALL_FUNC:
             handle_CALL_FUNC(((pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > * )event.pointer_data)->first.first,((pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > * )event.pointer_data)->first.second,((pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > * )event.pointer_data)->second.first,((pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > * )event.pointer_data)->second.second);
             break;

@@ -171,7 +171,6 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::LOAD_VAR_TO_REG:
             case event_type::WRITE_CONST_TO_REG:
             case event_type::WRITE_ADDR_TO_REG:
-            //case event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK:
             case event_type::MOVE_DATA_BETWEEN_REGS:
                 instruction_generator_->handler(event);
                 break;

@@ -274,106 +274,6 @@ struct event Memory_manager::handle_READY_TO_POP_CONTEXT_RECOVERED_VFP_REGS()
     return res;
 }
 
-// struct event Memory_manager::handle_READY_TO_POP_TEMP_VARS()
-// {
-//     size_t stack_offset=0;
-//     if(!current_func_stack_space_.temp_vars.empty())
-//     {
-//         if(current_func_stack_space_.f_params_passed_by_stack_as_caller.empty())
-//         {
-//             stack_offset=current_func_stack_space_.stack_pointer-current_func_stack_space_.temp_vars.front().first;
-//         }
-//         else
-//         {
-//             stack_offset=current_func_stack_space_.f_params_passed_by_stack_as_caller.front().first-current_func_stack_space_.temp_vars.front().first;
-//         }
-//     }
-//     else
-//     {
-//         stack_offset=current_func_stack_space_.padding_bytes_after_temp_vars;
-//     }
-//     return event(event_type::RESPONSE_INT,(int)stack_offset);
-// }
-
-// struct event Memory_manager::handle_READY_TO_POP_LOCAL_VARS()
-// {
-//     size_t stack_offset=0;
-//     if(!current_func_stack_space_.local_vars.empty())
-//     {
-//         if(!current_func_stack_space_.temp_vars.empty())
-//         {
-//             stack_offset=current_func_stack_space_.temp_vars.front().first-current_func_stack_space_.local_vars.front().first;
-//         }
-//         else if(!current_func_stack_space_.f_params_passed_by_stack_as_caller.empty())
-//         {
-//             stack_offset=current_func_stack_space_.f_params_passed_by_stack_as_caller.front().first-current_func_stack_space_.local_vars.front().first;
-//         }
-//         else
-//         {
-//             stack_offset=current_func_stack_space_.stack_pointer-current_func_stack_space_.local_vars.front().first;
-//         }
-//     }
-//     else
-//     {
-//         stack_offset=current_func_stack_space_.padding_bytes_after_local_vars;
-//     }
-//     return event(event_type::RESPONSE_INT,(int)stack_offset);
-// }
-
-// struct event Memory_manager::handle_READY_TO_POP_F_PARAM_CPU_REGS()
-// {
-//     size_t stack_offset=0;
-//     if(!current_func_stack_space_.f_params_passed_by_cpu_regs_as_callee.empty())
-//     {
-//         if(!current_func_stack_space_.f_params_passed_by_vfp_regs_as_callee.empty())
-//         {
-//             stack_offset=current_func_stack_space_.f_params_passed_by_vfp_regs_as_callee.front().first-current_func_stack_space_.f_params_passed_by_cpu_regs_as_callee.front().first;
-//         }
-//         else if(!current_func_stack_space_.local_vars.empty())
-//         {
-//             stack_offset=current_func_stack_space_.local_vars.front().first-current_func_stack_space_.f_params_passed_by_cpu_regs_as_callee.front().first;
-//         }
-//         else if(!current_func_stack_space_.temp_vars.empty())
-//         {
-//             stack_offset=current_func_stack_space_.temp_vars.front().first-current_func_stack_space_.f_params_passed_by_cpu_regs_as_callee.front().first;
-//         }
-//         else if(!current_func_stack_space_.f_params_passed_by_stack_as_caller.empty())
-//         {
-//             stack_offset=current_func_stack_space_.f_params_passed_by_stack_as_caller.front().first-current_func_stack_space_.f_params_passed_by_cpu_regs_as_callee.front().first;
-//         }
-//         else
-//         {
-//             stack_offset=current_func_stack_space_.stack_pointer-current_func_stack_space_.f_params_passed_by_cpu_regs_as_callee.front().first;
-//         }
-//     }
-//     return event(event_type::RESPONSE_INT,(int)stack_offset);
-// }
-
-// struct event Memory_manager::handle_READY_TO_POP_F_PARAM_VFP_REGS()
-// {
-//     size_t stack_offset=0;
-//     if(!current_func_stack_space_.f_params_passed_by_vfp_regs_as_callee.empty())
-//     {
-//         if(!current_func_stack_space_.local_vars.empty())
-//         {
-//             stack_offset=current_func_stack_space_.local_vars.front().first-current_func_stack_space_.f_params_passed_by_vfp_regs_as_callee.front().first;
-//         }
-//         else if(!current_func_stack_space_.temp_vars.empty())
-//         {
-//             stack_offset=current_func_stack_space_.temp_vars.front().first-current_func_stack_space_.f_params_passed_by_vfp_regs_as_callee.front().first;
-//         }
-//         else if(!current_func_stack_space_.f_params_passed_by_stack_as_caller.empty())
-//         {
-//             stack_offset=current_func_stack_space_.f_params_passed_by_stack_as_caller.front().first-current_func_stack_space_.f_params_passed_by_vfp_regs_as_callee.front().first;
-//         }
-//         else
-//         {
-//             stack_offset=current_func_stack_space_.stack_pointer-current_func_stack_space_.f_params_passed_by_vfp_regs_as_callee.front().first;
-//         }
-//     }
-//     return event(event_type::RESPONSE_INT,(int)stack_offset);
-// }
-
 struct event Memory_manager::handle_READY_TO_POP_WHEN_RET()
 {
     size_t stack_offset;
@@ -613,18 +513,6 @@ struct event Memory_manager::handler(struct event event)
         case event_type::GET_PADDING_BYTES_BEFORE_LOCAL_VARS_IN_CURRENT_FUNC:
             response=handle_GET_PADDING_BYTES_BEFORE_LOCAL_VARS_IN_CURRENT_FUNC();
             break;
-        // case event_type::READY_TO_POP_TEMP_VARS:
-        //     response=handle_READY_TO_POP_TEMP_VARS();
-        //     break;
-        // case event_type::READY_TO_POP_LOCAL_VARS:
-        //     response=handle_READY_TO_POP_LOCAL_VARS();
-        //     break;
-        // case event_type::READY_TO_POP_F_PARAM_CPU_REGS:
-        //     response=handle_READY_TO_POP_F_PARAM_CPU_REGS();
-        //     break;
-        // case event_type::READY_TO_POP_F_PARAM_VFP_REGS:
-        //     response=handle_READY_TO_POP_F_PARAM_VFP_REGS();
-        //     break;
         case event_type::READY_TO_POP_WHEN_RET:
             response=handle_READY_TO_POP_WHEN_RET();
             break;

@@ -234,30 +234,11 @@ bool Register_manager::allocate_designated_reg(reg_index reg)
         designated_reg.state=reg_state::ALLOCATING;
         temp=designated_reg.var_datas;
         //需要先把寄存器中需要写回内存的数据进行写回
-        //这里目前必须先把临时变量进栈，再把局部变量写回，因为临时变量的进栈会改变栈顶指针的位置，而局部变量的写回不会
-        // for(auto var_data:temp)
-        // {
-        //     if(var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && !notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data)
-        //     {
-        //         event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
-        //         notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
-        //         delete event_data;
-        //     }
-        // }
         for(auto var_data:temp)
         {
-            //如果一个寄存器关联着若干个变量，那么需要对这些变量进行判断，把需要写回内存的进行写回
             if(var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY)
             {
                 event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
-                // if(notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data)
-                // {
-                //     notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-                // }
-                // else
-                // {
-                //     notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
-                // }
                 notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
                 delete event_data;
             }
@@ -293,25 +274,6 @@ Return
 reg_index Register_manager::allocate_idle_reg(reg_processor processor,bool get_an_empty_reg)
 {
     reg_index res;
-    // switch(processor)
-    // {
-    //     case reg_processor::CPU:
-    //         do
-    //         {
-    //             res=regs_info_.next_available_CPU_reg();
-    //         }while(!allocate_designated_reg(res));
-    //         break;
-    //     case reg_processor::VFP:
-    //         do
-    //         {
-    //             res=regs_info_.next_available_VFP_reg();
-    //         }while(!allocate_designated_reg(res));
-    //         break;
-    //     default:
-    //         break;
-    // }
-
-    
     for(auto reg:regs_info_.reg_indexs)
     {
         if(reg.second.processor==processor && (reg.second.attr==reg_attr::ARGUMENT || reg.second.attr==reg_attr::TEMP) && (!get_an_empty_reg || reg.second.state==reg_state::EMPTY) && allocate_designated_reg(reg.first))
@@ -1228,14 +1190,6 @@ void Register_manager::handle_SAVE_REGS_WHEN_CALLING_FUNC()
             if(var_data.second==reg_var_state::NOT_DIRTY && var_data.first->is_tmp_var() && tag)
             {
                 event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg.first);
-                // if(notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data)
-                // {
-                //     notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-                // }
-                // else
-                // {
-                //     notify(event(event_type::PUSH_TEMP_VAR_FROM_REG_TO_STACK,(void *)event_data));
-                // }
                 notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
                 delete event_data;
             }

@@ -147,10 +147,6 @@ private:
     struct event handle_CACULATE_PADDING_BYTES_BEFORE_LOCAL_VARS_IN_CURRENT_FUNC();
     struct event handle_GET_PADDING_BYTES_BEFORE_LOCAL_VARS_IN_CURRENT_FUNC();
     struct event handle_READY_TO_POP_CONTEXT_RECOVERED_VFP_REGS();
-    // struct event handle_READY_TO_POP_TEMP_VARS();
-    // struct event handle_READY_TO_POP_LOCAL_VARS();
-    // struct event handle_READY_TO_POP_F_PARAM_CPU_REGS();
-    // struct event handle_READY_TO_POP_F_PARAM_VFP_REGS();
     struct event handle_READY_TO_POP_WHEN_RET();
     struct event handle_GET_VAR_STACK_POS_FROM_SP(struct ic_data * var);
     struct event handle_GET_VAR_STACK_POS_FROM_FP(struct ic_data * var);

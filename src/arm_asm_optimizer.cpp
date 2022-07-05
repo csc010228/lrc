@@ -365,15 +365,7 @@ next:
             else if(assign_fp==*arm_asm)
             {
                 delete *arm_asm;
-                // for(auto reg:push_cpu_regs)
-                // {
-                //     fp_sp_deviation+=notify(event(event_type::GET_REG_BYTE_SIZE,(int)reg)).int_data;
-                // }
                 fp_sp_deviation+=push_cpu_regs_bytes;
-                // for(auto reg:used_vfp_temp_regs)
-                // {
-                //     fp_sp_deviation+=notify(event(event_type::GET_REG_BYTE_SIZE,(int)reg)).int_data;
-                // }
                 fp_sp_deviation+=used_vfp_temp_regs_bytes;
                 if(fp_sp_deviation==0)
                 {
