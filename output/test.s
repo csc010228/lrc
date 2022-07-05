@@ -13,42 +13,6 @@
 	.align 1
 	.global	__aeabi_idiv
 	.global	__aeabi_idivmod
-	.global test
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	test, %function
-test:
-	push	{fp,lr}
-	nop
-	add	fp,sp,#8
-	sub	sp,sp,#0
-	sub	sp,sp,#8
-	add	r1,sp,#4
-	str	r0,[r1]
-	str	r0,[r1]
-	add	r2,sp,#4
-	ldr	r1,[r2]
-	ldr	r0,[r1,#4]
-	bl	putint
-	movw	r0,#10
-	bl	putch
-	add	r2,sp,#4
-	ldr	r1,[r2]
-	ldr	r0,[r1,#4]
-	bl	putint
-	movw	r0,#10
-	bl	putch
-	add	sp,sp,#8
-	add	sp,sp,#0
-	nop
-	pop	{fp,pc}
-	.size	test, .-test
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
 	.global main
 	.syntax unified
 	.thumb
@@ -60,89 +24,150 @@ main:
 	nop
 	add	fp,sp,#8
 	sub	sp,sp,#0
-	sub	sp,sp,#120
-	add	r0,sp,#0
-	movw	r1,#0
-	movw	r2,#120
-	bl	memset
-	movw	r0,#1
-	add	r1,sp,#0
-	str	r0,[r1,#0]
-	movw	r0,#2
-	str	r0,[r1,#4]
-	movw	r0,#3
-	str	r0,[r1,#8]
-	movw	r0,#4
-	str	r0,[r1,#12]
-	movw	r0,#5
-	str	r0,[r1,#16]
-	movw	r0,#6
-	str	r0,[r1,#20]
-	movw	r0,#7
-	str	r0,[r1,#24]
-	movw	r0,#8
-	str	r0,[r1,#28]
-	movw	r0,#9
-	str	r0,[r1,#32]
-	movw	r0,#11
-	str	r0,[r1,#40]
-	movw	r0,#12
-	str	r0,[r1,#44]
-	movw	r0,#13
-	str	r0,[r1,#48]
-	movw	r0,#14
-	str	r0,[r1,#52]
-	movw	r0,#15
-	str	r0,[r1,#56]
-	movw	r0,#16
-	str	r0,[r1,#60]
-	movw	r0,#17
-	str	r0,[r1,#64]
-	movw	r0,#18
-	str	r0,[r1,#68]
-	movw	r0,#19
-	str	r0,[r1,#72]
-	movw	r0,#10
-	str	r0,[r1,#76]
-	movw	r0,#31
-	str	r0,[r1,#80]
-	movw	r0,#32
-	str	r0,[r1,#84]
-	movw	r0,#33
-	str	r0,[r1,#88]
-	movw	r0,#34
-	str	r0,[r1,#92]
-	movw	r0,#35
-	str	r0,[r1,#96]
-	movw	r0,#36
-	str	r0,[r1,#100]
-	movw	r0,#37
-	str	r0,[r1,#104]
-	movw	r0,#38
-	str	r0,[r1,#108]
-	movw	r0,#39
-	str	r0,[r1,#112]
-	movw	r0,#30
-	str	r0,[r1,#116]
-	str	r0,[r1,#116]
-	movw	r0,#2
-	bl	putint
-	movw	r0,#10
-	bl	putch
-	add	r0,sp,#0
-	bl	test
+	sub	sp,sp,#8
+	sub	sp,sp,#40
+	bl	getint
+	add	r1,sp,#36
+	str	r0,[r1]
+	movw	r1,#:lower16:a
+	movt	r1,#:upper16:a
+	str	r0,[r1]
+	bl	getint
+	add	r1,sp,#8
+	str	r0,[r1]
+	movw	r1,#:lower16:b
+	movt	r1,#:upper16:b
+	str	r0,[r1]
+	bl	getint
+	add	r1,sp,#24
+	str	r0,[r1]
+	movw	r1,#:lower16:c
+	movt	r1,#:upper16:c
+	str	r0,[r1]
+	bl	getint
+	add	r1,sp,#32
+	str	r0,[r1]
+	movw	r1,#:lower16:d
+	movt	r1,#:upper16:d
+	str	r0,[r1]
+	bl	getint
+	add	r1,sp,#28
+	str	r0,[r1]
+	movw	r1,#:lower16:e
+	movt	r1,#:upper16:e
+	str	r0,[r1]
 	movw	r0,#0
-	add	sp,sp,#120
+	add	r1,sp,#44
+	str	r0,[r1]
+	add	r1,sp,#8
+	ldr	r0,[r1]
+	add	r2,sp,#24
+	ldr	r1,[r2]
+	mul	r2,r0,r1
+	add	r1,sp,#36
+	ldr	r0,[r1]
+	sub	r1,r0,r2
+	add	r0,sp,#20
+	str	r1,[r0]
+	add	r0,sp,#4
+	str	r2,[r0]
+	add	r3,sp,#4
+	str	r2,[r3]
+	add	r2,sp,#20
+	str	r1,[r2]
+	add	r1,sp,#36
+	ldr	r0,[r1]
+	add	r2,sp,#24
+	ldr	r1,[r2]
+	bl	__aeabi_idiv
+	add	r1,sp,#16
+	str	r0,[r1]
+	add	r1,sp,#32
+	ldr	r0,[r1]
+	add	r2,sp,#16
+	ldr	r1,[r2]
+	sub	r2,r0,r1
+	add	r1,sp,#20
+	ldr	r0,[r1]
+	cmp	r0,r2
+	add	sp,sp,#40
+	bne	.0
+	sub	sp,sp,#16
+	movw	r1,#:lower16:a
+	movt	r1,#:upper16:a
+	ldr	r0,[r1]
+	movw	r2,#:lower16:b
+	movt	r2,#:upper16:b
+	ldr	r1,[r2]
+	mul	r2,r0,r1
+	add	r0,sp,#8
+	str	r2,[r0]
+	mov	r0,r2
+	add	r3,sp,#8
+	str	r2,[r3]
+	movw	r2,#:lower16:c
+	movt	r2,#:upper16:c
+	ldr	r1,[r2]
+	bl	__aeabi_idiv
+	add	r1,sp,#0
+	str	r0,[r1]
+	movw	r1,#:lower16:e
+	movt	r1,#:upper16:e
+	ldr	r0,[r1]
+	movw	r2,#:lower16:d
+	movt	r2,#:upper16:d
+	ldr	r1,[r2]
+	add	r2,r0,r1
+	add	r1,sp,#0
+	ldr	r0,[r1]
+	cmp	r0,r2
+	add	sp,sp,#16
+	beq	.0
+	sub	sp,sp,#16
+	movw	r1,#:lower16:a
+	movt	r1,#:upper16:a
+	ldr	r0,[r1]
+	movw	r2,#:lower16:b
+	movt	r2,#:upper16:b
+	ldr	r1,[r2]
+	add	r2,r0,r1
+	movw	r1,#:lower16:c
+	movt	r1,#:upper16:c
+	ldr	r0,[r1]
+	add	r1,r2,r0
+	add	r3,sp,#0
+	str	r2,[r3]
+	add	r2,sp,#4
+	str	r1,[r2]
+	movw	r1,#:lower16:d
+	movt	r1,#:upper16:d
+	ldr	r0,[r1]
+	movw	r2,#:lower16:e
+	movt	r2,#:upper16:e
+	ldr	r1,[r2]
+	add	r2,r0,r1
+	add	r1,sp,#4
+	ldr	r0,[r1]
+	cmp	r0,r2
+	add	sp,sp,#16
+	beq	.0
+	b	.1
+.0:
+	movw	r0,#1
+	add	r1,sp,#4
+	str	r0,[r1]
+.1:
+	add	r1,sp,#4
+	ldr	r0,[r1]
+	add	sp,sp,#8
 	add	sp,sp,#0
 	nop
 	pop	{fp,pc}
 	.size	main, .-main
-	.global x
-	.data 
-	.align 2
-	.type x,%object
-	.size x,4
-x:
-	.word 10
+	.comm a,4,4
+	.comm b,4,4
+	.comm c,4,4
+	.comm d,4,4
+	.comm e,4,4
 	.ident	"GCC: (Raspbian 8.3.0-6+rpi1) 8.3.0"
 	.section	.note.GNU-stack,"",%progbits

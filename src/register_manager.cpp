@@ -236,13 +236,13 @@ bool Register_manager::allocate_designated_reg(reg_index reg)
         //需要先把寄存器中需要写回内存的数据进行写回
         for(auto var_data:temp)
         {
-            if(var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY)
+            /*if(var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY)
             {
                 event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
                 notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
                 delete event_data;
             }
-            else if(var_data.second==reg_var_state::DIRTY)
+            else */if(var_data.second==reg_var_state::DIRTY)
             {
                 regs_info_.reg_indexs.at(reg).set_value_NOT_DIRTY(var_data.first);
                 //如果此时要获取的寄存器中存储的变量值是脏值，那么就要把该寄存器写回到内存中
@@ -573,11 +573,11 @@ reg_index Register_manager::get_reg_for_writing_var(struct ic_data * var,enum re
             regs_info_.attach_value_to_reg(var,reg);
         }
     }
-    //如果是写一个临时变量，那么我们也不会将这个临时变量存放的寄存器标记为脏值，而只是标记为被使用了而已，因为临时变量只能赋值一次
-    if(!var->is_tmp_var())
-    {
+    // //如果是写一个临时变量，那么我们也不会将这个临时变量存放的寄存器标记为脏值，而只是标记为被使用了而已，因为临时变量只能赋值一次
+    // if(!var->is_tmp_var())
+    // {
         regs_info_.reg_indexs.at(reg).set_value_DIRTY(var);
-    }
+    // }
     //把该寄存器设置为被当前的指令所使用
     set_got_by_current_instruction(reg);
     return reg;
@@ -811,10 +811,10 @@ void Register_manager::get_designated_reg_for_writing_var(reg_index reg,struct i
             }
         }
     }
-    if(!var->is_tmp_var())
-    {
+    // if(!var->is_tmp_var())
+    // {
         designated_reg.set_value_DIRTY(var);
-    }
+    // }
     //把该寄存器设置为被当前的指令所使用
     set_got_by_current_instruction(reg);
 }
@@ -1006,7 +1006,8 @@ void Register_manager::handle_END_BASIC_BLOCK_WITHOUT_FLAG()
             temp=reg.second.var_datas;
             for(auto var_data:temp)
             {
-                if(var_data.second==reg_var_state::DIRTY || (var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data))
+                //if(var_data.second==reg_var_state::DIRTY || (var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data))
+                if(var_data.second==reg_var_state::DIRTY && (!var_data.first->is_tmp_var() || notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data))
                 {
                     if(written_back_vars.find(var_data.first)==written_back_vars.end())
                     {
@@ -1171,7 +1172,7 @@ void Register_manager::handle_SAVE_REGS_WHEN_CALLING_FUNC()
     set<struct ic_data * > written_back_vars;
     pair<struct ic_data *,reg_index> * event_data;
     map<struct ic_data * ,enum reg_var_state> temp;
-    bool tag;
+    // bool tag;
     for(auto reg:regs_info_.reg_indexs)
     {
         //在函数调用的时候需要保存回内存的数据有：
@@ -1184,19 +1185,33 @@ void Register_manager::handle_SAVE_REGS_WHEN_CALLING_FUNC()
         //目前先把所有寄存器中的所有的DIRTY_VALUE值全部进行写回保存，并把它们设置成NOT_DIRTY，因为之后写入参数的时候可能会用到它们
         //同时把所有参数寄存器中的临时变量写回内存
         temp=reg.second.var_datas;
-        tag=(reg.second.attr==reg_attr::ARGUMENT);
+        // tag=(reg.second.attr==reg_attr::ARGUMENT);
+        // for(auto var_data:temp)
+        // {
+        //     if(var_data.second==reg_var_state::NOT_DIRTY && var_data.first->is_tmp_var() && tag)
+        //     {
+        //         event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg.first);
+        //         notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
+        //         delete event_data;
+        //     }
+        // }
+        // for(auto var_data:temp)
+        // {
+        //     if(var_data.second==reg_var_state::DIRTY || (var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data))
+        //     {
+        //         reg.second.set_value_NOT_DIRTY(var_data.first);
+        //         if(written_back_vars.find(var_data.first)==written_back_vars.end())
+        //         {
+        //             event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg.first);
+        //             notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
+        //             delete event_data;
+        //             written_back_vars.insert(var_data.first);
+        //         }
+        //     }
+        // }
         for(auto var_data:temp)
         {
-            if(var_data.second==reg_var_state::NOT_DIRTY && var_data.first->is_tmp_var() && tag)
-            {
-                event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg.first);
-                notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-                delete event_data;
-            }
-        }
-        for(auto var_data:temp)
-        {
-            if(var_data.second==reg_var_state::DIRTY || (var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data))
+            if(var_data.second==reg_var_state::DIRTY)
             {
                 reg.second.set_value_NOT_DIRTY(var_data.first);
                 if(written_back_vars.find(var_data.first)==written_back_vars.end())
@@ -1333,7 +1348,7 @@ void Register_manager::handle_RET_FROM_CALLED_FUNC(struct ic_data * return_value
             //调用的函数可能会改变的数组形参对应的实参取元素
             //和上述两类变量有关的变量
 
-            //目前是把存放着全局变量和数值取元素都和它们的临时寄存器解除关联
+            //目前是把存放着全局变量和数数组取元素都和它们的临时寄存器解除关联
             for(auto var_data:reg.second.var_datas)
             {
                 if(var_data.second!=reg_var_state::ADDR && (var_data.first->is_array_member() || var_data.first->is_global()))
@@ -1347,10 +1362,10 @@ void Register_manager::handle_RET_FROM_CALLED_FUNC(struct ic_data * return_value
     if(return_value)
     {
         regs_info_.attach_value_to_reg(return_value,return_reg);
-        if(!return_value->is_tmp_var())
-        {
+        // if(!return_value->is_tmp_var())
+        // {
             regs_info_.reg_indexs.at(return_reg).set_value_DIRTY(return_value);
-        }
+        // }
     }
 }
 
@@ -1368,10 +1383,10 @@ void Register_manager::handle_RET_FROM_CALLED_ABI_FUNC(struct ic_data * return_v
     if(return_value)
     {
         regs_info_.attach_value_to_reg(return_value,return_reg);
-        if(!return_value->is_tmp_var())
-        {
+        // if(!return_value->is_tmp_var())
+        // {
             regs_info_.reg_indexs.at(return_reg).set_value_DIRTY(return_value);
-        }
+        // }
     }
 }
 
@@ -1455,9 +1470,7 @@ void Register_manager::handle_ATTACH_VAR_VALUE_TO_REG(struct ic_data * var_data,
 void Register_manager::handle_ATTACH_VAR_VALUE_TO_REG_THEN_SET_DIRTY(struct ic_data * var,reg_index reg)
 {
     set<reg_index> suspicious_regs;
-
     store_DIRTY_values_before_writing_var(var);
-
     suspicious_regs=regs_info_.get_var_owned_value_regs(var);
     for(auto suspicious_reg:suspicious_regs)
     {

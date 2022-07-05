@@ -101,7 +101,7 @@ struct reg
 
     void set_value_DIRTY(struct ic_data * var)
     {
-        if(!var->is_tmp_var() && var_datas.find(var)!=var_datas.end() && var_datas.at(var)==reg_var_state::NOT_DIRTY)
+        if(var_datas.find(var)!=var_datas.end() && var_datas.at(var)==reg_var_state::NOT_DIRTY)
         {
             var_datas.at(var)=reg_var_state::DIRTY;
         }
