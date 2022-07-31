@@ -173,8 +173,6 @@ struct ic_func
 
     struct ic_data * get_f_param(string f_param_name) const;
 
-    list<struct ic_data * > get_f_params() const;
-
     bool add_f_param(struct ic_data * f_param);
 
     void set_scope(struct ic_scope * scope);
@@ -344,6 +342,9 @@ public:
 
     //获取一个函数会直接调用的所有函数
     set<struct ic_func * > get_func_direct_calls(struct ic_func * func);
+
+    //根据函数名判断一个函数是否是定义的函数获取库函数
+    bool is_a_defined_or_library_func(string func_name) const;
 };
 
 

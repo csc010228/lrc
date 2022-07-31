@@ -105,6 +105,8 @@ struct quaternion_with_info
     set<struct ic_data * > vague_defs;
     //该中间代码使用的数据（可以有多个）
     set<struct ic_data * > uses;
+    //该中间代码涉及的常量数据
+    //set<struct ic_data * > const_datas;
 
     //ud-链信息
     map<struct ic_data *,set<ic_pos> > ud_chain;
@@ -146,6 +148,8 @@ struct ic_basic_block
     vector<struct quaternion_with_info> ic_sequence;
     //该基本块的后续基本块
     struct ic_basic_block * sequential_next,* jump_next;
+    //该基本块的前驱基本块
+    set<struct ic_basic_block * > precursors;
     //该基本块的所属函数流图
     struct ic_func_flow_graph * belong_func_flow_graph;
     //该基本块中的数组变量和其数组元素（包括数组变量）的映射

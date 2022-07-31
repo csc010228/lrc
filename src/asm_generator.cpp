@@ -26,10 +26,19 @@ Asm_generator::Asm_generator()
 Parameters
 ----------
 regs:目标机器的寄存器信息
+flag_reg:标志寄存器
+optimize:是否需要优化
 */
-bool Asm_generator::init_register_manager(set<struct reg> regs,struct flag_reg flag_reg)
+bool Asm_generator::create_register_manager(set<struct reg> regs,struct flag_reg flag_reg,bool optimize)
 {
-    register_manager_=new Register_manager(regs,flag_reg);
+    if(optimize)
+    {
+        register_manager_=new Graph_coloring_register_manager(regs,flag_reg);
+    }
+    else
+    {
+        register_manager_=new Local_register_manager(regs,flag_reg);
+    }
     register_manager_->set_mediator(this);
     return register_manager_->is_init_successful();
 }
@@ -41,7 +50,7 @@ Parameters
 ----------
 memory_info:内存信息
 */
-bool Asm_generator::init_memory_manager(string memory_info)
+bool Asm_generator::create_memory_manager(string memory_info)
 {
     memory_manager_=new Memory_manager(memory_info);
     memory_manager_->set_mediator(this);
@@ -51,7 +60,7 @@ bool Asm_generator::init_memory_manager(string memory_info)
 /*
 初始化中间代码管理器
 */
-bool Asm_generator::init_intermediate_code_manager()
+bool Asm_generator::create_intermediate_code_manager()
 {
     intermediate_code_manager_=new Intermediate_code_manager;
     intermediate_code_manager_->set_mediator(this);
@@ -65,6 +74,7 @@ Parameters
 ----------
 regs:目标机器下的可用的寄存器以及其类型
 memory_info:目标机器的内存信息
+optimize:是否需要优化
 */
 bool Asm_generator::init(set<struct reg> regs,struct flag_reg flag_reg,string memory_info,bool optimize)
 {
@@ -73,7 +83,7 @@ bool Asm_generator::init(set<struct reg> regs,struct flag_reg flag_reg,string me
     {
         regs_info.insert(make_pair(i.index,i.name));
     }
-    return init_register_manager(regs,flag_reg) && init_memory_manager(memory_info) && init_instruction_generator(regs_info) && init_intermediate_code_manager() && init_asm_optimizer(optimize);
+    return create_register_manager(regs,flag_reg,optimize) && create_memory_manager(memory_info) && create_instruction_generator(regs_info) && create_intermediate_code_manager() && create_asm_optimizer(optimize) && create_abi_manager() && init_components();
 }
 
 /*

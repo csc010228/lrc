@@ -474,6 +474,12 @@ public:
         return type_==arm_asm_file_line_type::PSEUDO_INSTRUCTION;
     };
 
+    virtual void replace_regs(const map<reg_index,reg_index> & regs_map);
+
+    // set<reg_index> get_all_destination_regs(bool as_virtual_target_code) const;
+
+    // set<reg_index> get_all_source_regs(bool as_virtual_target_code) const;
+
     //转换成字符串
     virtual string to_string() const =0;
 };
@@ -544,6 +550,12 @@ public:
     {
         return source_registers_;
     };
+
+    void replace_regs(const map<reg_index,reg_index> & regs_map);
+
+    bool is_cpu_instruction() const;
+
+    bool is_vfp_instruction() const;
 };
 
 //arm浮点数的精度
@@ -624,6 +636,8 @@ public:
         return reg_;
     };
 
+    void replace_regs(const map<reg_index,reg_index> & regs_map);
+
     //转换成字符串
     string to_string() const;
 };
@@ -674,6 +688,16 @@ public:
     {
 
     };
+
+    bool is_branch_instruction() const;
+
+    bool is_data_process_instruction() const;
+
+    bool is_multiple_registers_load_and_store_instruction() const;
+
+    bool is_single_register_load_and_store_instruction() const;
+
+    void replace_regs(const map<reg_index,reg_index> & regs_map);
 };
 
 //arm的vfp指令
@@ -689,6 +713,14 @@ public:
     {
 
     };
+
+    bool is_register_transfer_instruction() const;
+
+    bool is_data_process_instruction() const;
+
+    bool is_multiple_registers_load_and_store_instruction() const;
+
+    bool is_single_register_load_and_store_instruction() const;
 };
 
 //arm的branch类型的instruction
@@ -795,6 +827,12 @@ public:
 
     };
 
+    //获取数据类型
+    inline enum arm_data_process_instruction_data_type get_data_type() const
+    {
+        return data_type_;
+    };
+
     //获取operand2
     inline struct operand2 get_operand2() const
     {
@@ -818,6 +856,8 @@ public:
             update_flags_=new_update_flags;
         }
     };
+
+    void replace_regs(const map<reg_index,reg_index> & regs_map);
 
     //转换成字符串
     string to_string() const;
@@ -849,6 +889,18 @@ public:
     ~Arm_cpu_multiple_registers_load_and_store_instruction()
     {
 
+    };
+
+    //查看该指令是否是store指令
+    inline bool is_store() const
+    {
+        return op_==arm_op::STM || op_==arm_op::PUSH;
+    };
+
+    //查看该指令是否是load指令
+    inline bool is_load() const
+    {
+        return op_==arm_op::LDM || op_==arm_op::POP;
     };
 
     //转换成字符串
@@ -920,6 +972,20 @@ public:
     {
         return flexoffset_;
     };
+
+    //查看该指令是否是store指令
+    inline bool is_store() const
+    {
+        return op_==arm_op::STR;
+    };
+
+    //查看该指令是否是load指令
+    inline bool is_load() const
+    {
+        return op_==arm_op::LDR;
+    };
+
+    void replace_regs(const map<reg_index,reg_index> & regs_map);
 
     //转换成字符串
     string to_string() const;
@@ -1037,6 +1103,18 @@ public:
 
     };
 
+    //查看该指令是否是store指令
+    inline bool is_store() const
+    {
+        return op_==arm_op::VSTM || op_==arm_op::VPOP;
+    };
+
+    //查看该指令是否是load指令
+    inline bool is_load() const
+    {
+        return op_==arm_op::VLDM || op_==arm_op::VPUSH;
+    };
+
     //转换成字符串
     string to_string() const;
 };
@@ -1071,24 +1149,6 @@ private:
     };
 
 public:
-    // //zero offset
-    // Arm_vfp_single_register_load_and_store_instruction(enum arm_op op,enum arm_condition cond,enum precision precision,reg_index Fd,reg_index Rd):Arm_vfp_instruction(op,cond,arm_registers(1,Fd),arm_registers(1,Rd)),single_register_load_and_store_type_(arm_single_register_load_and_store_type::ZERO_OFFSET),precision_(precision)
-    // {
-
-    // };
-
-    // //pre-indexed offset
-    // Arm_vfp_single_register_load_and_store_instruction(enum arm_op op,enum arm_condition cond,enum precision precision,reg_index Fd,reg_index Rd,struct flexoffset flexoffset):Arm_vfp_instruction(op,cond,arm_registers(1,Fd),arm_registers(1,Rd)),single_register_load_and_store_type_(arm_single_register_load_and_store_type::PRE_INDEXED_OFFSET),flexoffset_(flexoffset),precision_(precision)
-    // {
-
-    // };
-
-    // //program-relative
-    // Arm_vfp_single_register_load_and_store_instruction(enum arm_op op,enum arm_condition cond,enum precision precision,reg_index Fd,string label):Arm_vfp_instruction(op,cond,arm_registers(1,Fd),arm_registers(0)),single_register_load_and_store_type_(arm_single_register_load_and_store_type::PROGRAM_RELATIVE),label_(label),precision_(precision)
-    // {
-
-    // };
-
     //only Rn
     Arm_vfp_single_register_load_and_store_instruction(enum arm_op op,enum arm_condition cond,enum precision precision,reg_index Fd,reg_index Rd):Arm_vfp_instruction(op,cond,arm_registers(1,Fd),arm_registers(1,Rd)),single_register_load_and_store_type_(vfp_single_register_load_and_store_type::RN),precision_(precision)
     {
@@ -1112,6 +1172,18 @@ public:
 
     };
 
+    //查看该指令是否是store指令
+    inline bool is_store() const
+    {
+        return op_==arm_op::VSTR;
+    };
+
+    //查看该指令是否是load指令
+    inline bool is_load() const
+    {
+        return op_==arm_op::VLDR;
+    };
+
     //转换成字符串
     string to_string() const;
 };
@@ -1119,7 +1191,7 @@ public:
 //arm流图中的基本块
 struct arm_basic_block
 {
-    arm_basic_block()
+    arm_basic_block(struct arm_func_flow_graph * belong_arm_func_flow_graph):belong_arm_func_flow_graph(belong_arm_func_flow_graph)
     {
         sequential_next=nullptr;
         jump_next=nullptr;
@@ -1142,17 +1214,25 @@ struct arm_basic_block
     //往汇编基本块中添加一条arm汇编
     void add_arm_asm(Arm_asm_file_line * arm_asm);
 
+    //获取该基本块的所有后继基本块
+    set<struct arm_basic_block * > get_successors() const;
+
+    //获取该基本块的所有前驱基本块
+    set<struct arm_basic_block * > get_precursors() const;
+
     //转换成字符串
     list<string> to_string();
 
+    struct arm_func_flow_graph * belong_arm_func_flow_graph;
     list<Arm_asm_file_line * > arm_sequence;
     struct arm_basic_block * sequential_next,* jump_next;
+    set<struct arm_basic_block * > precursors;
 };
 
 //arm汇编函数的流图
 struct arm_func_flow_graph
 {
-    arm_func_flow_graph(struct ic_func * function):function(function)
+    arm_func_flow_graph(struct ic_func_flow_graph * function):function(function),current_arm_basic_block(nullptr)
     {
 
     };
@@ -1171,11 +1251,16 @@ struct arm_func_flow_graph
     //往汇编函数流图中添加一条arm汇编
     void add_arm_asm(Arm_asm_file_line * arm_asm,bool new_basic_block);
 
+    //获取当前汇编函数的行数
+    size_t get_line_num() const;
+
     //转换成字符串
     list<string> to_string();
 
     //函数
-    struct ic_func * function;
+    struct ic_func_flow_graph * function;
+    //当前正在生成的基本块
+    struct arm_basic_block * current_arm_basic_block;
     //函数流图中的所有基本块序列，顺序就是中间代码的书写顺序
     list<struct arm_basic_block * > basic_blocks;
 };
@@ -1183,7 +1268,7 @@ struct arm_func_flow_graph
 //arm汇编的流图
 struct arm_flow_graph
 {
-    arm_flow_graph()
+    arm_flow_graph():current_arm_func_flow_graph(nullptr)
     {
         
     };
@@ -1200,7 +1285,7 @@ struct arm_flow_graph
     //参数arm_asm是要插入的汇编语句
     //参数new_basic_block如果不是false，就表示要新建一个基本块，将arm_asm插入到这个基本块中
     //参数new_func如果不是nullptr，就表示要新建一个函数，将arm_asm插入到这个函数中，否则的话就表示将arm_asm插入到当前函数中
-    void add_arm_asm_to_func(Arm_asm_file_line * arm_asm,bool new_basic_block,struct ic_func * new_func=nullptr);
+    void add_arm_asm_to_func(Arm_asm_file_line * arm_asm,bool new_basic_block,struct ic_func_flow_graph * new_func=nullptr);
 
     //把一句arm汇编加入到全局变量定义中
     void add_arm_asm_to_global(Arm_asm_file_line * arm_asm);
@@ -1208,10 +1293,14 @@ struct arm_flow_graph
     //转换成字符串
     list<string> to_string();
 
+    //当前正在生成的arm函数流图
+    struct arm_func_flow_graph * current_arm_func_flow_graph;
+
     //所有函数的流图，这些流图之间相互独立
     set<struct arm_func_flow_graph * > func_flow_graphs;
     //全局定义域流图（里面的语句只能是变量定义语句）
-    struct arm_basic_block global_basic_block;
+    list<Arm_asm_file_line * > global_defines;
+    //struct arm_basic_block global_basic_block;
 };
 
 #endif //__ARM_ASM_H

@@ -694,7 +694,6 @@ bool DAG::common_expression_delete(enum ic_op op,struct ic_data * result,struct 
         arg2_node=get_DAG_node(arg2);
         //查看两个操作数经过复制传播之后是否具有公共子表达式
         common_fathers=map_key_intersection(arg1_node->fathers,arg2_node->fathers);
-        //set_intersection(arg1_node->fathers.begin(),arg1_node->fathers.end(),arg2_node->fathers.begin(),arg2_node->fathers.end(),inserter(common_fathers,common_fathers.begin()));
         for(auto father:common_fathers)
         {
             if(op==father->related_op && (father->get_left_child()==arg1_node && father->get_right_child()==arg2_node) || (father->get_left_child()==arg2_node && father->get_right_child()==arg1_node))

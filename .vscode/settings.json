@@ -50,6 +50,9 @@
         "ratio": "cpp",
         "system_error": "cpp",
         "utility": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "compare": "cpp",
+        "cwchar": "cpp",
+        "algorithm": "cpp"
     }
 }

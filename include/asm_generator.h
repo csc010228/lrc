@@ -12,8 +12,12 @@
 #include "intermediate_code_manager.h"
 #include "instruction_generator.h"
 #include "register_manager.h"
+#include "local_register_manager.h"
+#include "global_register_manager.h"
+#include "graph_coloring_register_manager.h"
 #include "memory_manager.h"
 #include "asm_optimizer.h"
+#include "abi_manager.h"
 
 //汇编代码生成器
 class Asm_generator
@@ -35,20 +39,29 @@ protected:
     //内存管理器
     Memory_manager * memory_manager_;
 
+    //ABI管理器
+    Abi_manager * abi_manager_;
+
     //初始化寄存器管理器
-    virtual bool init_register_manager(set<struct reg> regs,struct flag_reg flag_reg);
+    virtual bool create_register_manager(set<struct reg> regs,struct flag_reg flag_reg,bool optimize);
 
     //初始化内存管理器
-    virtual bool init_memory_manager(string memory_info);
+    virtual bool create_memory_manager(string memory_info);
 
     //初始化中间代码管理器
-    virtual bool init_intermediate_code_manager();
+    virtual bool create_intermediate_code_manager();
 
     //初始化汇编指令优化器
-    virtual bool init_asm_optimizer(bool optimize)=0;
+    virtual bool create_asm_optimizer(bool optimize)=0;
+
+    //初始化ABI管理器
+    virtual bool create_abi_manager()=0;
 
     //初始化汇编指令生成器
-    virtual bool init_instruction_generator(map<reg_index,string> regs_info)=0;
+    virtual bool create_instruction_generator(map<reg_index,string> regs_info)=0;
+
+    //初始化各个组件
+    virtual bool init_components()=0;
 
 public:
     //构造函数

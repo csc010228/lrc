@@ -734,15 +734,17 @@ void ic_basic_block::clear_ic_sequence()
 
 set<struct ic_basic_block * > ic_basic_block::get_precursors()
 {
-    set<struct ic_basic_block * > res;
-    for(auto basic_block:belong_func_flow_graph->basic_blocks)
+    if(precursors.empty())
     {
-        if(basic_block->sequential_next==this || basic_block->jump_next==this)
+        for(auto basic_block:belong_func_flow_graph->basic_blocks)
         {
-            res.insert(basic_block);
+            if(basic_block->sequential_next==this || basic_block->jump_next==this)
+            {
+                precursors.insert(basic_block);
+            }
         }
     }
-    return res;
+    return precursors;
 }
 
 set<struct ic_basic_block * > ic_basic_block::get_successors()
@@ -1535,6 +1537,9 @@ Parameters
 ----------
 func:要优化的函数流图
 */
+
+// TO-DO
+//还需要对全局变量进行判断
 void Ic_optimizer::globale_constant_folding(struct ic_func_flow_graph * func)
 {
     static Symbol_table * symbol_table=Symbol_table::get_instance();

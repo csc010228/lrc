@@ -327,11 +327,6 @@ struct ic_data * ic_func::get_f_param(string f_param_name) const
     return res;
 }
 
-list<struct ic_data * > ic_func::get_f_params() const
-{
-    return (*f_params);
-}
-
 bool ic_func::add_f_param(struct ic_data * f_param)
 {
     bool res=true;
@@ -882,11 +877,32 @@ called_func:被调用的函数
 */
 void Symbol_table::add_func_direct_calls(struct ic_func * func,struct ic_func * called_func)
 {
+    set<struct ic_data * > globals_and_f_params;
     if(funcs_direct_calls_.find(func)==funcs_direct_calls_.end())
     {
         funcs_direct_calls_.insert(make_pair(func,set<struct ic_func * >()));
     }
     funcs_direct_calls_.at(func).insert(called_func);
+    //除了增加函数直接调用的信息，还需要增加该函数会更改和使用的全局变量信息
+    if(func!=called_func)
+    {
+        globals_and_f_params=get_func_def_globals_and_f_params(called_func);
+        for(auto var:globals_and_f_params)
+        {
+            if(var->is_global())
+            {
+                add_func_def_globals_and_f_params(func,var);
+            }
+        }
+        globals_and_f_params=get_func_use_globals_and_f_params(called_func);
+        for(auto var:globals_and_f_params)
+        {
+            if(var->is_global())
+            {
+                add_func_use_globals_and_f_params(func,var);
+            }
+        }
+    }
 }
 
 /*
@@ -950,6 +966,11 @@ set<struct ic_func * > Symbol_table::get_func_direct_calls(struct ic_func * func
         res=funcs_direct_calls_.at(func);
     }
     return res;
+}
+
+bool Symbol_table::is_a_defined_or_library_func(string func_name) const
+{
+    return func_entry(func_name)!=nullptr;
 }
 
 //==========================================================================//

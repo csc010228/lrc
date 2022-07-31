@@ -39,7 +39,7 @@ void regs_info::clear()
     var_value_regs_map.clear();
     const_value_regs_map.clear();
     var_addr_regs_map.clear();
-    for(auto reg:reg_indexs)
+    for(auto & reg:reg_indexs)
     {
         reg.second.clear();
     }
@@ -183,6 +183,51 @@ reg_index regs_info::next_available_VFP_reg()
     return res;
 }
 
+reg_index regs_info::get_max_reg_index() const
+{
+    reg_index res=0;
+    for(auto reg:reg_indexs)
+    {
+        if(reg.first>res)
+        {
+            res=reg.first;
+        }
+    }
+    return res;
+}
+
+size_t regs_info::get_CPU_ARGUMENT_reg_num() const
+{
+    static size_t cpu_argument_reg_num=0;
+    if(cpu_argument_reg_num==0)
+    {
+        for(auto reg:reg_indexs)
+        {
+            if(reg.second.processor==reg_processor::CPU && reg.second.attr==reg_attr::ARGUMENT)
+            {
+                cpu_argument_reg_num++;
+            }
+        }
+    }
+    return cpu_argument_reg_num;
+}
+
+size_t regs_info::get_VFP_ARGUMENT_reg_num() const
+{
+    static size_t vfp_argument_reg_num=0;
+    if(vfp_argument_reg_num==0)
+    {
+        for(auto reg:reg_indexs)
+        {
+            if(reg.second.processor==reg_processor::VFP && reg.second.attr==reg_attr::ARGUMENT)
+            {
+                vfp_argument_reg_num++;
+            }
+        }
+    }
+    return vfp_argument_reg_num;
+}
+
 //==========================================================================//
 
 
@@ -201,86 +246,50 @@ Register_manager::Register_manager(set<struct reg> regs,struct flag_reg flag_reg
 {
     regs_info_=regs_info(regs,flag_reg);
     is_init_successful_=true;
+    current_func_=nullptr;
 }
 
-/*
-检查该寄存器管理员是否初始化成功
-*/
-bool Register_manager::is_init_successful()
+Register_manager::~Register_manager()
 {
-    return is_init_successful_;
+
 }
 
-/*
-将一个指定的寄存器设置为新分配
-
-Parameters
-----------
-reg:要获取的寄存器编号
-
-Return
-------
-如果获取成功就返回true，否则返回false
-*/
-bool Register_manager::allocate_designated_reg(reg_index reg)
+list<reg_index> Register_manager::get_func_s_regs_holding_f_params_by_func_name(string func_name)
 {
-    bool res=false;
-    struct reg & designated_reg=regs_info_.reg_indexs.at(reg);
-    pair<struct ic_data *,reg_index> * event_data;
-    map<struct ic_data * ,enum reg_var_state> temp;
-    //如果要分配的寄存器正在被目前所生成的指令所使用，或者当前要分配的寄存器正在被分配，那么就无法将其获取
-    if(!is_got_by_current_instruction(reg) && designated_reg.state!=reg_state::ALLOCATING)
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
+    static size_t CPU_ARGUMENT_reg_num=regs_info_.get_CPU_ARGUMENT_reg_num(),VFP_ARGUMENT_reg_num=regs_info_.get_VFP_ARGUMENT_reg_num();
+    struct ic_func * func;
+    list<reg_index> res;
+    size_t int_f_params_num=0,float_f_params_num=0;
+    reg_index reg;
+    if(symbol_table->is_a_defined_or_library_func(func_name))
     {
-        designated_reg.state=reg_state::ALLOCATING;
-        temp=designated_reg.var_datas;
-        //需要先把寄存器中需要写回内存的数据进行写回
-        for(auto var_data:temp)
+        func=symbol_table->func_entry(func_name);
+        for(auto f_param:(*func->f_params))
         {
-            /*if(var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY)
+            if(f_param->get_data_type()==language_data_type::INT || f_param->is_array_var())
             {
-                event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
-                notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-                delete event_data;
+                //整型参数和数组参数都是放在r0-r3中
+                if(int_f_params_num<CPU_ARGUMENT_reg_num)
+                {
+                    res.push_back(regs_info_.reg_names.at("r"+to_string(int_f_params_num)));
+                    int_f_params_num++;
+                }
             }
-            else */if(var_data.second==reg_var_state::DIRTY)
+            else if(f_param->get_data_type()==language_data_type::FLOAT)
             {
-                regs_info_.reg_indexs.at(reg).set_value_NOT_DIRTY(var_data.first);
-                //如果此时要获取的寄存器中存储的变量值是脏值，那么就要把该寄存器写回到内存中
-                event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
-                notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-                delete event_data;
+                //非数组的浮点类型参数放在s0-s15中
+                if(float_f_params_num<VFP_ARGUMENT_reg_num)
+                {
+                    res.push_back(regs_info_.reg_names.at("s"+to_string(float_f_params_num)));
+                    float_f_params_num++;
+                }
             }
         }
-        //将这个寄存器上所有关联的常量值，变量值，变量地址全都解除关联
-        regs_info_.unattach_reg_s_all_data(reg);
-        res=true;
     }
-
-    return res;
-}
-
-/*
-新分配一个空闲的寄存器
-
-Prarmaters
-----------
-process:要获取的寄存器的类型
-get_an_empty_reg:如果指定为true，表示要获取一个没有被使用过的寄存器
-
-Return
-------
-返回获取到的寄存器的编号
-*/
-reg_index Register_manager::allocate_idle_reg(reg_processor processor,bool get_an_empty_reg)
-{
-    reg_index res;
-    for(auto reg:regs_info_.reg_indexs)
+    else if(notify(event(event_type::IS_AN_ABI_FUNC,(void *)(&func_name))).bool_data)
     {
-        if(reg.second.processor==processor && (reg.second.attr==reg_attr::ARGUMENT || reg.second.attr==reg_attr::TEMP) && (!get_an_empty_reg || reg.second.state==reg_state::EMPTY) && allocate_designated_reg(reg.first))
-        {
-            res=reg.first;
-            break;
-        }
+        res=*((list<reg_index> *)notify(event(event_type::GET_AN_ABI_FUNC_S_PARAM_REGS,(void *)(&func_name))).pointer_data);
     }
     return res;
 }
@@ -321,6 +330,60 @@ bool Register_manager::is_got_by_current_instruction(reg_index reg)
         }
     }
     return false;
+}
+
+list<struct ic_data * > Register_manager::get_func_s_f_params_in_memory(struct ic_func * func)
+{
+    static size_t cpu_argument_reg_num=regs_info_.get_CPU_ARGUMENT_reg_num();
+    static size_t vfp_argument_reg_num=regs_info_.get_VFP_ARGUMENT_reg_num();
+    size_t param_num_passed_by_cpu_reg=0,param_num_passed_by_vfp_reg=0;
+    list<struct ic_data * > res;
+    for(auto f_param:(*func->f_params))
+    {
+        if(f_param->is_array_var() || f_param->get_data_type()==language_data_type::INT)
+        {
+            param_num_passed_by_cpu_reg++;
+            if(param_num_passed_by_cpu_reg>cpu_argument_reg_num)
+            {
+                res.push_back(f_param);
+            }
+        }
+        else if(f_param->get_data_type()==language_data_type::FLOAT)
+        {
+            param_num_passed_by_vfp_reg++;
+            if(param_num_passed_by_vfp_reg<=vfp_argument_reg_num)
+            {
+                res.push_back(f_param);
+            }
+        }
+    }
+    return res;
+}
+
+/*
+新分配一个空闲的寄存器
+
+Prarmaters
+----------
+process:要获取的寄存器的类型
+get_an_empty_reg:如果指定为true，表示要获取一个没有被使用过的寄存器
+
+Return
+------
+返回获取到的寄存器的编号
+*/
+reg_index Register_manager::allocate_idle_reg(reg_processor processor,bool get_an_empty_reg)
+{
+    reg_index res;
+    for(auto reg:regs_info_.reg_indexs)
+    {
+        if(reg.second.processor==processor && (reg.second.attr==reg_attr::ARGUMENT || reg.second.attr==reg_attr::TEMP) && (!get_an_empty_reg || reg.second.state==reg_state::EMPTY) && allocate_designated_reg(reg.first))
+        {
+            res=reg.first;
+            break;
+        }
+    }
+    return res;
 }
 
 
@@ -381,6 +444,26 @@ end:
     return reg;
 }
 
+void Register_manager::store_array_s_all_DIRTY_members_and_set_them_NOT_DIRTY(struct ic_data * array,bool deal_with_const_offset_member)
+{
+    pair<struct ic_data *,reg_index> * event_data;
+    map<struct ic_data *,enum reg_var_state> temp;
+    for(auto reg_info:regs_info_.reg_indexs)
+    {
+        temp=reg_info.second.var_datas;
+        for(auto var_data:temp)
+        {
+            if(var_data.first->is_array_member() && !var_data.first->is_array_var() && var_data.first->get_belong_array()==array && var_data.second==reg_var_state::DIRTY)
+            {
+                reg_info.second.set_value_NOT_DIRTY(var_data.first);
+                event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg_info.first);
+                notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
+                delete event_data;
+            }
+        }
+    }
+}
+
 /*
 为了读取某一个变量而获取一个寄存器
 
@@ -399,8 +482,6 @@ reg_index Register_manager::get_reg_for_reading_var(struct ic_data * var,enum re
     set<reg_index> suspicious_regs;
     pair<struct ic_data *,reg_index> * event_data_1;
     pair<reg_index,reg_index> * event_data_2;
-    map<struct ic_data *,enum reg_var_state> temp;
-    struct ic_data * belong_array;
 
     if(var->is_const() && !var->is_array_var())
     {
@@ -414,21 +495,7 @@ reg_index Register_manager::get_reg_for_reading_var(struct ic_data * var,enum re
         //如果没有的话，需要判断这个变量是不是一个数组取元素，如果是的话，那么需要先遍历所有的寄存器，将该数组的所有数组取元素的脏值先写回内存
         if(var->is_array_member())
         {
-            belong_array=var->get_belong_array();
-            for(auto reg_info:regs_info_.reg_indexs)
-            {
-                temp=reg_info.second.var_datas;
-                for(auto var_data:temp)
-                {
-                    if(var_data.first->is_array_member() && !var_data.first->is_array_var() && var_data.first->get_belong_array()==belong_array && var_data.second==reg_var_state::DIRTY)
-                    {
-                        reg_info.second.set_value_NOT_DIRTY(var_data.first);
-                        event_data_1=new pair<struct ic_data *,reg_index>(var_data.first,reg_info.first);
-                        notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data_1));
-                        delete event_data_1;
-                    }
-                }
-            }
+            store_array_s_all_DIRTY_members_and_set_them_NOT_DIRTY(var->get_belong_array(),!var->get_offset()->is_const());
         }
         //再给该变量分配一个新的寄存器，并将该变量的值写入即可
         reg=allocate_idle_reg(processor);
@@ -470,16 +537,21 @@ end:
 Parameters
 ----------
 var:要写入寄存器的变量
+reg:要写入的寄存器
 */
-void Register_manager::store_DIRTY_values_before_writing_var(struct ic_data * var)
+void Register_manager::before_writing_var_value(struct ic_data * var)
 {
+    //在对一个变量进行写入之前，总共有下面3种情况需要处理：
+    //（1）任何把变量var作为偏移量的数组元素的值和地址都需要和它所在的寄存器解除关联，并且需要将脏值写回内存
+    //（2）假设函数的某一个数组形参定义的时候使用了变量var，那么该数组形参的所有数组元素的值和地址都需要和它们所在的寄存器解除关联，并且需要将脏值写回内存
+    //（3）假设变量var是一个数组元素，那么需要把和它同一个所属数组的所有数组元素全都和它们的寄存器解除关联，并且需要将脏值写回内存
     pair<struct ic_data *,reg_index> * event_data;
     map<struct ic_data * ,enum reg_var_state> temp;
     set<struct ic_data * > written_back_vars;
-    bool is_var_array_member;
+    bool is_var_array_member,situation_1_and_2,situation_3;
     struct ic_data * array,* temp_var;
     //在对某一个变量进行更改之前，需要遍历此时所有的寄存器中的所有脏值，查看其中的变量值是否和当前要更改的变量有关，如果有关的话，需要将其写回内存，并且和寄存器解除关联
-    //例如有一个二维数组是a[b][]，这在函数形参中是被允许的
+    //例如有一个二维数组是a[][b]，这在函数形参中是被允许的
     //那么此时假设要更改的变量是b，而此时的某一个DIRTY_VALUE寄存器中存放着a[2][4]
     //那么当b被更改完之后，a[2][4]可能就不再指向原本的值了，因此在b更改之前必须先将其写回
     //同时，如果这个变量是一个数组取元素，那么就需要遍历此时所有的寄存器中的所有脏值，查看其中和该变量属于同一个数组的数组取元素是否有可能与其冲突，如果有可能的话，必须先将其写回
@@ -501,12 +573,15 @@ void Register_manager::store_DIRTY_values_before_writing_var(struct ic_data * va
             for(auto var_data:temp)
             {
                 temp_var=var_data.first;
-                if(var_data.second==reg_var_state::DIRTY && 
-                temp_var!=var && 
-                (temp_var->check_ic_data_related(var) || 
-                (is_var_array_member && (temp_var->is_array_member() && !temp_var->is_array_var()) && temp_var->get_belong_array()==array && !(var->get_offset()->is_const() && temp_var->get_offset()->is_const() && var->get_offset()->get_value().int_data!=temp_var->get_offset()->get_value().int_data))))
+                if(temp_var==var)
                 {
-                    if(written_back_vars.find(var_data.first)==written_back_vars.end())
+                    continue;
+                }
+                situation_1_and_2=temp_var->check_ic_data_related(var);
+                situation_3=(is_var_array_member && (temp_var->is_array_member() && !temp_var->is_array_var()) && temp_var->get_belong_array()==array && !(var->get_offset()->is_const() && temp_var->get_offset()->is_const() && var->get_offset()->get_value().int_data!=temp_var->get_offset()->get_value().int_data));
+                if(situation_1_and_2 || situation_3)
+                {
+                    if(var_data.second==reg_var_state::DIRTY && written_back_vars.find(var_data.first)==written_back_vars.end())
                     {
                         regs_info_.reg_indexs.at(reg_info.first).set_value_NOT_DIRTY(var_data.first);
                         event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg_info.first);
@@ -514,7 +589,14 @@ void Register_manager::store_DIRTY_values_before_writing_var(struct ic_data * va
                         delete event_data;
                         written_back_vars.insert(var_data.first);
                     }
-                    regs_info_.unattach_value_to_reg(var_data.first,reg_info.first);
+                    if(var_data.second==reg_var_state::DIRTY || var_data.second==reg_var_state::NOT_DIRTY)
+                    {
+                        regs_info_.unattach_value_to_reg(var_data.first,reg_info.first);
+                    }
+                    else if(var_data.second==reg_var_state::ADDR && situation_1_and_2)
+                    {
+                        regs_info_.unattach_addr_to_reg(var_data.first,reg_info.first);
+                    }
                 }
             }
         }
@@ -543,7 +625,7 @@ reg_index Register_manager::get_reg_for_writing_var(struct ic_data * var,enum re
         return get_reg_for_const(var->get_value(),processor);
     }
     
-    store_DIRTY_values_before_writing_var(var);
+    before_writing_var_value(var);
 
     suspicious_regs=regs_info_.get_var_owned_value_regs(var);
     //查看此时是否有寄存器已经存放了该变量的值
@@ -556,9 +638,10 @@ reg_index Register_manager::get_reg_for_writing_var(struct ic_data * var,enum re
     else
     {
         //如果有的话，那么只需要从这些寄存器中选一个符合指定处理器的寄存器，并将其设置为脏值即可，而其他剩余的寄存器只需要被设置为无效，无需写回
+        //此时要求被获取的寄存器中最多只能存放一个变量的脏值
         for(auto suspicious_reg:suspicious_regs)
         {
-            if(regs_info_.reg_indexs.at(suspicious_reg).processor==processor && tag==false)
+            if(regs_info_.reg_indexs.at(suspicious_reg).processor==processor && (regs_info_.reg_indexs.at(suspicious_reg).has_the_only_DIRTY_value(var) || regs_info_.reg_indexs.at(suspicious_reg).has_no_DIRTY_value()) && tag==false)
             {
                 tag=true;
                 reg=suspicious_reg;
@@ -573,11 +656,7 @@ reg_index Register_manager::get_reg_for_writing_var(struct ic_data * var,enum re
             regs_info_.attach_value_to_reg(var,reg);
         }
     }
-    // //如果是写一个临时变量，那么我们也不会将这个临时变量存放的寄存器标记为脏值，而只是标记为被使用了而已，因为临时变量只能赋值一次
-    // if(!var->is_tmp_var())
-    // {
-        regs_info_.reg_indexs.at(reg).set_value_DIRTY(var);
-    // }
+    regs_info_.reg_indexs.at(reg).set_value_DIRTY(var);
     //把该寄存器设置为被当前的指令所使用
     set_got_by_current_instruction(reg);
     return reg;
@@ -594,7 +673,7 @@ Return
 ------
 返回获取到的寄存器编号
 */
-reg_index Register_manager::get_reg_for_var_addr(struct ic_data * var)
+reg_index Register_manager::get_reg_for_var_addr(struct ic_data * var,enum reg_processor processor)
 {
     pair<struct ic_data *,reg_index> * event_data;
     set<reg_index> suspicious_regs;
@@ -606,7 +685,7 @@ reg_index Register_manager::get_reg_for_var_addr(struct ic_data * var)
     {
         //否则的话，分配一个新的空闲寄存器，将地址写入该寄存器
         //默认都把地址放在CPU寄存器中
-        reg=allocate_idle_reg(reg_processor::CPU);
+        reg=allocate_idle_reg(processor);
         //必须立刻把该寄存器设置为被当前的指令所使用，因为后面的WRITE_ADDR_TO_REG也可能需要分配寄存器
         set_got_by_current_instruction(reg);
         event_data=new pair<struct ic_data *,reg_index>(var,reg);
@@ -621,6 +700,48 @@ reg_index Register_manager::get_reg_for_var_addr(struct ic_data * var)
         set_got_by_current_instruction(reg);
     }
     return reg;
+}
+
+/*
+将一个指定的寄存器设置为新分配
+
+Parameters
+----------
+reg:要获取的寄存器编号
+
+Return
+------
+如果获取成功就返回true，否则返回false
+*/
+bool Register_manager::allocate_designated_reg(reg_index reg)
+{
+    bool res=false;
+    struct reg & designated_reg=regs_info_.reg_indexs.at(reg);
+    pair<struct ic_data *,reg_index> * event_data;
+    map<struct ic_data * ,enum reg_var_state> temp;
+    //如果要分配的寄存器正在被目前所生成的指令所使用，或者当前要分配的寄存器正在被分配，那么就无法将其获取
+    if(!is_got_by_current_instruction(reg) && designated_reg.state!=reg_state::ALLOCATING)
+    {
+        designated_reg.state=reg_state::ALLOCATING;
+        temp=designated_reg.var_datas;
+        //需要先把寄存器中需要写回内存的数据进行写回
+        for(auto var_data:temp)
+        {
+            if(var_data.second==reg_var_state::DIRTY)
+            {
+                regs_info_.reg_indexs.at(reg).set_value_NOT_DIRTY(var_data.first);
+                //如果此时要获取的寄存器中存储的变量值是脏值，那么就要把该寄存器写回到内存中
+                event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
+                notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
+                delete event_data;
+            }
+        }
+        //将这个寄存器上所有关联的常量值，变量值，变量地址全都解除关联
+        regs_info_.unattach_reg_s_all_data(reg);
+        res=true;
+    }
+
+    return res;
 }
 
 /*
@@ -692,8 +813,6 @@ void Register_manager::get_designated_reg_for_reading_var(reg_index reg,struct i
     reg_index from_reg;
     set<reg_index> * regs_unaccessible;
     set<reg_index> suspicious_regs;
-    map<struct ic_data *,enum reg_var_state> temp;
-    struct ic_data * belong_array;
 
     //判断该变量是否是常数
     if(var->is_const() && !var->is_array_var())
@@ -710,21 +829,7 @@ void Register_manager::get_designated_reg_for_reading_var(reg_index reg,struct i
         //如果是的话，那么需要先遍历所有的寄存器，将和该数组取元素拥有相同所属数组的的所有数组取元素的脏值先写回内存
         if(var->is_array_member())
         {
-            belong_array=var->get_belong_array();
-            for(auto reg_info:regs_info_.reg_indexs)
-            {
-                temp=reg_info.second.var_datas;
-                for(auto var_data:temp)
-                {
-                    if(var_data.first->is_array_member() && !var_data.first->is_array_var() && var_data.first->get_belong_array()==belong_array && var_data.second==reg_var_state::DIRTY)
-                    {
-                        reg_info.second.set_value_NOT_DIRTY(var_data.first);
-                        event_data_3=new pair<struct ic_data *,reg_index>(var_data.first,reg_info.first);
-                        notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data_3));
-                        delete event_data_3;
-                    }
-                }
-            }
+            store_array_s_all_DIRTY_members_and_set_them_NOT_DIRTY(var->get_belong_array(),!var->get_offset()->is_const());
         }
         //再将指定的寄存器中的内容写回，然后把变量写入该寄存器即可
         allocate_designated_reg(reg);
@@ -769,14 +874,16 @@ var:要写入的变量
 void Register_manager::get_designated_reg_for_writing_var(reg_index reg,struct ic_data * var)
 {
     struct reg & designated_reg=regs_info_.reg_indexs.at(reg);
+    map<struct ic_data *,enum reg_var_state > temp;
     set<reg_index> suspicious_regs;
+    pair<struct ic_data *,reg_index> * event_data;
 
     if(var->is_const() && !var->is_array_var())
     {
         return get_designated_reg_for_const(reg,var->get_value());
     }
     
-    store_DIRTY_values_before_writing_var(var);
+    before_writing_var_value(var);
 
     suspicious_regs=regs_info_.get_var_owned_value_regs(var);
     //查看此时是否有寄存器存放了该变量的值
@@ -809,146 +916,28 @@ void Register_manager::get_designated_reg_for_writing_var(reg_index reg,struct i
                     regs_info_.unattach_value_to_reg(var,suspicious_reg);
                 }
             }
+            //同时必须先把此时的目标寄存器中剩余的脏值写回内存，保证此时获取的寄存器中最多只有一个变量的脏值
+            temp=designated_reg.var_datas;
+            for(auto var_data:temp)
+            {
+                if(var_data.second==reg_var_state::DIRTY)
+                {
+                    designated_reg.set_value_NOT_DIRTY(var_data.first);
+                    event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg);
+                    notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
+                    delete event_data;
+                }
+            }
         }
     }
-    // if(!var->is_tmp_var())
-    // {
-        designated_reg.set_value_DIRTY(var);
-    // }
+    designated_reg.set_value_DIRTY(var);
     //把该寄存器设置为被当前的指令所使用
     set_got_by_current_instruction(reg);
 }
 
-struct event Register_manager::handle_GET_CPU_REG_FOR_CONST(OAA const_data)
-{
-    return event(event_type::RESPONSE_INT,(int)get_reg_for_const(const_data,reg_processor::CPU));
-}
-
-struct event Register_manager::handle_GET_AN_EMPTY_CPU_REG_FOR_CONST(OAA const_data)
-{
-    return event(event_type::RESPONSE_INT,(int)get_reg_for_const(const_data,reg_processor::CPU,true));
-}
-
-struct event Register_manager::handle_GET_VFP_REG_FOR_CONST(OAA const_data)
-{
-    return event(event_type::RESPONSE_INT,(int)get_reg_for_const(const_data,reg_processor::VFP));
-}
-
-struct event Register_manager::handle_GET_CPU_REG_FOR_READING_VAR(struct ic_data * var_data)
-{
-    return event(event_type::RESPONSE_INT,(int)get_reg_for_reading_var(var_data,reg_processor::CPU));
-}
-
-struct event Register_manager::handle_GET_CPU_REG_FOR_WRITING_VAR(struct ic_data * var_data)
-{
-    return event(event_type::RESPONSE_INT,(int)get_reg_for_writing_var(var_data,reg_processor::CPU));
-}
-
-struct event Register_manager::handle_GET_VFP_REG_FOR_READING_VAR(struct ic_data * var_data)
-{
-    return event(event_type::RESPONSE_INT,(int)get_reg_for_reading_var(var_data,reg_processor::VFP));
-}
-
-struct event Register_manager::handle_GET_VFP_REG_FOR_WRITING_VAR(struct ic_data * var_data)
-{
-    return event(event_type::RESPONSE_INT,(int)get_reg_for_writing_var(var_data,reg_processor::VFP));
-}
-
-struct event Register_manager::handle_GET_ADDR_REG(struct ic_data * var_data)
-{
-    return event(event_type::RESPONSE_INT,(int)get_reg_for_var_addr(var_data));
-}
-
-struct event Register_manager::handle_READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS(struct ic_func * func)
-{
-    struct event res(event_type::RESPONSE_POINTER,nullptr);
-    reg_index lr=regs_info_.reg_names.at("lr"),fp=regs_info_.reg_names.at("fp");
-    list<reg_index> * regs=new list<reg_index>;
-    //目前是把所有的整型临时寄存器和lr寄存器全部进栈
-    for(auto i:regs_info_.reg_indexs)
-    {
-        if(i.second.attr==reg_attr::TEMP && i.second.processor==reg_processor::CPU)
-        {
-            regs->push_back(i.first);
-        }
-    }
-    regs->push_back(fp);
-    regs->push_back(lr);
-    res.pointer_data=(void *)regs;
-    notify(event(event_type::READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS,(void *)regs));
-    return res;
-}
-
-struct event Register_manager::handle_READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS(struct ic_func * func)
-{
-    struct event res;
-    list<reg_index> * regs=new list<reg_index>;
-    //目前是把所有的浮点临时寄存器全部进栈
-    for(auto i:regs_info_.reg_indexs)
-    {
-        if(i.second.attr==reg_attr::TEMP && i.second.processor==reg_processor::VFP)
-        {
-            regs->push_back(i.first);
-        }
-    }
-    res.type=event_type::RESPONSE_POINTER;
-    res.pointer_data=(void *)regs;
-    notify(event(event_type::READY_TO_PUSH_CONTEXT_SAVED_VFP_REGS,(void *)regs));
-    return res;
-}
-
-struct event Register_manager::handle_READY_TO_PUSH_F_PARAM_CPU_REGS(list<struct ic_data * > * f_params)
-{
-    struct event res;
-    size_t int_f_params_num=0;
-    list<reg_index> * f_param_regs=new list<reg_index>;
-
-    //默认函数参数每一个都是4bytes
-    for(auto i:(*f_params))
-    {
-        if(i->get_data_type()==language_data_type::INT || i->is_array_var())
-        {
-            if(int_f_params_num>=4)
-            {
-                break;
-            }
-            f_param_regs->push_back(regs_info_.reg_names.at("r"+to_string(int_f_params_num)));
-            int_f_params_num++;
-        }
-    }
-
-    res.type=event_type::RESPONSE_POINTER;
-    res.pointer_data=(void *)f_param_regs;
-    return res;
-}
-
-struct event Register_manager::handle_READY_TO_PUSH_F_PARAM_VFP_REGS(list<struct ic_data * > * f_params)
-{
-    struct event res;
-    size_t float_f_params_num=0;
-    list<reg_index> * f_param_regs=new list<reg_index>;
-
-    //默认函数参数每一个都是4bytes
-    for(auto i:(*f_params))
-    {
-        if(i->get_data_type()==language_data_type::FLOAT && !i->is_array_var())
-        {
-            if(float_f_params_num>=16)
-            {
-                break;
-            }
-            f_param_regs->push_back(regs_info_.reg_names.at("s"+to_string(float_f_params_num)));
-            float_f_params_num++;
-        }
-    }
-
-    res.type=event_type::RESPONSE_POINTER;
-    res.pointer_data=(void *)f_param_regs;
-    return res;
-}
-
 void Register_manager::handle_FUNC_DEFINE(struct ic_func * func)
 {
+    static size_t CPU_ARGUMENT_reg_num=regs_info_.get_CPU_ARGUMENT_reg_num(),VFP_ARGUMENT_reg_num=regs_info_.get_VFP_ARGUMENT_reg_num();
     size_t int_f_params_num=0,float_f_params_num=0;
     reg_index reg;
     //函数定义的时候，前4*32bits的整型参数已经被放入r0-r3的寄存器了，前16*32bits的浮点型参数也已经被放入s0-s15寄存器了，此时只需要初始化它们的信息即可
@@ -958,26 +947,29 @@ void Register_manager::handle_FUNC_DEFINE(struct ic_func * func)
         if(f_param->get_data_type()==language_data_type::INT || f_param->is_array_var())
         {
             //整型参数和数组参数都是放在r0-r3中
-            if(int_f_params_num<4)
+            if(int_f_params_num<CPU_ARGUMENT_reg_num)
             {
                 reg=regs_info_.reg_names.at("r"+to_string(int_f_params_num));
-                regs_info_.attach_value_to_reg(f_param,reg);
-                regs_info_.reg_indexs.at(reg).set_value_DIRTY(f_param);
+                get_designated_reg_for_writing_var(reg,f_param);
                 int_f_params_num++;
             }
         }
         else if(f_param->get_data_type()==language_data_type::FLOAT)
         {
             //非数组的浮点类型参数放在s0-s15中
-            if(float_f_params_num<16)
+            if(float_f_params_num<VFP_ARGUMENT_reg_num)
             {
                 reg=regs_info_.reg_names.at("s"+to_string(float_f_params_num));
-                regs_info_.attach_value_to_reg(f_param,reg);
-                regs_info_.reg_indexs.at(reg).set_value_DIRTY(f_param);
+                get_designated_reg_for_writing_var(reg,f_param);
                 float_f_params_num++;
             }
         }
     }
+}
+
+void Register_manager::handle_START_FUNC(struct ic_func_flow_graph * func)
+{
+    current_func_=func;
 }
 
 void Register_manager::handle_END_FUNC()
@@ -985,250 +977,14 @@ void Register_manager::handle_END_FUNC()
     regs_info_.clear();
 }
 
-void Register_manager::handle_END_BASIC_BLOCK()
-{
-    handle_END_BASIC_BLOCK_WITHOUT_FLAG();
-    handle_CLEAR_FLAG();
-}
-
-void Register_manager::handle_END_BASIC_BLOCK_WITHOUT_FLAG()
-{
-    set<struct ic_data * > written_back_vars;
-    pair<struct ic_data *,reg_index> * event_data;
-    map<struct ic_data * ,enum reg_var_state> temp;
-    //结束基本块的时候，需要查看此时是否有还未写回内存的脏值，如果有的话，需要全部写回
-    for(auto reg:regs_info_.reg_indexs)
-    {
-        if((reg.second.attr==reg_attr::ARGUMENT || reg.second.attr==reg_attr::TEMP) && reg.second.state==reg_state::USED)
-        {
-            //遍历所有的参数寄存器和临时寄存器，将需要写回内存的数值进行写回
-            //目前不把临时变量写回寄存器，因为我们目前规定临时变量的作用域不会跨越基本块
-            temp=reg.second.var_datas;
-            for(auto var_data:temp)
-            {
-                //if(var_data.second==reg_var_state::DIRTY || (var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data))
-                if(var_data.second==reg_var_state::DIRTY && (!var_data.first->is_tmp_var() || notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data))
-                {
-                    if(written_back_vars.find(var_data.first)==written_back_vars.end())
-                    {
-                        regs_info_.reg_indexs.at(reg.first).set_value_NOT_DIRTY(var_data.first);
-                        event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg.first);
-                        notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-                        delete event_data;
-                        written_back_vars.insert(var_data.first);
-                    }
-                    reg.second.set_value_NOT_DIRTY(var_data.first);
-                }
-            }
-        }
-    }
-    //最后还要再遍历一次所有的寄存器，将此时所有的寄存器置成EMPTY
-    //这些寄存器是在上面的将寄存器写回内存的时候用到的
-    for(auto reg:regs_info_.reg_indexs)
-    {
-        if(reg.second.attr==reg_attr::ARGUMENT || reg.second.attr==reg_attr::TEMP)
-        {
-            regs_info_.unattach_reg_s_all_data(reg.first);
-        }
-    }
-}
-
 void Register_manager::handle_CLEAR_FLAG()
 {
     regs_info_.flag_reg.related_data.first=nullptr;
 }
 
-struct event Register_manager::handle_GET_SP_REG()
+void Register_manager::handle_CHANGE_FLAGS_FOR_VAR(struct ic_data * var,int cared_flag)
 {
-    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("sp"));
-}
-
-struct event Register_manager::handle_GET_FP_REG()
-{
-    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("fp"));
-}
-
-struct event Register_manager::handle_GET_LR_REG()
-{
-    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("lr"));
-}
-
-struct event Register_manager::handle_GET_PC_REG()
-{
-    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("pc"));
-}
-
-struct event Register_manager::handle_GET_APSR_REG()
-{
-    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("APSR_nzcv"));
-}
-
-struct event Register_manager::handle_GET_FPSCR_REG()
-{
-    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("FPSCR"));
-}
-
-struct event Register_manager::handle_IS_CPU_REG(reg_index reg)
-{
-    return event(event_type::RESPONSE_BOOL,regs_info_.reg_indexs.at(reg).processor==reg_processor::CPU);
-}
-
-struct event Register_manager::handle_IS_VFP_REG(reg_index reg)
-{
-    return event(event_type::RESPONSE_BOOL,regs_info_.reg_indexs.at(reg).processor==reg_processor::VFP);
-}
-
-struct event Register_manager::handle_IS_ARGUMENT_REG(reg_index reg)
-{
-    return event(event_type::RESPONSE_BOOL,regs_info_.reg_indexs.at(reg).attr==reg_attr::ARGUMENT);
-}
-
-struct event Register_manager::handle_IS_TEMP_REG(reg_index reg)
-{
-    return event(event_type::RESPONSE_BOOL,regs_info_.reg_indexs.at(reg).attr==reg_attr::TEMP);
-}
-
-struct event Register_manager::handle_GET_REG_BYTE_SIZE(reg_index reg)
-{
-    return event(event_type::RESPONSE_INT,(int)(regs_info_.reg_indexs.at(reg).size/8));
-}
-
-void Register_manager::handle_RETURN_VAR(struct ic_data * var)
-{
-    reg_index return_reg;
-    switch(var->get_data_type())
-    {
-        case language_data_type::INT:
-            return_reg=regs_info_.reg_names.at("r0");
-            break;
-        case language_data_type::FLOAT:
-            return_reg=regs_info_.reg_names.at("s0");
-            break;
-        default:
-            break;
-    }
-    if(var)
-    {
-        get_designated_reg_for_reading_var(return_reg,var);
-    }
-}
-
-void Register_manager::handle_START_INSRUCTION(set<reg_index> * regs_unaccessible)
-{
-    if(regs_unaccessible)
-    {
-        regs_info_.current_instructions_involved_regs.push_front(*regs_unaccessible);
-    }
-    else
-    {
-        regs_info_.current_instructions_involved_regs.push_front(set<reg_index>());
-    }
-}
-
-void Register_manager::handle_END_INSTRUCTION()
-{
-    regs_info_.current_instructions_involved_regs.pop_front();
-}
-
-void Register_manager::handle_FUNC_RET()
-{
-    struct ic_data * var;
-    set<struct ic_data * > written_back_vars;
-    pair<struct ic_data *,reg_index> * event_data;
-    map<struct ic_data * ,enum reg_var_state> temp;
-    for(auto reg:regs_info_.reg_indexs)
-    {
-        if(reg.second.state==reg_state::USED)
-        {
-            temp=reg.second.var_datas;
-            for(auto var_data:temp)
-            {
-                if(var_data.second==reg_var_state::DIRTY)
-                {
-                    var=var_data.first;
-                    if(written_back_vars.find(var)==written_back_vars.end() && (var->is_global() || (var->is_array_member() && (var->get_belong_array()->is_global() || var->get_belong_array()->is_f_param()))))
-                    {
-                        //函数退出时，只需要将以下的脏值写回到内存中
-                        //全局变量
-                        //所属数组为全局变量的数组取元素变量
-                        //所属数组为函数形参的数组取元素变量
-                        regs_info_.reg_indexs.at(reg.first).set_value_NOT_DIRTY(var);
-                        event_data=new pair<struct ic_data *,reg_index>(var,reg.first);
-                        notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-                        delete event_data;
-                        written_back_vars.insert(var);
-                    }
-                    //至于其他的脏值，就无需将其写回
-                    //但是仍旧需要将它们设置为NOT_DIRTY，而不是EMPTY，以免到时候函数的返回值需要用到它们
-                    reg.second.set_value_NOT_DIRTY(var);
-                }
-            }
-        }
-    }
-}
-
-void Register_manager::handle_SAVE_REGS_WHEN_CALLING_FUNC()
-{
-    set<struct ic_data * > written_back_vars;
-    pair<struct ic_data *,reg_index> * event_data;
-    map<struct ic_data * ,enum reg_var_state> temp;
-    // bool tag;
-    for(auto reg:regs_info_.reg_indexs)
-    {
-        //在函数调用的时候需要保存回内存的数据有：
-        //参数寄存器中的DIRTY_VALUE数据和NOT_DIRTY的临时变量
-        //被调用的函数可能使用到的全局变量
-        //被调用函数可能会用到的数组形参对应的实参的数组取元素
-        //和上述两类变量有关的变量
-        //会把这些寄存器中的值设置为NOT_DIRTY，而不是EMPTY，因为之后写入参数的时候可能会用到它们
-        
-        //目前先把所有寄存器中的所有的DIRTY_VALUE值全部进行写回保存，并把它们设置成NOT_DIRTY，因为之后写入参数的时候可能会用到它们
-        //同时把所有参数寄存器中的临时变量写回内存
-        temp=reg.second.var_datas;
-        // tag=(reg.second.attr==reg_attr::ARGUMENT);
-        // for(auto var_data:temp)
-        // {
-        //     if(var_data.second==reg_var_state::NOT_DIRTY && var_data.first->is_tmp_var() && tag)
-        //     {
-        //         event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg.first);
-        //         notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-        //         delete event_data;
-        //     }
-        // }
-        // for(auto var_data:temp)
-        // {
-        //     if(var_data.second==reg_var_state::DIRTY || (var_data.first->is_tmp_var() && var_data.second==reg_var_state::NOT_DIRTY && notify(event(event_type::IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC,(void *)var_data.first)).bool_data))
-        //     {
-        //         reg.second.set_value_NOT_DIRTY(var_data.first);
-        //         if(written_back_vars.find(var_data.first)==written_back_vars.end())
-        //         {
-        //             event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg.first);
-        //             notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-        //             delete event_data;
-        //             written_back_vars.insert(var_data.first);
-        //         }
-        //     }
-        // }
-        for(auto var_data:temp)
-        {
-            if(var_data.second==reg_var_state::DIRTY)
-            {
-                reg.second.set_value_NOT_DIRTY(var_data.first);
-                if(written_back_vars.find(var_data.first)==written_back_vars.end())
-                {
-                    event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg.first);
-                    notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
-                    delete event_data;
-                    written_back_vars.insert(var_data.first);
-                }
-            }
-        }
-    }
-}
-
-void Register_manager::handle_SAVE_REGS_WHEN_CALLING_ABI_FUNC()
-{
-    handle_SAVE_REGS_WHEN_CALLING_FUNC();
+    regs_info_.flag_reg.attach_var(var,cared_flag);
 }
 
 void Register_manager::handle_PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_FUNC(list<struct ic_data * > * r_params)
@@ -1324,15 +1080,155 @@ void Register_manager::handle_PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_ABI_FUNC(list<
     delete unaccessible_regs;
 }
 
+void Register_manager::handle_RETURN_VAR(struct ic_data * var)
+{
+    reg_index return_reg;
+    if(var)
+    {
+        switch(var->get_data_type())
+        {
+            case language_data_type::INT:
+                return_reg=regs_info_.reg_names.at("r0");
+                break;
+            case language_data_type::FLOAT:
+                return_reg=regs_info_.reg_names.at("s0");
+                break;
+            default:
+                break;
+        }
+        get_designated_reg_for_reading_var(return_reg,var);
+    }
+}
+
 void Register_manager::handle_BEFORE_CALL_FUNC(struct ic_data * return_value)
 {
     if(return_value)
     {
-        store_DIRTY_values_before_writing_var(return_value);
+        before_writing_var_value(return_value);
     }
 }
 
-void Register_manager::handle_RET_FROM_CALLED_FUNC(struct ic_data * return_value,reg_index return_reg)
+void Register_manager::handle_START_INSRUCTION(set<reg_index> * regs_unaccessible)
+{
+    if(regs_unaccessible)
+    {
+        regs_info_.current_instructions_involved_regs.push_front(*regs_unaccessible);
+    }
+    else
+    {
+        regs_info_.current_instructions_involved_regs.push_front(set<reg_index>());
+    }
+}
+
+void Register_manager::handle_END_INSTRUCTION()
+{
+    regs_info_.current_instructions_involved_regs.pop_front();
+}
+
+void Register_manager::handle_FUNC_RET()
+{
+    struct ic_data * var;
+    set<struct ic_data * > written_back_vars;
+    pair<struct ic_data *,reg_index> * event_data;
+    map<struct ic_data * ,enum reg_var_state> temp;
+    for(auto reg:regs_info_.reg_indexs)
+    {
+        if(reg.second.state==reg_state::USED)
+        {
+            temp=reg.second.var_datas;
+            for(auto var_data:temp)
+            {
+                if(var_data.second==reg_var_state::DIRTY)
+                {
+                    var=var_data.first;
+                    //需要将所有的脏值设置为NOT_DIRTY，而不是EMPTY，以免到时候函数的返回值需要用到它们
+                    reg.second.set_value_NOT_DIRTY(var);
+                    if(written_back_vars.find(var)==written_back_vars.end() && (var->is_global() || (var->is_array_member() && (var->get_belong_array()->is_global() || var->get_belong_array()->is_f_param()))))
+                    {
+                        //函数退出时，只需要将以下的脏值写回到内存中
+                        //全局变量
+                        //所属数组为全局变量的数组取元素变量
+                        //所属数组为函数形参的数组取元素变量
+                        event_data=new pair<struct ic_data *,reg_index>(var,reg.first);
+                        notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
+                        delete event_data;
+                        written_back_vars.insert(var);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Register_manager::handle_SAVE_REGS_WHEN_CALLING_FUNC(struct ic_func * func,list<struct ic_data * > * r_params)
+{
+    set<struct ic_data * > written_back_vars;
+    pair<struct ic_data *,reg_index> * event_data;
+    map<struct ic_data * ,enum reg_var_state> temp;
+    for(auto reg:regs_info_.reg_indexs)
+    {
+        //在函数调用的时候需要保存回内存的数据有：
+        //参数寄存器中的DIRTY_VALUE数据和NOT_DIRTY的临时变量
+        //被调用的函数可能使用到的全局变量
+        //被调用函数可能会用到的数组形参对应的实参的数组取元素
+        //和上述两类变量有关的变量
+        //会把这些寄存器中的值设置为NOT_DIRTY，而不是EMPTY，因为之后写入参数的时候可能会用到它们
+        
+        //目前先把所有寄存器中的所有的DIRTY_VALUE值全部进行写回保存，并把它们设置成NOT_DIRTY，因为之后写入参数的时候可能会用到它们
+        //同时把所有参数寄存器中的临时变量写回内存
+        temp=reg.second.var_datas;
+        for(auto var_data:temp)
+        {
+            if(var_data.second==reg_var_state::DIRTY)
+            {
+                reg.second.set_value_NOT_DIRTY(var_data.first);
+                if(written_back_vars.find(var_data.first)==written_back_vars.end())
+                {
+                    event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg.first);
+                    notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
+                    delete event_data;
+                    written_back_vars.insert(var_data.first);
+                }
+            }
+        }
+    }
+}
+
+void Register_manager::handle_SAVE_REGS_WHEN_CALLING_ABI_FUNC(string func_name,list<struct ic_data * > * r_params)
+{
+    set<struct ic_data * > written_back_vars;
+    pair<struct ic_data *,reg_index> * event_data;
+    map<struct ic_data * ,enum reg_var_state> temp;
+    for(auto reg:regs_info_.reg_indexs)
+    {
+        //在函数调用的时候需要保存回内存的数据有：
+        //参数寄存器中的DIRTY_VALUE数据和NOT_DIRTY的临时变量
+        //被调用的函数可能使用到的全局变量
+        //被调用函数可能会用到的数组形参对应的实参的数组取元素
+        //和上述两类变量有关的变量
+        //会把这些寄存器中的值设置为NOT_DIRTY，而不是EMPTY，因为之后写入参数的时候可能会用到它们
+        
+        //目前先把所有寄存器中的所有的DIRTY_VALUE值全部进行写回保存，并把它们设置成NOT_DIRTY，因为之后写入参数的时候可能会用到它们
+        //同时把所有参数寄存器中的临时变量写回内存
+        temp=reg.second.var_datas;
+        for(auto var_data:temp)
+        {
+            if(var_data.second==reg_var_state::DIRTY)
+            {
+                reg.second.set_value_NOT_DIRTY(var_data.first);
+                if(written_back_vars.find(var_data.first)==written_back_vars.end())
+                {
+                    event_data=new pair<struct ic_data *,reg_index>(var_data.first,reg.first);
+                    notify(event(event_type::STORE_VAR_TO_MEM,(void *)event_data));
+                    delete event_data;
+                    written_back_vars.insert(var_data.first);
+                }
+            }
+        }
+    }
+}
+
+void Register_manager::handle_RET_FROM_CALLED_FUNC(struct ic_func * func,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg)
 {
     for(auto reg:regs_info_.reg_indexs)
     {
@@ -1362,14 +1258,11 @@ void Register_manager::handle_RET_FROM_CALLED_FUNC(struct ic_data * return_value
     if(return_value)
     {
         regs_info_.attach_value_to_reg(return_value,return_reg);
-        // if(!return_value->is_tmp_var())
-        // {
-            regs_info_.reg_indexs.at(return_reg).set_value_DIRTY(return_value);
-        // }
+        regs_info_.reg_indexs.at(return_reg).set_value_DIRTY(return_value);
     }
 }
 
-void Register_manager::handle_RET_FROM_CALLED_ABI_FUNC(struct ic_data * return_value,reg_index return_reg)
+void Register_manager::handle_RET_FROM_CALLED_ABI_FUNC(string func_name,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg)
 {
     for(auto reg:regs_info_.reg_indexs)
     {
@@ -1383,11 +1276,18 @@ void Register_manager::handle_RET_FROM_CALLED_ABI_FUNC(struct ic_data * return_v
     if(return_value)
     {
         regs_info_.attach_value_to_reg(return_value,return_reg);
-        // if(!return_value->is_tmp_var())
-        // {
-            regs_info_.reg_indexs.at(return_reg).set_value_DIRTY(return_value);
-        // }
+        regs_info_.reg_indexs.at(return_reg).set_value_DIRTY(return_value);
     }
+}
+
+struct event Register_manager::handle_IS_CPU_REG(reg_index reg)
+{
+    return event(event_type::RESPONSE_BOOL,regs_info_.reg_indexs.at(reg).processor==reg_processor::CPU);
+}
+
+struct event Register_manager::handle_IS_VFP_REG(reg_index reg)
+{
+    return event(event_type::RESPONSE_BOOL,regs_info_.reg_indexs.at(reg).processor==reg_processor::VFP);
 }
 
 struct event Register_manager::handle_CHECK_CONST_VALUE_OWN_CPU_REG(OAA const_value)
@@ -1422,36 +1322,6 @@ struct event Register_manager::handle_GET_CONST_VALUE_S_CPU_REG(OAA const_value)
     return event(event_type::RESPONSE_INT,(int)res);
 }
 
-struct event Register_manager::handle_GET_R0_REG()
-{
-    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("r0"));
-}
-
-struct event Register_manager::handle_GET_R1_REG()
-{
-    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("r1"));
-}
-
-struct event Register_manager::handle_GET_S0_REG()
-{
-    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("s0"));;
-}
-
-void Register_manager::handle_CHANGE_FLAGS_FOR_VAR(struct ic_data * var,int cared_flag)
-{
-    regs_info_.flag_reg.attach_var(var,cared_flag);
-}
-
-struct event Register_manager::handle_CHECK_VAR_ATTACHED_TO_FLAG(struct ic_data * var)
-{
-    return event(event_type::RESPONSE_BOOL,(bool)(regs_info_.flag_reg.related_data.first==var));
-}
-
-struct event Register_manager::handle_GET_VAR_CARED_FLAG()
-{
-    return event(event_type::RESPONSE_INT,regs_info_.flag_reg.related_data.second);   
-}
-
 struct event Register_manager::handle_ALLOCATE_IDLE_CPU_REG()
 {
     return event(event_type::RESPONSE_INT,(int)allocate_idle_reg(reg_processor::CPU));
@@ -1470,7 +1340,7 @@ void Register_manager::handle_ATTACH_VAR_VALUE_TO_REG(struct ic_data * var_data,
 void Register_manager::handle_ATTACH_VAR_VALUE_TO_REG_THEN_SET_DIRTY(struct ic_data * var,reg_index reg)
 {
     set<reg_index> suspicious_regs;
-    store_DIRTY_values_before_writing_var(var);
+    before_writing_var_value(var);
     suspicious_regs=regs_info_.get_var_owned_value_regs(var);
     for(auto suspicious_reg:suspicious_regs)
     {
@@ -1483,6 +1353,155 @@ void Register_manager::handle_ATTACH_VAR_VALUE_TO_REG_THEN_SET_DIRTY(struct ic_d
 void Register_manager::handle_UNATTACH_REG_S_ALL_DATA(reg_index reg)
 {
     regs_info_.unattach_reg_s_all_data(reg);
+}
+
+// void Register_manager::handle_DISABLE_ALL_ADDR_REGS_RELATED_WITH_SP()
+// {
+//     for(auto reg:regs_info_.reg_indexs)
+//     {
+//         regs_info_.unattach_reg_s_all_addr(reg.first);
+//     }
+// }
+
+void Register_manager::handle_DEAL_WITH_PARMAS_IN_ARGUMENT_REGS()
+{
+    ;
+}
+
+struct event Register_manager::handle_GET_REG_BY_NAME(string name)
+{
+    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at(name));
+}
+
+struct event Register_manager::handle_IS_REG_EFFECTIVE(reg_index reg)
+{
+    return event(event_type::RESPONSE_BOOL,regs_info_.reg_indexs.at(reg).state==reg_state::USED);
+}
+
+struct event Register_manager::handle_GET_FUNC_S_F_PARAMS_IN_REGS(struct ic_func * func)
+{
+    static size_t cpu_argument_reg_num=regs_info_.get_CPU_ARGUMENT_reg_num();
+    static size_t vfp_argument_reg_num=regs_info_.get_VFP_ARGUMENT_reg_num();
+    size_t param_num_passed_by_cpu_reg=0,param_num_passed_by_vfp_reg=0;
+    set<struct ic_data * > * f_params_in_regs=new set<struct ic_data * >();
+    for(auto f_param:(*func->f_params))
+    {
+        if(f_param->is_array_var() || f_param->get_data_type()==language_data_type::INT)
+        {
+            param_num_passed_by_cpu_reg++;
+            if(param_num_passed_by_cpu_reg<=cpu_argument_reg_num)
+            {
+                f_params_in_regs->insert(f_param);
+            }
+        }
+        else if(f_param->get_data_type()==language_data_type::FLOAT)
+        {
+            param_num_passed_by_vfp_reg++;
+            if(param_num_passed_by_vfp_reg<=vfp_argument_reg_num)
+            {
+                f_params_in_regs->insert(f_param);
+            }
+        }
+    }
+    return event(event_type::RESPONSE_POINTER,(void *)f_params_in_regs);
+}
+
+struct event Register_manager::handle_GET_CPU_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC(struct ic_func * func)
+{
+    static size_t cpu_argument_reg_num=regs_info_.get_CPU_ARGUMENT_reg_num();
+    size_t param_num_passed_by_cpu_reg=0;
+    list<reg_index> * regs=new list<reg_index>();
+    for(auto f_param:(*func->f_params))
+    {
+        if(f_param->is_array_var() || f_param->get_data_type()==language_data_type::INT)
+        {
+            if(param_num_passed_by_cpu_reg<cpu_argument_reg_num)
+            {
+                regs->push_back(regs_info_.reg_names.at("r"+to_string(param_num_passed_by_cpu_reg)));
+                param_num_passed_by_cpu_reg++;
+            }
+        }
+    }
+    return event(event_type::RESPONSE_POINTER,(void *)regs);
+}
+
+struct event Register_manager::handle_GET_VFP_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC(struct ic_func * func)
+{
+    static size_t vfp_argument_reg_num=regs_info_.get_VFP_ARGUMENT_reg_num();
+    size_t param_num_passed_by_vfp_reg=0;
+    list<reg_index> * regs=new list<reg_index>();
+    for(auto f_param:(*func->f_params))
+    {
+        if(f_param->get_data_type()==language_data_type::FLOAT)
+        {
+            if(param_num_passed_by_vfp_reg<=vfp_argument_reg_num)
+            {
+                regs->push_back(regs_info_.reg_names.at("s"+to_string(param_num_passed_by_vfp_reg)));
+                param_num_passed_by_vfp_reg++;
+            }
+        }
+    }
+    return event(event_type::RESPONSE_POINTER,(void *)regs);
+}
+
+struct event Register_manager::handle_GET_SP_REG()
+{
+    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("sp"));
+}
+
+struct event Register_manager::handle_GET_FP_REG()
+{
+    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("fp"));
+}
+
+struct event Register_manager::handle_GET_LR_REG()
+{
+    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("lr"));
+}
+
+struct event Register_manager::handle_GET_PC_REG()
+{
+    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("pc"));
+}
+
+struct event Register_manager::handle_GET_APSR_REG()
+{
+    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("APSR_nzcv"));
+}
+
+struct event Register_manager::handle_GET_FPSCR_REG()
+{
+    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("FPSCR"));
+}
+
+struct event Register_manager::handle_GET_R0_REG()
+{
+    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("r0"));
+}
+
+struct event Register_manager::handle_GET_R1_REG()
+{
+    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("r1"));
+}
+
+struct event Register_manager::handle_GET_S0_REG()
+{
+    return event(event_type::RESPONSE_INT,(int)regs_info_.reg_names.at("s0"));;
+}
+
+struct event Register_manager::handle_IS_ARGUMENT_REG(reg_index reg)
+{
+    return event(event_type::RESPONSE_BOOL,regs_info_.reg_indexs.at(reg).attr==reg_attr::ARGUMENT);
+}
+
+struct event Register_manager::handle_IS_TEMP_REG(reg_index reg)
+{
+    return event(event_type::RESPONSE_BOOL,regs_info_.reg_indexs.at(reg).attr==reg_attr::TEMP);
+}
+
+struct event Register_manager::handle_GET_REG_BYTE_SIZE(reg_index reg)
+{
+    return event(event_type::RESPONSE_INT,(int)(regs_info_.reg_indexs.at(reg).size/8));
 }
 
 struct event Register_manager::handle_GET_ALL_ARGUMENT_REGS()
@@ -1500,36 +1519,101 @@ struct event Register_manager::handle_GET_ALL_ARGUMENT_REGS()
 
 struct event Register_manager::handle_GET_CPU_ARGUMENT_REG_NUM()
 {
-    size_t cpu_argument_reg_num=0;
-    for(auto reg:regs_info_.reg_indexs)
-    {
-        if(reg.second.processor==reg_processor::CPU && reg.second.attr==reg_attr::ARGUMENT)
-        {
-            cpu_argument_reg_num++;
-        }
-    }
-    return event(event_type::RESPONSE_INT,(void *)cpu_argument_reg_num);
+    return event(event_type::RESPONSE_INT,(void *)regs_info_.get_CPU_ARGUMENT_reg_num());
 }
 
 struct event Register_manager::handle_GET_VFP_ARGUMENT_REG_NUM()
 {
-    size_t vfp_argument_reg_num=0;
-    for(auto reg:regs_info_.reg_indexs)
-    {
-        if(reg.second.processor==reg_processor::VFP && reg.second.attr==reg_attr::ARGUMENT)
-        {
-            vfp_argument_reg_num++;
-        }
-    }
-    return event(event_type::RESPONSE_INT,(void *)vfp_argument_reg_num);
+    return event(event_type::RESPONSE_INT,(void *)regs_info_.get_VFP_ARGUMENT_reg_num());
 }
 
-void Register_manager::handle_DISABLE_ALL_ADDR_REG()
+struct event Register_manager::handle_CHECK_VAR_ATTACHED_TO_FLAG(struct ic_data * var)
 {
-    for(auto reg:regs_info_.reg_indexs)
+    return event(event_type::RESPONSE_BOOL,(bool)(regs_info_.flag_reg.related_data.first==var));
+}
+
+struct event Register_manager::handle_GET_VAR_CARED_FLAG()
+{
+    return event(event_type::RESPONSE_INT,regs_info_.flag_reg.related_data.second);   
+}
+
+struct event Register_manager::handle_GET_ALL_CONTEXT_SAVED_CPU_REGS(struct ic_func * func)
+{
+    reg_index lr=regs_info_.reg_names.at("lr"),fp=regs_info_.reg_names.at("fp");
+    list<reg_index> * regs=new list<reg_index>;
+    //目前是把所有的整型临时寄存器和lr寄存器全部进栈
+    for(auto i:regs_info_.reg_indexs)
     {
-        regs_info_.unattach_reg_s_all_addr(reg.first);
+        if(i.second.attr==reg_attr::TEMP && i.second.processor==reg_processor::CPU)
+        {
+            regs->push_back(i.first);
+        }
     }
+    regs->push_back(fp);
+    regs->push_back(lr);
+    return event(event_type::RESPONSE_POINTER,(void *)regs);
+}
+
+struct event Register_manager::handle_GET_ALL_CONTEXT_SAVED_VFP_REGS(struct ic_func * func)
+{
+    list<reg_index> * regs=new list<reg_index>;
+    //目前是把所有的浮点临时寄存器全部进栈
+    for(auto i:regs_info_.reg_indexs)
+    {
+        if(i.second.attr==reg_attr::TEMP && i.second.processor==reg_processor::VFP)
+        {
+            regs->push_back(i.first);
+        }
+    }
+    return event(event_type::RESPONSE_POINTER,(void *)regs);
+}
+
+struct event Register_manager::handle_GET_CPU_REG_FOR_CONST(OAA const_data)
+{
+    return event(event_type::RESPONSE_INT,(int)get_reg_for_const(const_data,reg_processor::CPU));
+}
+
+struct event Register_manager::handle_GET_AN_EMPTY_CPU_REG_FOR_CONST(OAA const_data)
+{
+    return event(event_type::RESPONSE_INT,(int)get_reg_for_const(const_data,reg_processor::CPU,true));
+}
+
+struct event Register_manager::handle_GET_VFP_REG_FOR_CONST(OAA const_data)
+{
+    return event(event_type::RESPONSE_INT,(int)get_reg_for_const(const_data,reg_processor::VFP));
+}
+
+struct event Register_manager::handle_GET_CPU_REG_FOR_READING_VAR(struct ic_data * var_data)
+{
+    return event(event_type::RESPONSE_INT,(int)get_reg_for_reading_var(var_data,reg_processor::CPU));
+}
+
+struct event Register_manager::handle_GET_CPU_REG_FOR_WRITING_VAR(struct ic_data * var_data)
+{
+    return event(event_type::RESPONSE_INT,(int)get_reg_for_writing_var(var_data,reg_processor::CPU));
+}
+
+struct event Register_manager::handle_GET_VFP_REG_FOR_READING_VAR(struct ic_data * var_data)
+{
+    return event(event_type::RESPONSE_INT,(int)get_reg_for_reading_var(var_data,reg_processor::VFP));
+}
+
+struct event Register_manager::handle_GET_VFP_REG_FOR_WRITING_VAR(struct ic_data * var_data)
+{
+    return event(event_type::RESPONSE_INT,(int)get_reg_for_writing_var(var_data,reg_processor::VFP));
+}
+
+struct event Register_manager::handle_GET_ADDR_REG(struct ic_data * var_data)
+{
+    return event(event_type::RESPONSE_INT,(int)get_reg_for_var_addr(var_data,reg_processor::CPU));
+}
+
+/*
+检查该寄存器管理员是否初始化成功
+*/
+bool Register_manager::is_init_successful()
+{
+    return is_init_successful_;
 }
 
 /*
@@ -1552,14 +1636,11 @@ struct event Register_manager::handler(struct event event)
         case event_type::FUNC_DEFINE:
             handle_FUNC_DEFINE((struct ic_func *)event.pointer_data);
             break;
+        case event_type::START_FUNC:
+            handle_START_FUNC((struct ic_func_flow_graph *)event.pointer_data);
+            break;
         case event_type::END_FUNC:
             handle_END_FUNC();
-            break;
-        case event_type::READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS:
-            response=handle_READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS((struct ic_func *)event.pointer_data);
-            break;
-        case event_type::READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS:
-            response=handle_READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS((struct ic_func *)event.pointer_data);
             break;
         case event_type::GET_SP_REG:
             response=handle_GET_SP_REG();
@@ -1594,12 +1675,6 @@ struct event Register_manager::handler(struct event event)
         case event_type::GET_REG_BYTE_SIZE:
             response=handle_GET_REG_BYTE_SIZE(event.int_data);
             break;
-        case event_type::READY_TO_PUSH_F_PARAM_CPU_REGS:
-            response=handle_READY_TO_PUSH_F_PARAM_CPU_REGS(((struct ic_func *)event.pointer_data)->f_params);
-            break;
-        case event_type::READY_TO_PUSH_F_PARAM_VFP_REGS:
-            response=handle_READY_TO_PUSH_F_PARAM_VFP_REGS(((struct ic_func *)event.pointer_data)->f_params);
-            break;
         case event_type::GET_CPU_REG_FOR_CONST:
             response=handle_GET_CPU_REG_FOR_CONST(*((OAA *)event.pointer_data));
             break;
@@ -1609,11 +1684,14 @@ struct event Register_manager::handler(struct event event)
         case event_type::GET_VFP_REG_FOR_CONST:
             response=handle_GET_VFP_REG_FOR_CONST(*((OAA *)event.pointer_data));
             break;
+        case event_type::START_BASIC_BLOCK:
+            handle_START_BASIC_BLOCK((struct ic_basic_block *)event.pointer_data);
+            break;
         case event_type::END_BASIC_BLOCK:
-            handle_END_BASIC_BLOCK();
+            handle_END_BASIC_BLOCK((struct ic_basic_block *)event.pointer_data);
             break;
         case event_type::END_BASIC_BLOCK_WITHOUT_FLAG:
-            handle_END_BASIC_BLOCK_WITHOUT_FLAG();
+            handle_END_BASIC_BLOCK_WITHOUT_FLAG((struct ic_basic_block *)event.pointer_data);
             break;
         case event_type::CLEAR_FLAG:
             handle_CLEAR_FLAG();
@@ -1646,10 +1724,10 @@ struct event Register_manager::handler(struct event event)
             handle_FUNC_RET();
             break;
         case event_type::SAVE_REGS_WHEN_CALLING_FUNC:
-            handle_SAVE_REGS_WHEN_CALLING_FUNC();
+            handle_SAVE_REGS_WHEN_CALLING_FUNC(((pair<struct ic_func *,list<struct ic_data * > * > *)event.pointer_data)->first,((pair<struct ic_func *,list<struct ic_data * > * > *)event.pointer_data)->second);
             break;
         case event_type::SAVE_REGS_WHEN_CALLING_ABI_FUNC:
-            handle_SAVE_REGS_WHEN_CALLING_ABI_FUNC();
+            handle_SAVE_REGS_WHEN_CALLING_ABI_FUNC(((pair<string,list<struct ic_data * > * > *)event.pointer_data)->first,((pair<string,list<struct ic_data * > * > *)event.pointer_data)->second);
             break;
         case event_type::PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_FUNC:
             handle_PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_FUNC((list<struct ic_data * > *)event.pointer_data);
@@ -1661,16 +1739,16 @@ struct event Register_manager::handler(struct event event)
             handle_BEFORE_CALL_FUNC((struct ic_data *)event.pointer_data);
             break;
         case event_type::RET_FROM_CALLED_FUNC:
-            handle_RET_FROM_CALLED_FUNC(((pair<struct ic_data *,reg_index> *)event.pointer_data)->first,((pair<struct ic_data *,reg_index> *)event.pointer_data)->second);
+            handle_RET_FROM_CALLED_FUNC(((pair<pair<struct ic_func *,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > *)event.pointer_data)->first.first,((pair<pair<struct ic_func *,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > *)event.pointer_data)->first.second,((pair<pair<struct ic_func *,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > *)event.pointer_data)->second.first,((pair<pair<struct ic_func *,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > *)event.pointer_data)->second.second);
             break;
         case event_type::RET_FROM_CALLED_ABI_FUNC:
-            handle_RET_FROM_CALLED_ABI_FUNC(((pair<struct ic_data *,reg_index> *)event.pointer_data)->first,((pair<struct ic_data *,reg_index> *)event.pointer_data)->second);
+            handle_RET_FROM_CALLED_ABI_FUNC(((pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > *)event.pointer_data)->first.first,((pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > *)event.pointer_data)->first.second,((pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > *)event.pointer_data)->second.first,((pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> > *)event.pointer_data)->second.second);
             break;
         case event_type::CHECK_CONST_INT_VALUE_OWN_CPU_REG:
-            response=handle_CHECK_CONST_VALUE_OWN_CPU_REG(event.int_data);
+            response=handle_CHECK_CONST_VALUE_OWN_CPU_REG(OAA((int)event.int_data));
             break;
         case event_type::GET_CONST_VALUE_S_CPU_REG:
-            response=handle_GET_CONST_VALUE_S_CPU_REG(event.int_data);
+            response=handle_GET_CONST_VALUE_S_CPU_REG(OAA((int)event.int_data));
             break;
         case event_type::GET_R0_REG:
             response=handle_GET_R0_REG();
@@ -1714,8 +1792,32 @@ struct event Register_manager::handler(struct event event)
         case event_type::GET_VFP_ARGUMENT_REG_NUM:
             response=handle_GET_VFP_ARGUMENT_REG_NUM();
             break;
-        case event_type::DISABLE_ALL_ADDR_REG:
-            handle_DISABLE_ALL_ADDR_REG();
+        // case event_type::DISABLE_ALL_ADDR_REGS_RELATED_WITH_SP:
+        //     handle_DISABLE_ALL_ADDR_REGS_RELATED_WITH_SP();
+        //     break;
+        case event_type::GET_FUNC_S_F_PARAMS_IN_REGS:
+            response=handle_GET_FUNC_S_F_PARAMS_IN_REGS((struct ic_func * )event.pointer_data);
+            break;
+        case event_type::GET_CPU_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC:
+            response=handle_GET_CPU_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC((struct ic_func * )event.pointer_data);
+            break;
+        case event_type::GET_VFP_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC:
+            response=handle_GET_VFP_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC((struct ic_func * )event.pointer_data);
+            break;
+        case event_type::DEAL_WITH_PARMAS_IN_ARGUMENT_REGS:
+            handle_DEAL_WITH_PARMAS_IN_ARGUMENT_REGS();
+            break;
+        case event_type::GET_ALL_CONTEXT_SAVED_CPU_REGS:
+            response=handle_GET_ALL_CONTEXT_SAVED_CPU_REGS((struct ic_func * )event.pointer_data);
+            break;
+        case event_type::GET_ALL_CONTEXT_SAVED_VFP_REGS:
+            response=handle_GET_ALL_CONTEXT_SAVED_VFP_REGS((struct ic_func * )event.pointer_data);
+            break;
+        case event_type::GET_REG_BY_NAME:
+            response=handle_GET_REG_BY_NAME(*((string * )event.pointer_data));
+            break;
+        case event_type::IS_REG_EFFECTIVE:
+            response=handle_IS_REG_EFFECTIVE((reg_index)event.int_data);
             break;
         default:
             break;

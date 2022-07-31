@@ -14,6 +14,7 @@
 #include<stdarg.h>
 #include "symbol_table.h"
 #include "asm_generator_component.h"
+#include "ic_optimizer.h"
 
 using namespace std;
 
@@ -70,8 +71,8 @@ struct reg
     void clear()
     {
         state=reg_state::EMPTY;
-        attached_const=false;
         var_datas.clear();
+        attached_const=false;
     };
 
     void add_value(OAA const_value)
@@ -148,6 +149,38 @@ struct reg
         }
     };
 
+    bool has_the_only_DIRTY_value(struct ic_data * var) const
+    {
+        bool res=false;
+        for(auto var_data:var_datas)
+        {
+            if(var_data.second==reg_var_state::DIRTY)
+            {
+                if(var_data.first==var)
+                {
+                    res=true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        return res;
+    };
+
+    bool has_no_DIRTY_value() const
+    {
+        for(auto var_data:var_datas)
+        {
+            if(var_data.second==reg_var_state::DIRTY)
+            {
+                return false;
+            }
+        }
+        return true;
+    };
+
     bool operator <(const struct reg & a) const
     {
         return (this->index<a.index);
@@ -211,13 +244,7 @@ struct flag_reg
 
     flag_reg(string name,size_t flag_num_in_flag_reg,...):name(name)
     {
-        /*va_list argptr;
-        va_start(argptr,flag_num_in_flag_reg);
-        for(size_t i=0;i<flag_num_in_flag_reg;i++)
-        {
-            related_data.insert(make_pair(va_arg(argptr,enum flag_in_flag_reg),nullptr));
-        }
-        va_end(argptr);*/
+        
     };
 
     //在当前的标志寄存器的所有标志位和某一个变量之间建立联系
@@ -279,24 +306,35 @@ struct regs_info
     reg_index next_available_CPU_reg();
     //获取下一个可用的CPU寄存器
     reg_index next_available_VFP_reg();
+    //获取当前寄存器堆中最大的寄存器编号
+    reg_index get_max_reg_index() const;
+    //获取CPU参数寄存器的个数
+    size_t get_CPU_ARGUMENT_reg_num() const;
+    //获取VFP参数寄存器的个数
+    size_t get_VFP_ARGUMENT_reg_num() const;
+    //查看一个寄存器是否是ARGUMENT寄存器
+    inline bool is_ARGUMENT_REG(reg_index reg) const
+    {
+        return reg_indexs.at(reg).attr==reg_attr::ARGUMENT;
+    }
 };
 
 //寄存器管理器
 class Register_manager:public Asm_generator_component
 {
 
-private:
+protected:
     //有效位
     bool is_init_successful_;
 
     //寄存器信息
     struct regs_info regs_info_;
 
-    //将一个指定的寄存器设置为新分配
-    bool allocate_designated_reg(reg_index reg);
+    //当前正在处理的函数
+    struct ic_func_flow_graph * current_func_;
 
-    //新分配一个空闲的寄存器
-    reg_index allocate_idle_reg(reg_processor processor,bool get_an_empty_reg=false);
+    //获取一个函数在被调用的时候需要用到的寄存器
+    list<reg_index> get_func_s_regs_holding_f_params_by_func_name(string func_name);
 
     //将某一个寄存器设置为正在被当前的指令所使用
     void set_got_by_current_instruction(reg_index reg);
@@ -304,91 +342,110 @@ private:
     //查看一个寄存器是否正在被当前的指令所使用
     bool is_got_by_current_instruction(reg_index reg);
 
-    //为某一个int常量获取一个寄存器
-    reg_index get_reg_for_const(OAA const_data,enum reg_processor processor,bool get_an_empty_reg=false);
+    //获取一个函数存放在内存中的函数形参
+    list<struct ic_data * > get_func_s_f_params_in_memory(struct ic_func * func);
+
+    //新分配一个空闲的寄存器
+    virtual reg_index allocate_idle_reg(reg_processor processor,bool get_an_empty_reg=false);
+
+    //为某一个常量获取一个寄存器
+    virtual reg_index get_reg_for_const(OAA const_data,enum reg_processor processor,bool get_an_empty_reg=false);
+
+    //把一个数组的所有脏值元素全部写回内存，并且将其设置为非脏值
+    virtual void store_array_s_all_DIRTY_members_and_set_them_NOT_DIRTY(struct ic_data * array,bool deal_with_const_offset_member=true);
 
     //为了读取某一个变量而获取一个寄存器
-    reg_index get_reg_for_reading_var(struct ic_data * var,enum reg_processor processor);
+    virtual reg_index get_reg_for_reading_var(struct ic_data * var,enum reg_processor processor);
 
-    //在把某一个变量写入寄存器并设置为脏值之前将和它关联的所有脏值写回
-    void store_DIRTY_values_before_writing_var(struct ic_data * var);
+    //在把某一个变量写入寄存器并设置为脏值之前进行相应的处理
+    virtual void before_writing_var_value(struct ic_data * var);
 
     //为了写某一个变量而获取一个寄存器
-    reg_index get_reg_for_writing_var(struct ic_data * var,enum reg_processor processor);
+    virtual reg_index get_reg_for_writing_var(struct ic_data * var,enum reg_processor processor);
 
     //为了读取某一个变量的地址而获取一个寄存器
-    reg_index get_reg_for_var_addr(struct ic_data * var);
+    virtual reg_index get_reg_for_var_addr(struct ic_data * var,enum reg_processor processor);
+
+    //将一个指定的寄存器设置为新分配
+    virtual bool allocate_designated_reg(reg_index reg);
 
     //为了某一个int常量的值而获取一个特定的寄存器
-    void get_designated_reg_for_const(reg_index reg,OAA const_data);
+    virtual void get_designated_reg_for_const(reg_index reg,OAA const_data);
 
     //为了读取某一个变量而获取一个特定的寄存器
-    void get_designated_reg_for_reading_var(reg_index reg,struct ic_data * var);
+    virtual void get_designated_reg_for_reading_var(reg_index reg,struct ic_data * var);
 
     //为了写某一个变量而获取一个特定的寄存器
-    void get_designated_reg_for_writing_var(reg_index reg,struct ic_data * var);
+    virtual void get_designated_reg_for_writing_var(reg_index reg,struct ic_data * var);
 
     //事件处理
-    void handle_FUNC_DEFINE(struct ic_func * func);
-    void handle_END_FUNC();
-    struct event handle_READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS(struct ic_func * func);
-    struct event handle_READY_TO_PUSH_CONTEXT_SAVED_TEMP_VFP_REGS(struct ic_func * func);
-    struct event handle_GET_SP_REG();
-    struct event handle_GET_FP_REG();
-    struct event handle_GET_LR_REG();
-    struct event handle_GET_PC_REG();
-    struct event handle_GET_APSR_REG();
-    struct event handle_GET_FPSCR_REG();
-    struct event handle_IS_CPU_REG(reg_index reg);
-    struct event handle_IS_VFP_REG(reg_index reg);
-    struct event handle_IS_ARGUMENT_REG(reg_index reg);
-    struct event handle_IS_TEMP_REG(reg_index reg);
-    struct event handle_GET_REG_BYTE_SIZE(reg_index reg);
-    struct event handle_READY_TO_PUSH_F_PARAM_CPU_REGS(list<struct ic_data * > * f_params);
-    struct event handle_READY_TO_PUSH_F_PARAM_VFP_REGS(list<struct ic_data * > * f_params);
-    void handle_END_BASIC_BLOCK();
-    void handle_END_BASIC_BLOCK_WITHOUT_FLAG();
-    void handle_CLEAR_FLAG();
-    void handle_RETURN_VAR(struct ic_data * var);
-    struct event handle_GET_CPU_REG_FOR_CONST(OAA const_data);
-    struct event handle_GET_AN_EMPTY_CPU_REG_FOR_CONST(OAA const_data);
-    struct event handle_GET_VFP_REG_FOR_CONST(OAA const_data);
-    struct event handle_GET_CPU_REG_FOR_READING_VAR(struct ic_data * var_data);
-    struct event handle_GET_CPU_REG_FOR_WRITING_VAR(struct ic_data * var_data);
-    struct event handle_GET_VFP_REG_FOR_READING_VAR(struct ic_data * var_data);
-    struct event handle_GET_VFP_REG_FOR_WRITING_VAR(struct ic_data * var_data);
-    struct event handle_GET_ADDR_REG(struct ic_data * var_data);
-    void handle_START_INSRUCTION(set<reg_index> * regs_unaccessible);
-    void handle_END_INSTRUCTION();
-    void handle_FUNC_RET();
-    void handle_SAVE_REGS_WHEN_CALLING_FUNC();
-    void handle_SAVE_REGS_WHEN_CALLING_ABI_FUNC();
-    void handle_PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_FUNC(list<struct ic_data * > * r_params);
-    void handle_PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_ABI_FUNC(list<struct ic_data * > * r_params,list<reg_index> * r_param_regs);
-    void handle_BEFORE_CALL_FUNC(struct ic_data * return_value);
-    void handle_RET_FROM_CALLED_FUNC(struct ic_data * return_value,reg_index return_reg);
-    void handle_RET_FROM_CALLED_ABI_FUNC(struct ic_data * return_value,reg_index return_reg);
-    struct event handle_CHECK_CONST_VALUE_OWN_CPU_REG(OAA const_value);
-    struct event handle_GET_CONST_VALUE_S_CPU_REG(OAA const_value);
-    struct event handle_GET_R0_REG();
-    struct event handle_GET_R1_REG();
-    struct event handle_GET_S0_REG();
-    void handle_CHANGE_FLAGS_FOR_VAR(struct ic_data * var,int cared_flag);
-    struct event handle_CHECK_VAR_ATTACHED_TO_FLAG(struct ic_data * var);
-    struct event handle_GET_VAR_CARED_FLAG();
-    struct event handle_ALLOCATE_IDLE_CPU_REG();
-    void handle_ATTACH_CONST_TO_REG(OAA const_data,reg_index reg);
-    void handle_ATTACH_VAR_VALUE_TO_REG(struct ic_data * var_data,reg_index reg);
-    void handle_ATTACH_VAR_VALUE_TO_REG_THEN_SET_DIRTY(struct ic_data * var_data,reg_index reg);
-    void handle_UNATTACH_REG_S_ALL_DATA(reg_index reg);
-    struct event handle_GET_ALL_ARGUMENT_REGS();
-    struct event handle_GET_CPU_ARGUMENT_REG_NUM();
-    struct event handle_GET_VFP_ARGUMENT_REG_NUM();
-    void handle_DISABLE_ALL_ADDR_REG();
+    virtual void handle_FUNC_DEFINE(struct ic_func * func);
+    virtual void handle_START_FUNC(struct ic_func_flow_graph * func);
+    virtual void handle_END_FUNC();
+    virtual void handle_CLEAR_FLAG();
+    virtual void handle_CHANGE_FLAGS_FOR_VAR(struct ic_data * var,int cared_flag);
+    virtual void handle_PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_FUNC(list<struct ic_data * > * r_params);
+    virtual void handle_PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_ABI_FUNC(list<struct ic_data * > * r_params,list<reg_index> * r_param_regs);
+    virtual void handle_RETURN_VAR(struct ic_data * var);
+    virtual void handle_BEFORE_CALL_FUNC(struct ic_data * return_value);
+    virtual void handle_START_INSRUCTION(set<reg_index> * regs_unaccessible);
+    virtual void handle_END_INSTRUCTION();
+    virtual void handle_FUNC_RET();
+    virtual void handle_SAVE_REGS_WHEN_CALLING_FUNC(struct ic_func * func,list<struct ic_data * > * r_params);
+    virtual void handle_SAVE_REGS_WHEN_CALLING_ABI_FUNC(string func_name,list<struct ic_data * > * r_params);
+    virtual void handle_RET_FROM_CALLED_FUNC(struct ic_func * func,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg);
+    virtual void handle_RET_FROM_CALLED_ABI_FUNC(string func_name,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg);
+    virtual void handle_ATTACH_CONST_TO_REG(OAA const_data,reg_index reg);
+    virtual void handle_ATTACH_VAR_VALUE_TO_REG(struct ic_data * var_data,reg_index reg);
+    virtual void handle_ATTACH_VAR_VALUE_TO_REG_THEN_SET_DIRTY(struct ic_data * var_data,reg_index reg);
+    virtual void handle_UNATTACH_REG_S_ALL_DATA(reg_index reg);
+    // virtual void handle_DISABLE_ALL_ADDR_REGS_RELATED_WITH_SP();
+    virtual void handle_DEAL_WITH_PARMAS_IN_ARGUMENT_REGS();
+    virtual struct event handle_GET_REG_BY_NAME(string name);
+    virtual struct event handle_IS_REG_EFFECTIVE(reg_index reg);
+    virtual struct event handle_GET_FUNC_S_F_PARAMS_IN_REGS(struct ic_func * func);
+    virtual struct event handle_GET_CPU_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC(struct ic_func * func);
+    virtual struct event handle_GET_VFP_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC(struct ic_func * func);
+    virtual struct event handle_IS_CPU_REG(reg_index reg);
+    virtual struct event handle_IS_VFP_REG(reg_index reg);
+    virtual struct event handle_CHECK_CONST_VALUE_OWN_CPU_REG(OAA const_value);
+    virtual struct event handle_GET_CONST_VALUE_S_CPU_REG(OAA const_value);
+    virtual struct event handle_ALLOCATE_IDLE_CPU_REG();
+    virtual struct event handle_GET_SP_REG();
+    virtual struct event handle_GET_FP_REG();
+    virtual struct event handle_GET_LR_REG();
+    virtual struct event handle_GET_PC_REG();
+    virtual struct event handle_GET_APSR_REG();
+    virtual struct event handle_GET_FPSCR_REG();
+    virtual struct event handle_GET_R0_REG();
+    virtual struct event handle_GET_R1_REG();
+    virtual struct event handle_GET_S0_REG();
+    virtual struct event handle_IS_ARGUMENT_REG(reg_index reg);
+    virtual struct event handle_IS_TEMP_REG(reg_index reg);
+    virtual struct event handle_GET_REG_BYTE_SIZE(reg_index reg);
+    virtual struct event handle_GET_ALL_ARGUMENT_REGS();
+    virtual struct event handle_GET_CPU_ARGUMENT_REG_NUM();
+    virtual struct event handle_GET_VFP_ARGUMENT_REG_NUM();
+    virtual struct event handle_CHECK_VAR_ATTACHED_TO_FLAG(struct ic_data * var);
+    virtual struct event handle_GET_VAR_CARED_FLAG();
+    virtual struct event handle_GET_ALL_CONTEXT_SAVED_CPU_REGS(struct ic_func * func);
+    virtual struct event handle_GET_ALL_CONTEXT_SAVED_VFP_REGS(struct ic_func * func);
+    virtual struct event handle_GET_CPU_REG_FOR_CONST(OAA const_data);
+    virtual struct event handle_GET_AN_EMPTY_CPU_REG_FOR_CONST(OAA const_data);
+    virtual struct event handle_GET_VFP_REG_FOR_CONST(OAA const_data);
+    virtual struct event handle_GET_CPU_REG_FOR_READING_VAR(struct ic_data * var_data);
+    virtual struct event handle_GET_CPU_REG_FOR_WRITING_VAR(struct ic_data * var_data);
+    virtual struct event handle_GET_VFP_REG_FOR_READING_VAR(struct ic_data * var_data);
+    virtual struct event handle_GET_VFP_REG_FOR_WRITING_VAR(struct ic_data * var_data);
+    virtual struct event handle_GET_ADDR_REG(struct ic_data * var_data);
+    virtual void handle_START_BASIC_BLOCK(struct ic_basic_block * basic_block)=0;
+    virtual void handle_END_BASIC_BLOCK(struct ic_basic_block * basic_block)=0;
+    virtual void handle_END_BASIC_BLOCK_WITHOUT_FLAG(struct ic_basic_block * basic_block)=0;
 
 public:
-    //构造函数
     Register_manager(set<struct reg> regs,struct flag_reg flag_reg);
+
+    virtual ~Register_manager();
 
     //检查该寄存器管理员是否初始化成功
     bool is_init_successful();

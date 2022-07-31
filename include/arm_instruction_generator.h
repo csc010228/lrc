@@ -18,14 +18,14 @@ class Arm_instruction_generator:public Instruction_generator
 {
 
 protected:
-    //arm汇编
-    list<Arm_asm_file_line * > arm_asm_codes_;
-
     //arm汇编的流图
     struct arm_flow_graph arm_flow_graph_;
 
     //当前基本块是否处于开始状态
     bool is_current_basic_block_starting_;
+
+    //为了溢出而生成的虚拟目标代码
+    list<Arm_asm_file_line * > * virtual_target_codes_for_spilling_;
 
     //生成汇编文件序列,并将其赋值给父类Instruction_generator的asm_codes_成员
     void generate_asm_codes();
@@ -110,6 +110,9 @@ protected:
     //把一行directive插入到汇编的全局区域当中
     inline void push_directive(Arm_directive * directive);
 
+    //在当前指令的位置保存运行时栈空间情况
+    void record_stack_space_changed_here();
+
     //事件处理函数
     void handle_WRITE_CONST_TO_REG(OAA const_data,reg_index reg);
     void handle_STORE_VAR_TO_MEM(struct ic_data * var,reg_index reg);
@@ -117,13 +120,16 @@ protected:
     void handle_LOAD_VAR_TO_REG(struct ic_data * var,reg_index reg);
     void handle_WRITE_ADDR_TO_REG(struct ic_data * var,reg_index reg);
     void handle_PUSH_TEMP_VAR_FROM_REG_TO_STACK(struct ic_data * var,reg_index reg);
-    void handle_CALL_FUNC(string func_name,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg);
+    void handle_CALL_FUNC(struct ic_func * func,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg);
     void handle_CALL_ABI_FUNC(string func_name,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg,list<reg_index> * r_param_regs);
     void handle_MOVE_DATA_BETWEEN_REGS(reg_index from,reg_index to);
     void handle_ASSIGN_VAR(struct ic_data * from,struct ic_data * to);
     void handle_POP_STACK(size_t pop_size);
-    void handle_START_FUNC(struct ic_func * func);
+    void handle_START_FUNC(struct ic_func_flow_graph * func);
     void handle_START_BASIC_BLOCK(struct ic_basic_block * basic_block);
+    struct event handle_GET_VIRTUAL_TRAGET_CODE_OF_CURRENT_FUNC();
+    void handle_START_GENERATING_SPILLING_VIRTUAL_CODES();
+    struct event handle_GET_SPILLING_VIRTUAL_CODES();
 
 public:
     //构造函数

@@ -30,6 +30,22 @@ Arm_asm_optimizer::~Arm_asm_optimizer()
 }
 
 /*
+优化基本块的出入口代码
+
+Parameters
+----------
+basic_block:要优化的基本块
+*/
+void Arm_asm_optimizer::optimize_basic_block_enter_and_exit(struct arm_basic_block * basic_block)
+{
+    //主要是把入栈操作删除
+    for(auto & line:basic_block->arm_sequence)
+    {
+
+    }
+}
+
+/*
 利用arm数据处理指令能够更改标志位进行优化
 
 Parameters
@@ -47,11 +63,11 @@ void Arm_asm_optimizer::data_process_instructions_change_flags(struct arm_basic_
     reg_index reg;
     map<reg_index,list<Arm_asm_file_line * >::reverse_iterator> compare_zero_regs;
     set<reg_index> * all_argument_regs;
-    for(list<Arm_asm_file_line * >::reverse_iterator arm_asm=basic_block->arm_sequence.rbegin();arm_asm!=basic_block->arm_sequence.rend();arm_asm++)
+    for(list<Arm_asm_file_line * >::reverse_iterator line=basic_block->arm_sequence.rbegin();arm_asm!=basic_block->arm_sequence.rend();arm_asm++)
     {
-        if((*arm_asm)->is_instruction())
+        if((*line)->is_instruction())
         {
-            instruction=dynamic_cast<Arm_instruction *>(*arm_asm);
+            instruction=dynamic_cast<Arm_instruction *>(*line);
             switch(instruction->get_op())
             {
                 case arm_op::ADD:
@@ -137,6 +153,39 @@ void Arm_asm_optimizer::data_process_instructions_change_flags(struct arm_basic_
 }
 
 /*
+删除无用mov指令
+
+Parameters
+----------
+basic_bloc:要优化的基本块
+*/
+void Arm_asm_optimizer::remove_useless_mov(struct arm_basic_block * basic_block)
+{
+    Arm_instruction * ins;
+    Arm_cpu_data_process_instruction * cpu_data_process_ins;
+    struct operand2 op2;
+    for(list<Arm_asm_file_line * >::iterator line=basic_block->arm_sequence.begin();line!=basic_block->arm_sequence.end();line++)
+    {
+        if((*line)->is_instruction())
+        {
+            ins=dynamic_cast<Arm_instruction * >(*line);
+            if(ins->get_op()==arm_op::MOV)
+            {
+                cpu_data_process_ins=dynamic_cast<Arm_cpu_data_process_instruction * >(ins);
+                if(cpu_data_process_ins->get_destination_registers().registers_.size()==1)
+                {
+                    op2=cpu_data_process_ins->get_operand2();
+                    if(op2.type==operand2_type::RM_SHIFT && op2.Rm_shift.shift_op==operand2_shift_op::NONE && op2.Rm_shift.Rm==(*(cpu_data_process_ins->get_destination_registers().registers_.begin())))
+                    {
+                        (*line)=new Arm_pseudo_instruction();
+                    }
+                }
+            }
+        }
+    }
+}
+
+/*
 局部优化
 */
 void Arm_asm_optimizer::local_optimize()
@@ -145,8 +194,24 @@ void Arm_asm_optimizer::local_optimize()
     {
         for(auto basic_block:func->basic_blocks)
         {
+            //优化基本块的出入口代码
+            optimize_basic_block_enter_and_exit(basic_block);
+        }
+    }
+    for(auto func:arm_flow_graph_->func_flow_graphs)
+    {
+        for(auto basic_block:func->basic_blocks)
+        {
             //利用arm数据处理指令能够更改标志位进行优化
             data_process_instructions_change_flags(basic_block);
+        }
+    }
+    for(auto func:arm_flow_graph_->func_flow_graphs)
+    {
+        for(auto basic_block:func->basic_blocks)
+        {
+            //将删除无用的mov
+            remove_useless_mov(basic_block);
         }
     }
 }

@@ -2750,7 +2750,7 @@ define_semantic_rule(___UNARY_EXP_3___)
     struct ic_func * func=func(*(string*)get_syntax_symbol_attribute(id,id_string,pointer));
     list<struct ic_data * > * r_params=(list<struct ic_data * > * )get_syntax_symbol_attribute(FUNC_R_PARAMS,r_params,pointer);
     list<struct ic_data * >::iterator r_param_pointer=r_params->begin();
-    list<struct ic_data * > f_params=func->get_f_params();
+    list<struct ic_data * > f_params=*(func->f_params);
     //检查函数形参类型和实参类型是否一致，如果不一致的话需要进行转换
     for(auto i:f_params)
     {

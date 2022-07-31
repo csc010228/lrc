@@ -18,8 +18,14 @@ private:
     //要优化的arm汇编流图
     struct arm_flow_graph * arm_flow_graph_;
 
+    //优化基本块的出入口代码
+    void optimize_basic_block_enter_and_exit(struct arm_basic_block * basic_block);
+
     //利用arm数据处理指令能够更改标志位进行优化
     void data_process_instructions_change_flags(struct arm_basic_block * basic_block);
+
+    //删除多余的mov指令
+    void remove_useless_mov(struct arm_basic_block * basic_block);
     
     //局部优化
     void local_optimize();

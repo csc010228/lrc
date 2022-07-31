@@ -34,6 +34,34 @@ protected:
     //所有的跨越基本块的临时变量
     map<struct ic_func * ,set<struct ic_data * > > temp_vars_over_basic_blocks_;
 
+    //函数的无效常量分析结果
+    struct
+    {
+        map<struct ic_basic_block *,set<pair<OAA,enum language_data_type > > > ins;
+        map<struct ic_basic_block *,set<pair<OAA,enum language_data_type > > > outs;
+    } ineffective_const_value_info_;
+
+    //函数的无效变量分析结果
+    struct
+    {
+        map<struct ic_basic_block *,set<struct ic_data * > > ins;
+        map<struct ic_basic_block *,set<struct ic_data * > > outs;
+    } ineffective_value_info_;
+
+    //函数的无效地址分析结果
+    struct
+    {
+        map<struct ic_basic_block *,set<struct ic_data * > > ins;
+        map<struct ic_basic_block *,set<struct ic_data * > > outs;
+    } ineffective_not_array_global_addr_info_;
+
+    //函数的脏值分析结果
+    struct
+    {
+        map<struct ic_basic_block *,set<struct ic_data * > > ins;
+        map<struct ic_basic_block *,set<struct ic_data * > > outs;
+    } dirty_not_array_global_value_info_;
+
     //获取一个函数中所有的跨越基本块的临时变量
     void build_temp_vars_over_basic_blocks_info_in_func(struct ic_func_flow_graph * func);
 
@@ -44,6 +72,20 @@ protected:
     struct event handle_GET_TEMP_VARS_OVER_BASIC_BLOCK_IN_CURRENT_FUNC();
     struct event handle_IS_TEMP_VAR_OVER_BASIC_BLOCKS_IN_CURRENT_FUNC(struct ic_data * var);
     struct event handle_GET_TEMP_VARS_IN_CURRENT_BASIC_BLOCK();
+    struct event handle_GET_ARRAY_S_ALL_MEMBERS_IN_CURRENT_FUNC(struct ic_data * array);
+    struct event handle_GET_ARRAY_MEMBERS_WITH_SPECIFIED_OFFSET(struct ic_data * array);
+    struct event handle_GET_CURRENT_FUNC_S_F_PARAMS();
+    void handle_INEFFECTIVE_CONST_VALUE_ANALYSIS(struct ic_func_flow_graph * func_flow_graph);
+    void handle_INEFFECTIVE_VALUE_ANALYSIS(struct ic_func_flow_graph * func_flow_graph);
+    void handle_INEFFECTIVE_NOT_ARRAY_GLOBAL_ADDR_ANALYSIS(struct ic_func_flow_graph * func_flow_graph);
+    void handle_DIRTY_VALUE_ANALYSIS(struct ic_func_flow_graph * func_flow_graph);
+    struct event handle_GET_BASIC_BLOCK_ENTER_S_INEFFECTIVE_CONST_VALUE_ANALYSIS_INFO(struct ic_basic_block * basic_block);
+    struct event handle_GET_BASIC_BLOCK_ENTER_S_INEFFECTIVE_VALUE_ANALYSIS_INFO(struct ic_basic_block * basic_block);
+    struct event handle_GET_BASIC_BLOCK_ENTER_S_INEFFECTIVE_NOT_ARRAY_GLOBAL_ADDR_ANALYSIS_INFO(struct ic_basic_block * basic_block);
+    struct event handle_GET_BASIC_BLOCK_ENTER_S_DIRTY_VALUE_ANALYSIS_INFO(struct ic_basic_block * basic_block);
+    struct event handle_GET_CURRENT_BASIC_BLOCK_EXIT_S_DIRTY_VALUE_ANALYSIS_INFO();
+    struct event handle_IS_A_START_BASIC_BLOCK(struct ic_basic_block * basic_block);
+    struct event handle_GET_CURRENT_BASIC_BLOCK();
 
 public:
     //构造函数
