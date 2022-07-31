@@ -38,11 +38,11 @@ basic_block:要优化的基本块
 */
 void Arm_asm_optimizer::optimize_basic_block_enter_and_exit(struct arm_basic_block * basic_block)
 {
-    //主要是把入栈操作删除
-    for(auto & line:basic_block->arm_sequence)
-    {
+    // //主要是把入栈操作删除
+    // for(auto & line:basic_block->arm_sequence)
+    // {
 
-    }
+    // }
 }
 
 /*
@@ -63,7 +63,7 @@ void Arm_asm_optimizer::data_process_instructions_change_flags(struct arm_basic_
     reg_index reg;
     map<reg_index,list<Arm_asm_file_line * >::reverse_iterator> compare_zero_regs;
     set<reg_index> * all_argument_regs;
-    for(list<Arm_asm_file_line * >::reverse_iterator line=basic_block->arm_sequence.rbegin();arm_asm!=basic_block->arm_sequence.rend();arm_asm++)
+    for(list<Arm_asm_file_line * >::reverse_iterator line=basic_block->arm_sequence.rbegin();line!=basic_block->arm_sequence.rend();line++)
     {
         if((*line)->is_instruction())
         {
@@ -108,7 +108,7 @@ void Arm_asm_optimizer::data_process_instructions_change_flags(struct arm_basic_
                     source_regs=instruction->get_source_registers();
                     if(op2.type==operand2_type::IMMED_8R && op2.immed_8r==0 && source_regs.get_regs_num()==1)
                     {
-                        compare_zero_regs.insert(make_pair(source_regs.get_only_member(),arm_asm));
+                        compare_zero_regs.insert(make_pair(source_regs.get_only_member(),line));
                     }
                     break;
                 case arm_op::LDM:
