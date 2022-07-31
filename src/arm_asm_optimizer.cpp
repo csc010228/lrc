@@ -38,11 +38,19 @@ basic_block:要优化的基本块
 */
 void Arm_asm_optimizer::optimize_basic_block_enter_and_exit(struct arm_basic_block * basic_block)
 {
-    // //主要是把入栈操作删除
-    // for(auto & line:basic_block->arm_sequence)
-    // {
+    Arm_instruction * instruction;
+    list<Arm_asm_file_line * >::iterator sub_sp,add_sp;
+    reg_index sp=(reg_index)notify(event(event_type::GET_SP_REG,nullptr)).int_data;
+    //当基本块满足下列条件的时候，我们认为该基本块出入口的移动sp为临时变量开辟和释放内存空间是可以省略的
+    //（1）除了出入口的移动sp指令外，没有指令涉及到sp寄存器
+    //（2）没有push和pop指令
+    for(list<Arm_asm_file_line * >::reverse_iterator line=basic_block->arm_sequence.rbegin();line!=basic_block->arm_sequence.rend();line++)
+    {
+        // if((*line)->)
+        // {
 
-    // }
+        // }
+    }
 }
 
 /*
@@ -172,11 +180,12 @@ void Arm_asm_optimizer::remove_useless_mov(struct arm_basic_block * basic_block)
             if(ins->get_op()==arm_op::MOV)
             {
                 cpu_data_process_ins=dynamic_cast<Arm_cpu_data_process_instruction * >(ins);
-                if(cpu_data_process_ins->get_destination_registers().registers_.size()==1)
+                if(!cpu_data_process_ins->is_update_flags() && cpu_data_process_ins->get_destination_registers().registers_.size()==1)
                 {
                     op2=cpu_data_process_ins->get_operand2();
                     if(op2.type==operand2_type::RM_SHIFT && op2.Rm_shift.shift_op==operand2_shift_op::NONE && op2.Rm_shift.Rm==(*(cpu_data_process_ins->get_destination_registers().registers_.begin())))
                     {
+                        delete (*line);
                         (*line)=new Arm_pseudo_instruction();
                     }
                 }

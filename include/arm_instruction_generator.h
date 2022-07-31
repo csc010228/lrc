@@ -124,7 +124,7 @@ protected:
     void handle_CALL_ABI_FUNC(string func_name,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg,list<reg_index> * r_param_regs);
     void handle_MOVE_DATA_BETWEEN_REGS(reg_index from,reg_index to);
     void handle_ASSIGN_VAR(struct ic_data * from,struct ic_data * to);
-    void handle_POP_STACK(size_t pop_size);
+    void handle_POP_STACK_WHEN_EXIT_BASIC_BLOCK(size_t pop_size);
     void handle_START_FUNC(struct ic_func_flow_graph * func);
     void handle_START_BASIC_BLOCK(struct ic_basic_block * basic_block);
     struct event handle_GET_VIRTUAL_TRAGET_CODE_OF_CURRENT_FUNC();

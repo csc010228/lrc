@@ -380,7 +380,13 @@ void Memory_manager::handle_END_BASIC_BLOCK(struct ic_basic_block * basic_block)
 
 void Memory_manager::handle_END_BASIC_BLOCK_WITHOUT_FLAG(struct ic_basic_block * basic_block)
 {
+    static struct ic_basic_block * pre_basic_block=nullptr;
     size_t stack_offset=0;
+    if(pre_basic_block==basic_block)
+    {
+        return;
+    }
+    pre_basic_block=basic_block;
     //把此时所有的临时变量全部出栈
     if(current_func_stack_space_.r_params_passed_by_stack_as_caller.empty() && !current_func_stack_space_.temp_vars.empty())
     {
@@ -395,7 +401,7 @@ void Memory_manager::handle_END_BASIC_BLOCK_WITHOUT_FLAG(struct ic_basic_block *
         stack_offset=current_func_stack_space_.padding_bytes_after_temp_vars;
         current_func_stack_space_.padding_bytes_after_temp_vars=0;
     }
-    notify(event(event_type::POP_STACK,(int)stack_offset));
+    notify(event(event_type::POP_STACK_WHEN_EXIT_BASIC_BLOCK,(int)stack_offset));
 }
 
 struct event Memory_manager::handle_IS_F_PARAM_PASSED_BY_STACK(struct ic_data * var)

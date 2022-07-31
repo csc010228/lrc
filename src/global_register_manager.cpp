@@ -705,8 +705,7 @@ void Global_register_manager::get_designated_reg_for_writing_var(reg_index reg,s
     }
     Register_manager::get_designated_reg_for_writing_var(reg,var);
 }
-#include<iostream>
-using namespace std;
+
 void Global_register_manager::handle_START_FUNC(struct ic_func_flow_graph * func)
 {
     set<struct ic_data * > all_datas;

@@ -43,6 +43,9 @@ bool lrc(string source_program_filename,string target_filename,bool optimize,boo
     struct ic_flow_graph * intermediate_codes_flow_graph;
     string source_file_content_after_pre_process;
 
+    //设置优化选项
+    symbol_table->set_optimize_setting(optimize);
+
     //添加语言内置的头文件
     pre.add_inner_header_files(1,SYSY_INNER_HEADER_FILE_NAME);
 

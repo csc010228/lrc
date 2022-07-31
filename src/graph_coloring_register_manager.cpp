@@ -403,8 +403,7 @@ set<reg_index> Graph_coloring_register_manager::get_virtual_traget_instruction_s
     set_union(source_regs.begin(),source_regs.end(),destination_regs.begin(),destination_regs.end(),inserter(res,res.begin()));
     return res;
 }
-#include<iostream>
-using namespace std;
+
 void Graph_coloring_register_manager::live_analyze()
 {
     set<reg_index> registers,old_out;
@@ -470,36 +469,36 @@ void Graph_coloring_register_manager::live_analyze()
             }
         }
     }
-    cout<<"live_analysis:"<<endl;
-    for(auto i:virtual_target_code->basic_blocks)
-    {
-        cout<<"basic_block "<<i<<endl;
-        cout<<"live def:";
-        for(auto j:current_func_s_live_analysis.basic_block_s_live_analysis_infos.at(i).live_def)
-        {
-            cout<<(virtual_regs_info_.is_physical_reg(j)?"r":"VR")<<j<<",";
-        }
-        cout<<endl;
-        cout<<"live use:";
-        for(auto j:current_func_s_live_analysis.basic_block_s_live_analysis_infos.at(i).live_use)
-        {
-            cout<<(virtual_regs_info_.is_physical_reg(j)?"r":"VR")<<j<<",";
-        }
-        cout<<endl;
-        cout<<"live in:";
-        for(auto j:current_func_s_live_analysis.basic_block_s_live_analysis_infos.at(i).live_in)
-        {
-            cout<<(virtual_regs_info_.is_physical_reg(j)?"r":"VR")<<j<<",";
-        }
-        cout<<endl;
-        cout<<"live out:";
-        for(auto j:current_func_s_live_analysis.basic_block_s_live_analysis_infos.at(i).live_out)
-        {
-            cout<<(virtual_regs_info_.is_physical_reg(j)?"r":"VR")<<j<<",";
-        }
-        cout<<endl;
-    }
-    cout<<endl;
+    // cout<<"live_analysis:"<<endl;
+    // for(auto i:virtual_target_code->basic_blocks)
+    // {
+    //     cout<<"basic_block "<<i<<endl;
+    //     cout<<"live def:";
+    //     for(auto j:current_func_s_live_analysis.basic_block_s_live_analysis_infos.at(i).live_def)
+    //     {
+    //         cout<<(virtual_regs_info_.is_physical_reg(j)?"r":"VR")<<j<<",";
+    //     }
+    //     cout<<endl;
+    //     cout<<"live use:";
+    //     for(auto j:current_func_s_live_analysis.basic_block_s_live_analysis_infos.at(i).live_use)
+    //     {
+    //         cout<<(virtual_regs_info_.is_physical_reg(j)?"r":"VR")<<j<<",";
+    //     }
+    //     cout<<endl;
+    //     cout<<"live in:";
+    //     for(auto j:current_func_s_live_analysis.basic_block_s_live_analysis_infos.at(i).live_in)
+    //     {
+    //         cout<<(virtual_regs_info_.is_physical_reg(j)?"r":"VR")<<j<<",";
+    //     }
+    //     cout<<endl;
+    //     cout<<"live out:";
+    //     for(auto j:current_func_s_live_analysis.basic_block_s_live_analysis_infos.at(i).live_out)
+    //     {
+    //         cout<<(virtual_regs_info_.is_physical_reg(j)?"r":"VR")<<j<<",";
+    //     }
+    //     cout<<endl;
+    // }
+    // cout<<endl;
 }
 
 void Graph_coloring_register_manager::build_live_intervals()
@@ -633,17 +632,17 @@ void Graph_coloring_register_manager::build_live_intervals()
             }
         }
     }
-    cout<<"live interval:"<<endl;
-    for(auto i:current_func_s_live_intervals.virtual_regs_s_live_intervals)
-    {
-        cout<<(virtual_regs_info_.is_physical_reg(i.first)?"r":"VR")<<i.first<<":";
-        for(auto j:i.second.live_interval)
-        {
-            cout<<"("<<j.first<<"-"<<j.second<<")->";
-        }
-        cout<<endl;
-    }
-    cout<<endl;
+    // cout<<"live interval:"<<endl;
+    // for(auto i:current_func_s_live_intervals.virtual_regs_s_live_intervals)
+    // {
+    //     cout<<(virtual_regs_info_.is_physical_reg(i.first)?"r":"VR")<<i.first<<":";
+    //     for(auto j:i.second.live_interval)
+    //     {
+    //         cout<<"("<<j.first<<"-"<<j.second<<")->";
+    //     }
+    //     cout<<endl;
+    // }
+    // cout<<endl;
 }
 
 void Graph_coloring_register_manager::build_coherent_diagram()
@@ -702,13 +701,13 @@ next:
             ;
         }
     }
-    cout<<"coherent_diagram:"<<endl;
-    for(auto i:current_func_s_coherent_diagram.nodes)
-    {
-        cout<<"("<<(virtual_regs_info_.is_physical_reg(i.first)?"r":"VR")<<i.first<<","<<i.second->degree<<");";
-    }
-    cout<<endl;
-    cout<<endl;
+    // cout<<"coherent_diagram:"<<endl;
+    // for(auto i:current_func_s_coherent_diagram.nodes)
+    // {
+    //     cout<<"("<<(virtual_regs_info_.is_physical_reg(i.first)?"r":"VR")<<i.first<<","<<i.second->degree<<");";
+    // }
+    // cout<<endl;
+    // cout<<endl;
 }
 
 void Graph_coloring_register_manager::mk_worklists()
@@ -1061,10 +1060,6 @@ void Graph_coloring_register_manager::rewrite_program()
         set<reg_index> f_param_in_regs_array_regs;
         set<reg_index> addr_regs;
         set<reg_index> const_regs;
-        // map<reg_index,struct ic_data * > array_member_regs;
-        // map<reg_index,struct ic_data * > var_regs;
-        // map<reg_index,struct ic_data * > addr_regs;
-        // map<reg_index,OAA> const_regs;
     } spilled_regs;
     list<Arm_asm_file_line * > instructions;
     set<reg_index> destination_regs,source_regs,regs;
@@ -1077,30 +1072,26 @@ void Graph_coloring_register_manager::rewrite_program()
     struct runtime_stack_space * stack_space;
     map<struct ic_data *,bool> f_param_in_regs_array_has_been_spilled;
     set<struct ic_data * > * f_params_in_regs=(set<struct ic_data * > *)notify(event(event_type::GET_FUNC_S_F_PARAMS_IN_REGS,(void *)(virtual_target_code->function->func))).pointer_data;
-    map<reg_index,set<reg_index> > map_for_debug;
+    // map<reg_index,set<reg_index> > map_for_debug;
     //找出要溢出的虚拟寄存器，并对这些要溢出的虚拟寄存器决定溢出的处理顺序
-    cout<<"VAR_SPILLED:"<<endl;
+    // cout<<"VAR_SPILLED:"<<endl;
     for(auto node:spilled_nodes)
     {
         switch(virtual_regs_info_.reg_indexs.at(node->reg).data_type)
         {
             case virtual_related_data_type::CONST:
-                // spilled_regs.const_regs.insert(make_pair(node->reg,virtual_regs_info_.reg_indexs.at(node->reg).related_const));
                 spilled_regs.const_regs.insert(node->reg);
                 break;
             case virtual_related_data_type::VAR_ADDR:
-                // spilled_regs.addr_regs.insert(make_pair(node->reg,virtual_regs_info_.reg_indexs.at(node->reg).related_var));
                 spilled_regs.addr_regs.insert(node->reg);
                 break;
             case virtual_related_data_type::VAR_VALUE:
                 if(virtual_regs_info_.reg_indexs.at(node->reg).related_var->is_array_member())
                 {
-                    // spilled_regs.array_member_regs.insert(make_pair(node->reg,virtual_regs_info_.reg_indexs.at(node->reg).related_var));
                     spilled_regs.array_member_regs.insert(node->reg);
                 }
                 else if(virtual_regs_info_.reg_indexs.at(node->reg).related_var->is_array_var())
                 {
-                    // spilled_regs.var_regs.insert(make_pair(node->reg,virtual_regs_info_.reg_indexs.at(node->reg).related_var));
                     if(f_params_in_regs->find(virtual_regs_info_.reg_indexs.at(node->reg).related_var)!=f_params_in_regs->end())
                     {
                         spilled_regs.f_param_in_regs_array_regs.insert(node->reg);
@@ -1119,12 +1110,12 @@ void Graph_coloring_register_manager::rewrite_program()
                 break;
         }
     }
-    cout<<spilled_regs.const_regs.size()<<endl;
-    cout<<spilled_regs.addr_regs.size()<<endl;
-    cout<<spilled_regs.array_member_regs.size()<<endl;
-    cout<<spilled_regs.f_param_in_regs_array_regs.size()<<endl;
-    cout<<spilled_regs.not_f_param_in_regs_array_regs.size()<<endl;
-    cout<<spilled_regs.var_regs.size()<<endl;
+    // cout<<spilled_regs.const_regs.size()<<endl;
+    // cout<<spilled_regs.addr_regs.size()<<endl;
+    // cout<<spilled_regs.array_member_regs.size()<<endl;
+    // cout<<spilled_regs.f_param_in_regs_array_regs.size()<<endl;
+    // cout<<spilled_regs.not_f_param_in_regs_array_regs.size()<<endl;
+    // cout<<spilled_regs.var_regs.size()<<endl;
     delete f_params_in_regs;
     //溢出处理的顺序如下（不是强制的，只是这样处理会更好）：
     //数组元素
@@ -1134,7 +1125,6 @@ void Graph_coloring_register_manager::rewrite_program()
     {
         for(list<Arm_asm_file_line * >::iterator ins_pos=bb->arm_sequence.begin();ins_pos!=bb->arm_sequence.end();ins_pos++)
         {
-            //notify(event(event_type::SET_STACK_SPACE,(void *)(&ins_pos)));
             source_regs=get_virtual_traget_instruction_s_all_source_regs(*ins_pos);
             regs.clear();
             set_intersection(source_regs.begin(),source_regs.end(),spilled_regs.array_member_regs.begin(),spilled_regs.array_member_regs.end(),inserter(regs,regs.begin()));
@@ -1146,14 +1136,11 @@ void Graph_coloring_register_manager::rewrite_program()
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-
-                    map_set_insert(map_for_debug,reg,new_reg);
-
+                    // map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_loading_var_value(var,new_reg);
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
                     current_func_s_live_intervals.new_empty_virtual_code_segment(current_pos-1,instructions.size());
-                    // current_func_s_live_intervals.add_live_interval_for_a_reg(new_reg,current_pos,current_pos+instructions.size());
                     current_pos+=instructions.size();
                 }
                 (*ins_pos)->replace_regs(replace_regs_map);
@@ -1170,17 +1157,13 @@ void Graph_coloring_register_manager::rewrite_program()
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-
-                    map_set_insert(map_for_debug,reg,new_reg);
-
+                    // map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_storing_var_value(var,new_reg);
                     new_ins_pos=ins_pos;
                     advance(new_ins_pos,1);
                     bb->arm_sequence.insert(new_ins_pos,instructions.cbegin(),instructions.cend());
                     current_func_s_live_intervals.new_empty_virtual_code_segment(current_pos,instructions.size());
-                    // current_func_s_live_intervals.add_live_interval_for_a_reg(new_reg,current_pos,current_pos+instructions.size());
-                    // current_pos+=instructions.size();
                 }
                 (*ins_pos)->replace_regs(replace_regs_map);
             }
@@ -1194,7 +1177,6 @@ void Graph_coloring_register_manager::rewrite_program()
     {
         for(list<Arm_asm_file_line * >::iterator ins_pos=bb->arm_sequence.begin();ins_pos!=bb->arm_sequence.end();ins_pos++)
         {
-            //notify(event(event_type::SET_STACK_SPACE,(void *)(&ins_pos)));
             source_regs=get_virtual_traget_instruction_s_all_source_regs(*ins_pos);
             regs.clear();
             set_intersection(source_regs.begin(),source_regs.end(),spilled_regs.var_regs.begin(),spilled_regs.var_regs.end(),inserter(regs,regs.begin()));
@@ -1206,14 +1188,11 @@ void Graph_coloring_register_manager::rewrite_program()
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-
-                    map_set_insert(map_for_debug,reg,new_reg);
-
+                    // map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_loading_var_value(var,new_reg);
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
                     current_func_s_live_intervals.new_empty_virtual_code_segment(current_pos-1,instructions.size());
-                    // current_func_s_live_intervals.add_live_interval_for_a_reg(new_reg,current_pos,current_pos+instructions.size());
                     current_pos+=instructions.size();
                 }
                 (*ins_pos)->replace_regs(replace_regs_map);
@@ -1230,17 +1209,13 @@ void Graph_coloring_register_manager::rewrite_program()
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-
-                    map_set_insert(map_for_debug,reg,new_reg);
-
+                    // map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_storing_var_value(var,new_reg);
                     new_ins_pos=ins_pos;
                     advance(new_ins_pos,1);
                     bb->arm_sequence.insert(new_ins_pos,instructions.cbegin(),instructions.cend());
                     current_func_s_live_intervals.new_empty_virtual_code_segment(current_pos,instructions.size());
-                    // current_func_s_live_intervals.add_live_interval_for_a_reg(new_reg,current_pos,current_pos+instructions.size());
-                    // current_pos+=instructions.size();
                 }
                 (*ins_pos)->replace_regs(replace_regs_map);
             }
@@ -1254,7 +1229,6 @@ void Graph_coloring_register_manager::rewrite_program()
     {
         for(list<Arm_asm_file_line * >::iterator ins_pos=bb->arm_sequence.begin();ins_pos!=bb->arm_sequence.end();ins_pos++)
         {
-            //notify(event(event_type::SET_STACK_SPACE,(void *)(&ins_pos)));
             source_regs=get_virtual_traget_instruction_s_all_source_regs(*ins_pos);
             regs.clear();
             set_intersection(source_regs.begin(),source_regs.end(),spilled_regs.f_param_in_regs_array_regs.begin(),spilled_regs.f_param_in_regs_array_regs.end(),inserter(regs,regs.begin()));
@@ -1266,14 +1240,11 @@ void Graph_coloring_register_manager::rewrite_program()
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-
-                    map_set_insert(map_for_debug,reg,new_reg);
-
+                    // map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_loading_var_value(var,new_reg);
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
                     current_func_s_live_intervals.new_empty_virtual_code_segment(current_pos-1,instructions.size());
-                    // current_func_s_live_intervals.add_live_interval_for_a_reg(new_reg,current_pos,current_pos+instructions.size());
                     current_pos+=instructions.size();
                 }
                 (*ins_pos)->replace_regs(replace_regs_map);
@@ -1295,17 +1266,13 @@ void Graph_coloring_register_manager::rewrite_program()
                     f_param_in_regs_array_has_been_spilled.insert(make_pair(var,true));
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-
-                    map_set_insert(map_for_debug,reg,new_reg);
-
+                    //map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_storing_var_value(var,new_reg);
                     new_ins_pos=ins_pos;
                     advance(new_ins_pos,1);
                     bb->arm_sequence.insert(new_ins_pos,instructions.cbegin(),instructions.cend());
                     current_func_s_live_intervals.new_empty_virtual_code_segment(current_pos,instructions.size());
-                    // current_func_s_live_intervals.add_live_interval_for_a_reg(new_reg,current_pos,current_pos+instructions.size());
-                    // current_pos+=instructions.size();
                 }
                 (*ins_pos)->replace_regs(replace_regs_map);
             }
@@ -1319,7 +1286,6 @@ void Graph_coloring_register_manager::rewrite_program()
     {
         for(list<Arm_asm_file_line * >::iterator ins_pos=bb->arm_sequence.begin();ins_pos!=bb->arm_sequence.end();ins_pos++)
         {
-            //notify(event(event_type::SET_STACK_SPACE,(void *)(&ins_pos)));
             source_regs=get_virtual_traget_instruction_s_all_source_regs(*ins_pos);
             regs.clear();
             set_intersection(source_regs.begin(),source_regs.end(),spilled_regs.not_f_param_in_regs_array_regs.begin(),spilled_regs.not_f_param_in_regs_array_regs.end(),inserter(regs,regs.begin()));
@@ -1331,14 +1297,11 @@ void Graph_coloring_register_manager::rewrite_program()
                 {
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-
-                    map_set_insert(map_for_debug,reg,new_reg);
-
+                    // map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_loading_var_value(var,new_reg);
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
                     current_func_s_live_intervals.new_empty_virtual_code_segment(current_pos-1,instructions.size());
-                    // current_func_s_live_intervals.add_live_interval_for_a_reg(new_reg,current_pos,current_pos+instructions.size());
                     current_pos+=instructions.size();
                 }
                 (*ins_pos)->replace_regs(replace_regs_map);
@@ -1354,7 +1317,6 @@ void Graph_coloring_register_manager::rewrite_program()
     {
         for(list<Arm_asm_file_line * >::iterator ins_pos=bb->arm_sequence.begin();ins_pos!=bb->arm_sequence.end();ins_pos++)
         {
-            //notify(event(event_type::SET_STACK_SPACE,(void *)(&ins_pos)));
             source_regs=get_virtual_traget_instruction_s_all_source_regs(*ins_pos);
             regs.clear();
             set_intersection(source_regs.begin(),source_regs.end(),spilled_regs.addr_regs.begin(),spilled_regs.addr_regs.end(),inserter(regs,regs.begin()));
@@ -1366,14 +1328,11 @@ void Graph_coloring_register_manager::rewrite_program()
                 {
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     new_reg=virtual_regs_info_.new_temp_for_var_addr(var,virtual_regs_info_.get_reg_s_processor(reg));
-
-                    map_set_insert(map_for_debug,reg,new_reg);
-
+                    // map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_writing_var_addr_to_new_reg(var,new_reg);
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
                     current_func_s_live_intervals.new_empty_virtual_code_segment(current_pos-1,instructions.size());
-                    // current_func_s_live_intervals.add_live_interval_for_a_reg(new_reg,current_pos,current_pos+instructions.size());
                     current_pos+=instructions.size();
                 }
                 (*ins_pos)->replace_regs(replace_regs_map);
@@ -1399,14 +1358,11 @@ void Graph_coloring_register_manager::rewrite_program()
                 {
                     const_value=virtual_regs_info_.reg_indexs.at(reg).related_const;
                     new_reg=virtual_regs_info_.new_temp_for_const(const_value,virtual_regs_info_.get_reg_s_processor(reg));
-
-                    map_set_insert(map_for_debug,reg,new_reg);
-
+                    // map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_writing_const_value_to_new_reg(const_value,new_reg);
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
                     current_func_s_live_intervals.new_empty_virtual_code_segment(current_pos-1,instructions.size());
-                    // current_func_s_live_intervals.add_live_interval_for_a_reg(new_reg,current_pos,current_pos+instructions.size());
                     current_pos+=instructions.size();
                 }
                 (*ins_pos)->replace_regs(replace_regs_map);
@@ -1415,104 +1371,104 @@ void Graph_coloring_register_manager::rewrite_program()
             current_pos++;
         }
     }
-    cout<<"SPILL "<<map_for_debug.size()<<":"<<endl;
-    for(auto i:map_for_debug)
-    {
-        cout<<(virtual_regs_info_.is_physical_reg(i.first)?"r":"VR")<<i.first<<"->{";
-        for(auto j:i.second)
-        {
-            cout<<(virtual_regs_info_.is_physical_reg(j)?"r":"VR")<<j<<",";
-        }
-        cout<<"}"<<endl;
-    }
-    cout<<endl;
+    // cout<<"SPILL "<<map_for_debug.size()<<":"<<endl;
+    // for(auto i:map_for_debug)
+    // {
+    //     cout<<(virtual_regs_info_.is_physical_reg(i.first)?"r":"VR")<<i.first<<"->{";
+    //     for(auto j:i.second)
+    //     {
+    //         cout<<(virtual_regs_info_.is_physical_reg(j)?"r":"VR")<<j<<",";
+    //     }
+    //     cout<<"}"<<endl;
+    // }
+    // cout<<endl;
 }
 
 void Graph_coloring_register_manager::graph_coloring_register_distribute()
 {
-    cout<<"=========================================================="<<endl;
-    //debug输出虚拟寄存器信息
-    cout<<"VIRTUAL REGS INFO:"<<endl;
-    for(auto i:virtual_regs_info_.reg_indexs)
-    {
-        cout<<(virtual_regs_info_.is_physical_reg(i.first)?"r":"VR")<<i.first<<":";
-        switch(i.second.data_type)
-        {
-            case virtual_related_data_type::CONST:
-                cout<<i.second.related_const.int_data<<endl;
-                break;
-            case virtual_related_data_type::VAR_ADDR:
-                if(i.second.related_var->is_array_member())
-                {
-                    cout<<i.second.related_var->get_belong_array()->get_var_name()<<"[";
-                    if(i.second.related_var->get_offset()->is_const())
-                    {
-                        cout<<i.second.related_var->get_offset()->get_value().int_data;
-                    }
-                    else if(i.second.related_var->get_offset()->is_tmp_var())
-                    {
-                        cout<<"@"<<i.second.related_var->get_offset()->tmp_index;
-                    }
-                    else
-                    {
-                        cout<<i.second.related_var->get_offset()->get_var_name();
-                    }
-                    cout<<"]";
-                }
-                else if(i.second.related_var->is_tmp_var())
-                {
-                    cout<<"@"<<i.second.related_var->tmp_index;
-                }
-                else
-                {
-                    cout<<i.second.related_var->get_var_name();
-                }
-                cout<<"\t\t\t\t\t(addr)"<<endl;
-                break;
-            case virtual_related_data_type::VAR_VALUE:
-                if(i.second.related_var->is_array_member())
-                {
-                    cout<<i.second.related_var->get_belong_array()->get_var_name()<<"[";
-                    if(i.second.related_var->get_offset()->is_const())
-                    {
-                        cout<<i.second.related_var->get_offset()->get_value().int_data;
-                    }
-                    else if(i.second.related_var->get_offset()->is_tmp_var())
-                    {
-                        cout<<"@"<<i.second.related_var->get_offset()->tmp_index;
-                    }
-                    else
-                    {
-                        cout<<i.second.related_var->get_offset()->get_var_name();
-                    }
-                    cout<<"]";
-                }
-                else if(i.second.related_var->is_tmp_var())
-                {
-                    cout<<"@"<<i.second.related_var->tmp_index;
-                }
-                else
-                {
-                    cout<<i.second.related_var->get_var_name();
-                }
-                cout<<"\t\t\t\t\t(value)"<<endl;
-                break;
-            default:
-                break;
-        }
-    }
-    cout<<endl;
-    //
-    cout<<"VIRTUAL CODE:"<<endl;
-    size_t count=1;
-    for(auto i:virtual_target_code->basic_blocks)
-    {
-        for(auto j:i->arm_sequence)
-        {
-            cout<<count++<<":"<<j->to_string()<<endl;
-        }
-    }
-    cout<<endl;
+    // cout<<"=========================================================="<<endl;
+    // //debug输出虚拟寄存器信息
+    // cout<<"VIRTUAL REGS INFO:"<<endl;
+    // for(auto i:virtual_regs_info_.reg_indexs)
+    // {
+    //     cout<<(virtual_regs_info_.is_physical_reg(i.first)?"r":"VR")<<i.first<<":";
+    //     switch(i.second.data_type)
+    //     {
+    //         case virtual_related_data_type::CONST:
+    //             cout<<i.second.related_const.int_data<<endl;
+    //             break;
+    //         case virtual_related_data_type::VAR_ADDR:
+    //             if(i.second.related_var->is_array_member())
+    //             {
+    //                 cout<<i.second.related_var->get_belong_array()->get_var_name()<<"[";
+    //                 if(i.second.related_var->get_offset()->is_const())
+    //                 {
+    //                     cout<<i.second.related_var->get_offset()->get_value().int_data;
+    //                 }
+    //                 else if(i.second.related_var->get_offset()->is_tmp_var())
+    //                 {
+    //                     cout<<"@"<<i.second.related_var->get_offset()->tmp_index;
+    //                 }
+    //                 else
+    //                 {
+    //                     cout<<i.second.related_var->get_offset()->get_var_name();
+    //                 }
+    //                 cout<<"]";
+    //             }
+    //             else if(i.second.related_var->is_tmp_var())
+    //             {
+    //                 cout<<"@"<<i.second.related_var->tmp_index;
+    //             }
+    //             else
+    //             {
+    //                 cout<<i.second.related_var->get_var_name();
+    //             }
+    //             cout<<"\t\t\t\t\t(addr)"<<endl;
+    //             break;
+    //         case virtual_related_data_type::VAR_VALUE:
+    //             if(i.second.related_var->is_array_member())
+    //             {
+    //                 cout<<i.second.related_var->get_belong_array()->get_var_name()<<"[";
+    //                 if(i.second.related_var->get_offset()->is_const())
+    //                 {
+    //                     cout<<i.second.related_var->get_offset()->get_value().int_data;
+    //                 }
+    //                 else if(i.second.related_var->get_offset()->is_tmp_var())
+    //                 {
+    //                     cout<<"@"<<i.second.related_var->get_offset()->tmp_index;
+    //                 }
+    //                 else
+    //                 {
+    //                     cout<<i.second.related_var->get_offset()->get_var_name();
+    //                 }
+    //                 cout<<"]";
+    //             }
+    //             else if(i.second.related_var->is_tmp_var())
+    //             {
+    //                 cout<<"@"<<i.second.related_var->tmp_index;
+    //             }
+    //             else
+    //             {
+    //                 cout<<i.second.related_var->get_var_name();
+    //             }
+    //             cout<<"\t\t\t\t\t(value)"<<endl;
+    //             break;
+    //         default:
+    //             break;
+    //     }
+    // }
+    // cout<<endl;
+    // //
+    // cout<<"VIRTUAL CODE:"<<endl;
+    // size_t count=1;
+    // for(auto i:virtual_target_code->basic_blocks)
+    // {
+    //     for(auto j:i->arm_sequence)
+    //     {
+    //         cout<<count++<<":"<<j->to_string()<<endl;
+    //     }
+    // }
+    // cout<<endl;
     //首先构建虚拟寄存器之间的相干图
     build_coherent_diagram();
     //根据相干图初始化各个worklist
@@ -1569,10 +1525,7 @@ void Graph_coloring_register_manager::clear_info()
     current_func_s_live_intervals.clear();
     current_func_s_coherent_diagram.clear();
     initial.clear();
-    // if(end_func)
-    // {
-        precolored.clear();
-    // }
+    precolored.clear();
     simplify_worklist.clear();
     freeze_worklist.clear();
     spill_worklist.clear();
@@ -1591,17 +1544,17 @@ void Graph_coloring_register_manager::handle_END_FUNC()
     //获取当前函数的虚拟目标代码
     virtual_target_code=(struct arm_func_flow_graph *)notify(event(event_type::GET_VIRTUAL_TRAGET_CODE_OF_CURRENT_FUNC,nullptr)).pointer_data;
     virtual_target_code->build_nexts_between_basic_blocks();
-    cout<<endl<<endl<<endl<<endl<<endl<<endl<<endl<<virtual_target_code->function->func->name<<endl<<endl;
+    // cout<<endl<<endl<<endl<<endl<<endl<<endl<<endl<<virtual_target_code->function->func->name<<endl<<endl;
     //把物理寄存器堆清空
     regs_info_.clear();
     //对其进行图着色寄存器分配
     current_processor=reg_processor::CPU;
     graph_coloring_register_distribute();
-    cout<<endl<<endl<<endl<<"COLORED NODES:"<<endl;
-    for(auto i:colored_nodes)
-    {
-        cout<<i.first->reg<<"-->"<<i.second<<endl;
-    }
+    // cout<<endl<<endl<<endl<<"COLORED NODES:"<<endl;
+    // for(auto i:colored_nodes)
+    // {
+    //     cout<<i.first->reg<<"-->"<<i.second<<endl;
+    // }
     //根据着色的结果从虚拟目标代码生成实际目标代码
     virtual_target_code_to_physical_target_code();
     //把虚拟寄存器堆清空

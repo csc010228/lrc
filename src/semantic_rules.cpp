@@ -634,9 +634,15 @@ void quaternion::replace_all_labels(const map<struct ic_label *,struct ic_label 
 
 
 //语法分析时的全局信息
-struct 
+struct// global_info
 {
+    // global_info():current_func(nullptr)
+    // {
+
+    // };
+
     enum language_data_type data_type;
+    struct ic_func * current_func=nullptr;
 } global_info;
 
 //每一个语义动作规约完成之前和之后，栈顶的指针的差值+1（规约前栈顶指针减去规约后栈顶指针+1）
@@ -1089,6 +1095,7 @@ end_define_semantic_rule
 define_semantic_rule(___B_TYPE_1___)
     set_syntax_symbol_attribute(B_TYPE,b_type,int,(int)language_data_type::INT);
     set_global_info(data_type,language_data_type::INT);
+    //relate_data_type_to_curretn_func(language_data_type::INT);
 end_define_semantic_rule
 
 /*
@@ -1097,6 +1104,7 @@ end_define_semantic_rule
 define_semantic_rule(___B_TYPE_2___)
     set_syntax_symbol_attribute(B_TYPE,b_type,int,(int)language_data_type::FLOAT);
     set_global_info(data_type,language_data_type::FLOAT);
+    //relate_data_type_to_curretn_func(language_data_type::FLOAT);
 end_define_semantic_rule
 
 /*
@@ -1905,6 +1913,7 @@ end_define_semantic_rule
 define_semantic_rule(___FUNC_DEF_1___)
     //在符号表中进行注册
     struct ic_func * func=def_func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)),language_data_type((int)get_syntax_symbol_attribute(B_TYPE,b_type,int)),new list<struct ic_data * >);
+    //set_global_info(current_func,func);
     //生成函数定义的中间代码
     gen_zero_operand_code(ic_op::FUNC_DEFINE,ic_operand::FUNC,func);
 end_define_semantic_rule
@@ -1918,6 +1927,7 @@ define_semantic_rule(___FUNC_DEF_2___)
     //检查BLOCK中是否还存在有不匹配的break和continue
     //目前无需实现
     gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func);
+    //set_global_info(current_func,nullptr);
 end_define_semantic_rule
 
 /*
@@ -1926,6 +1936,7 @@ end_define_semantic_rule
 define_semantic_rule(___FUNC_DEF_3___)
     //在符号表中进行注册
     struct ic_func * func=def_func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)),language_data_type((int)get_syntax_symbol_attribute(B_TYPE,b_type,int)),(list<struct ic_data * > *)get_syntax_symbol_attribute(FUNC_F_PARAMS,f_params,pointer));
+    //set_global_info(current_func,func);
     //生成函数定义的中间代码
     gen_zero_operand_code(ic_op::FUNC_DEFINE,ic_operand::FUNC,func);
 end_define_semantic_rule
@@ -1939,6 +1950,7 @@ define_semantic_rule(___FUNC_DEF_4___)
     //检查BLOCK中是否还存在有不匹配的break和continue
     //目前无需实现
     gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func);
+    //set_global_info(current_func,nullptr);
 end_define_semantic_rule
 
 /*
@@ -1947,6 +1959,7 @@ end_define_semantic_rule
 define_semantic_rule(___FUNC_DEF_5___)
     //在符号表中进行注册
     struct ic_func * func=def_func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)),language_data_type::VOID,new list<struct ic_data * >);
+    //set_global_info(current_func,func);
     //生成函数定义的中间代码
     gen_zero_operand_code(ic_op::FUNC_DEFINE,ic_operand::FUNC,func);
 end_define_semantic_rule
@@ -1961,6 +1974,7 @@ define_semantic_rule(___FUNC_DEF_6___)
     //最后显式地增加一条ret
     gen_only_op_code(ic_op::RET);
     gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer))));
+    //set_global_info(current_func,nullptr);
 end_define_semantic_rule
 
 /*
@@ -1969,6 +1983,7 @@ end_define_semantic_rule
 define_semantic_rule(___FUNC_DEF_7___)
     //在符号表中进行注册
     struct ic_func * func=def_func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)),language_data_type::VOID,(list<struct ic_data * > *)get_syntax_symbol_attribute(FUNC_F_PARAMS,f_params,pointer));
+    //set_global_info(current_func,func);
     //生成函数定义的中间代码
     gen_zero_operand_code(ic_op::FUNC_DEFINE,ic_operand::FUNC,func);
 end_define_semantic_rule
@@ -1983,6 +1998,7 @@ define_semantic_rule(___FUNC_DEF_8___)
     //最后显式地增加一条ret
     gen_only_op_code(ic_op::RET);
     gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer))));
+    //set_global_info(current_func,nullptr);
 end_define_semantic_rule
 
 /*

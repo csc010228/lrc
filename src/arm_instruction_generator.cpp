@@ -1356,6 +1356,62 @@ void Arm_instruction_generator::ret_ic_to_arm_asm(struct ic_data * result)
     }
     notify(event(event_type::END_INSTRUCTION,nullptr));
     //把使用到的临时变量，局部变量，前16*32bits的浮点型参数，前4*4bytes的整型参数以及padding退栈
+    //先把该基本块开辟的存放临时变量的空间释放
+    // stack_offset=notify(event(event_type::READY_TO_POP_WHEN_RET,nullptr)).int_data;
+    // // if(stack_offset>0)
+    // // {
+    //     //此时需要将存放返回值的寄存器设置为不可获取的，这里默认是r0
+    //     regs_unaccessible=new set<reg_index>;
+    //     regs_unaccessible->insert((reg_index)notify(event(event_type::GET_R0_REG,nullptr)).int_data);
+    //     notify(event(event_type::START_INSTRUCTION,(void *)regs_unaccessible));
+    //     delete regs_unaccessible;
+    //     //这里不能使用如下的方法：
+    //     //op2=get_operand2((int)stack_offset);
+    //     //push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,sp,sp,op2));
+    //     //因为在第1行的get_operand2()的时候可能也会进行变量的出栈入栈，导致stack_offset无效
+    //     //因此我们只能采用如下的比较麻烦的方法
+    //     if(operand2::is_legal_immed_8r((int)stack_offset))
+    //     {
+    //         //如果此时stack_offset可以作为指令的一部分，不需要放入寄存器中
+    //         op2=get_operand2((int)stack_offset);
+    //     }
+    //     else
+    //     {
+    //         //如果此时stack_offset需要放入寄存器之后再使用
+    //         if(notify(event(event_type::CHECK_CONST_INT_VALUE_OWN_CPU_REG,(int)stack_offset)).bool_data)
+    //         {
+    //             //如果此时该stack_offset的值是否已经被放入某一个寄存器中了，那么只需要获取该寄存器即可
+    //             const_reg=(reg_index)notify(event(event_type::GET_CONST_VALUE_S_CPU_REG,(int)stack_offset)).int_data;
+    //             //再查看该常数寄存器此时是否有效，如果无效的话需要重新将值写入该寄存器
+    //             if(!notify(event(event_type::IS_REG_EFFECTIVE,(int)const_reg)).bool_data)
+    //             {
+    //                 event_data=new pair<OAA,reg_index>(OAA((int)stack_offset),const_reg);
+    //                 notify(event(event_type::WRITE_CONST_TO_REG,(void *)event_data));
+    //                 delete event_data;
+    //             }
+    //             op2=operand2(const_reg);
+    //         }
+    //         else
+    //         {
+    //             //如果此时没有寄存器中存放着stack_offset的值，那么就需要给该值新分配一个寄存器
+    //             const_reg=(reg_index)notify(event(event_type::ALLOCATE_IDLE_CPU_REG,nullptr)).int_data;
+    //             //分配完之后还要再得到新的stack_offset，因为上面的ALLOCATE_IDLE_REG可能会使得新的临时变量入栈，从而栈顶的位置发送变化
+    //             stack_offset=notify(event(event_type::READY_TO_POP_WHEN_RET,nullptr)).int_data;
+    //             //然后把新的stack_offset值写入寄存器中
+    //             event_data=new pair<OAA,reg_index>(OAA((int)stack_offset),const_reg);
+    //             notify(event(event_type::WRITE_CONST_TO_REG,(void *)event_data));
+    //             //再通知内存管理模块：寄存器被新的stack_offset占用了
+    //             notify(event(event_type::ATTACH_CONST_TO_REG,(void *)event_data));
+    //             delete event_data;
+    //             //最后把得到的寄存器作为operand2的一部分即可
+    //             op2=operand2(const_reg);
+    //         }
+    //     }
+    //     push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,sp,sp,op2));
+    //     record_stack_space_changed_here();
+    //     notify(event(event_type::END_INSTRUCTION,nullptr));
+    // // }
+    //再把函数开辟的栈空间释放
     stack_offset=notify(event(event_type::READY_TO_POP_WHEN_RET,nullptr)).int_data;
     if(stack_offset>0)
     {
@@ -2156,9 +2212,14 @@ void Arm_instruction_generator::handle_ASSIGN_VAR(struct ic_data * from,struct i
     notify(event(event_type::END_INSTRUCTION,nullptr));
 }
 
-void Arm_instruction_generator::handle_POP_STACK(size_t pop_size)
+void Arm_instruction_generator::handle_POP_STACK_WHEN_EXIT_BASIC_BLOCK(size_t pop_size)
 {
     reg_index sp=(reg_index)notify(event(event_type::GET_SP_REG,nullptr)).int_data;
+    if(is_current_basic_block_starting_)
+    {
+        start_basic_block_to_arm_asm();
+        is_current_basic_block_starting_=false;
+    }
     if(pop_size>0)
     {
         push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,sp,sp,get_operand2((int)pop_size)));
@@ -2234,8 +2295,8 @@ struct event Arm_instruction_generator::handler(struct event event)
         case event_type::ASSIGN_VAR:
             handle_ASSIGN_VAR(((pair<struct ic_data *,struct ic_data * > *)event.pointer_data)->first,((pair<struct ic_data *,struct ic_data * > *)event.pointer_data)->second);
             break;
-        case event_type::POP_STACK:
-            handle_POP_STACK((size_t)event.int_data);
+        case event_type::POP_STACK_WHEN_EXIT_BASIC_BLOCK:
+            handle_POP_STACK_WHEN_EXIT_BASIC_BLOCK((size_t)event.int_data);
             break;
         case event_type::START_FUNC:
             handle_START_FUNC((struct ic_func_flow_graph *)event.pointer_data);

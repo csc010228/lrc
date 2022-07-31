@@ -236,6 +236,13 @@ global_info.info_name
 #define set_global_info(info_name,info_value) \
 global_info.info_name=info_value
 
+//将某一个数据类型和当前正在生成的函数关联
+// #define relate_data_type_to_curretn_func(data_type) \
+// if(global_info.current_func)\
+// {\
+//     symbol_table->add_func_related_data_type(global_info.current_func,data_type); \
+// }\
+
 //从符号表中获取一个变量的表项
 #define var(var_name) \
 symbol_table->var_entry(var_name)

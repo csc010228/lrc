@@ -243,6 +243,9 @@ protected:
     //析构函数
     ~Symbol_table();
 
+    //优化选项
+    bool optimize_setting_;
+
     //临时变量的个数
     size_t tmp_vars_num_;
 
@@ -253,13 +256,16 @@ protected:
     map<string,struct ic_func * > functions_;
 
     //每个函数会改变的全局变量和形参
-    map<struct ic_func *,set<struct ic_data * > > funcs_def_globals_and_f_params_;
+    map<struct ic_func *,set<struct ic_data * > > func_s_def_globals_and_f_params_;
 
     //每个函数会使用的全局变量和形参
-    map<struct ic_func *,set<struct ic_data * > > funcs_use_globals_and_f_params_;
+    map<struct ic_func *,set<struct ic_data * > > func_s_use_globals_and_f_params_;
 
     //每个函数会直接调用的函数
-    map<struct ic_func *,set<struct ic_func * > > funcs_direct_calls_;
+    map<struct ic_func *,set<struct ic_func * > > func_s_direct_calls_;
+
+    //每个函数会涉及到的数据类型
+    map<struct ic_func *,set<enum language_data_type> > func_s_related_data_type_;
 
     //常量
     map<enum language_data_type,map<OAA,struct ic_data * > > consts_;
@@ -285,6 +291,12 @@ public:
 
     //销毁单例类
     static void delete_instance();
+
+    //设置优化选项
+    void set_optimize_setting(bool optimize);
+
+    //获取优化选项
+    bool get_optimize_setting() const;
 
     //往符号表中添加一个用户定义的变量
     struct ic_data * new_var(string name,enum language_data_type data_type,list<struct ic_data * > * dimensions_len,OAA const_or_init_value,bool is_const,struct ic_scope * belong_scope=nullptr);
@@ -334,14 +346,20 @@ public:
     //增加一个函数会直接调用的函数
     void add_func_direct_calls(struct ic_func * func,struct ic_func * called_func);
 
+    //增加一个函数会涉及的的数据结构
+    void add_func_related_data_type(struct ic_func * func,enum language_data_type data_type);
+
     //获取一个函数会更改的所有全局变量和形参
-    set<struct ic_data * > get_func_def_globals_and_f_params(struct ic_func * func);
+    set<struct ic_data * > get_func_def_globals_and_f_params(struct ic_func * func) const;
 
     //获取一个函数会使用的所有全局变量和形参
-    set<struct ic_data * > get_func_use_globals_and_f_params(struct ic_func * func);
+    set<struct ic_data * > get_func_use_globals_and_f_params(struct ic_func * func) const;
 
     //获取一个函数会直接调用的所有函数
-    set<struct ic_func * > get_func_direct_calls(struct ic_func * func);
+    set<struct ic_func * > get_func_direct_calls(struct ic_func * func) const;
+
+    //查看一个函数是否涉及某一个数据类型
+    bool is_func_related_to_a_data_type(struct ic_func * func,enum language_data_type data_type) const;
 
     //根据函数名判断一个函数是否是定义的函数获取库函数
     bool is_a_defined_or_library_func(string func_name) const;

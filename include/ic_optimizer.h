@@ -194,6 +194,9 @@ struct ic_func_flow_graph
     //获取函数的出口个数
     size_t get_exit_num() const;
 
+    //获取函数中的有效指令条数
+    size_t get_effective_ic_instruction_num() const;
+
     //获取指定位置的中间代码及其信息
     struct quaternion_with_info & get_ic_with_info(ic_pos pos);
 

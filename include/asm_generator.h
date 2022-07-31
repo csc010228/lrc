@@ -36,6 +36,12 @@ protected:
     //寄存器管理器
     Register_manager * register_manager_;
 
+    //速度更快的寄存器管理器
+    Register_manager * easyer_register_manager_;
+
+    //效果更好的寄存器
+    Register_manager * better_register_manager_;
+
     //内存管理器
     Memory_manager * memory_manager_;
 
@@ -63,6 +69,10 @@ protected:
     //初始化各个组件
     virtual bool init_components()=0;
 
+    //事件处理函数
+    void handle_CHANGE_TO_EASYER_REGISTER_MANAGER();
+    void handle_CHANGE_TO_BETTER_REGISTER_MANAGER();
+
 public:
     //构造函数
     Asm_generator();
@@ -75,6 +85,9 @@ public:
 
     //组件通知该汇编代码生成器有事件发生
     virtual struct event notify(Asm_generator_component *sender, struct event event) const =0 ;
+
+    //事件处理函数(由中介者进行调用)
+    struct event handler(struct event event);
 
     //生成最终的汇编代码文件
     bool generate_asm_then_output(struct ic_flow_graph * intermediate_codes_flow_graph,const char * filename);

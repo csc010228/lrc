@@ -70,6 +70,8 @@ void Intermediate_code_manager::build_temp_vars_over_basic_blocks_info_in_func(s
 
 struct event Intermediate_code_manager::handle_NEXT_IC()
 {
+    const size_t func_s_max_ic_ins_num_threshold=500;
+    Symbol_table * symbol_table=Symbol_table::get_instance();
     struct event res(event_type::RESPONSE_POINTER,nullptr);
     static list<struct quaternion>::iterator current_global_define=intermediate_codes_flow_graph_->global_defines.begin();
     static bool first_tag=true,end_tag=false;
@@ -90,6 +92,18 @@ struct event Intermediate_code_manager::handle_NEXT_IC()
             current_func_pos_=intermediate_codes_flow_graph_->func_flow_graphs.begin();
             while(current_func_pos_!=intermediate_codes_flow_graph_->func_flow_graphs.end())
             {
+                //根据函数的情况判断通知整个后端管理器应该选择哪一个寄存器分配器
+                //如果不开启优化，获取开启了优化，但是一个函数涉及浮点操作，获取函数的长度过长，那么使用简单的寄存器分配器
+                //其余的情况使用效果更优的寄存器分配器
+                if(!symbol_table->get_optimize_setting() || (*current_func_pos_)->get_effective_ic_instruction_num()>func_s_max_ic_ins_num_threshold || symbol_table->is_func_related_to_a_data_type((*current_func_pos_)->func,language_data_type::FLOAT))
+                {
+                    notify(event(event_type::CHANGE_TO_EASYER_REGISTER_MANAGER,nullptr));
+                }
+                else
+                {
+                    notify(event(event_type::CHANGE_TO_BETTER_REGISTER_MANAGER,nullptr));
+                }
+                //开始一个新的函数
                 notify(event(event_type::START_FUNC,(void *)(*current_func_pos_)));
                 //每当开始一个新的函数，就获取该函数中所有会跨越基本块的临时变量
                 build_temp_vars_over_basic_blocks_info_in_func(*current_func_pos_);
@@ -212,8 +226,7 @@ struct event Intermediate_code_manager::handle_GET_CURRENT_FUNC_S_F_PARAMS()
 {
     return event(event_type::RESPONSE_POINTER,(void *)((*current_func_pos_)->func->f_params));
 }
-#include<iostream>
-using namespace std;
+
 void Intermediate_code_manager::handle_INEFFECTIVE_CONST_VALUE_ANALYSIS(struct ic_func_flow_graph * func_flow_graph)
 {
     //无效常量分析，目的是为了计算出每一个基本块开始的时候有哪些常量的值对应的虚拟寄存器是无效的
@@ -277,7 +290,7 @@ void Intermediate_code_manager::handle_INEFFECTIVE_CONST_VALUE_ANALYSIS(struct i
 
 void Intermediate_code_manager::handle_INEFFECTIVE_VALUE_ANALYSIS(struct ic_func_flow_graph * func_flow_graph)
 {
-    cout<<"INEFFECTIVE_VALUE_ANALYSIS"<<endl;
+    // cout<<"INEFFECTIVE_VALUE_ANALYSIS"<<endl;
     //无效值分析，目的是为了计算出有哪些数据在基本块开始的时候是无效的
     //需要计算的数据如下：
     //全局变量
@@ -447,84 +460,84 @@ void Intermediate_code_manager::handle_INEFFECTIVE_VALUE_ANALYSIS(struct ic_func
         }
     }
     delete f_params_in_regs;
-    cout<<"gens:"<<endl;
-    for(auto i:gens)
-    {
-        cout<<i.first<<":{";
-        for(auto j:i.second)
-        {
-            if(j->is_const())
-            {
-                cout<<j->get_value().int_data<<",";
-            }
-            else if(j->is_tmp_var())
-            {
-                cout<<"@"<<j->tmp_index<<",";
-            }
-            else if(j->is_array_member())
-            {
-                cout<<j->get_belong_array()->get_var_name()<<"[";
-                if(j->get_offset()->is_const())
-                {
-                    cout<<j->get_offset()->get_value().int_data;
-                }
-                else if(j->get_offset()->is_tmp_var())
-                {
-                    cout<<"@"<<j->get_offset()->tmp_index;
-                }
-                else
-                {
-                    cout<<j->get_offset()->get_var_name();
-                }
-                cout<<"],";
-            }
-            else
-            {
-                cout<<j->get_var_name()<<",";
-            }
-        }
-        cout<<"}"<<endl;
-    }
-    cout<<endl;
-    cout<<"kills:"<<endl;
-    for(auto i:kills)
-    {
-        cout<<i.first<<":{";
-        for(auto j:i.second)
-        {
-            if(j->is_const())
-            {
-                cout<<j->get_value().int_data<<",";
-            }
-            else if(j->is_tmp_var())
-            {
-                cout<<"@"<<j->tmp_index<<",";
-            }
-            else if(j->is_array_member())
-            {
-                cout<<j->get_belong_array()->get_var_name()<<"[";
-                if(j->get_offset()->is_const())
-                {
-                    cout<<j->get_offset()->get_value().int_data;
-                }
-                else if(j->get_offset()->is_tmp_var())
-                {
-                    cout<<"@"<<j->get_offset()->tmp_index;
-                }
-                else
-                {
-                    cout<<j->get_offset()->get_var_name();
-                }
-                cout<<"],";
-            }
-            else
-            {
-                cout<<j->get_var_name()<<",";
-            }
-        }
-        cout<<"}"<<endl;
-    }
-    cout<<endl;
+    // cout<<"gens:"<<endl;
+    // for(auto i:gens)
+    // {
+    //     cout<<i.first<<":{";
+    //     for(auto j:i.second)
+    //     {
+    //         if(j->is_const())
+    //         {
+    //             cout<<j->get_value().int_data<<",";
+    //         }
+    //         else if(j->is_tmp_var())
+    //         {
+    //             cout<<"@"<<j->tmp_index<<",";
+    //         }
+    //         else if(j->is_array_member())
+    //         {
+    //             cout<<j->get_belong_array()->get_var_name()<<"[";
+    //             if(j->get_offset()->is_const())
+    //             {
+    //                 cout<<j->get_offset()->get_value().int_data;
+    //             }
+    //             else if(j->get_offset()->is_tmp_var())
+    //             {
+    //                 cout<<"@"<<j->get_offset()->tmp_index;
+    //             }
+    //             else
+    //             {
+    //                 cout<<j->get_offset()->get_var_name();
+    //             }
+    //             cout<<"],";
+    //         }
+    //         else
+    //         {
+    //             cout<<j->get_var_name()<<",";
+    //         }
+    //     }
+    //     cout<<"}"<<endl;
+    // }
+    // cout<<endl;
+    // cout<<"kills:"<<endl;
+    // for(auto i:kills)
+    // {
+    //     cout<<i.first<<":{";
+    //     for(auto j:i.second)
+    //     {
+    //         if(j->is_const())
+    //         {
+    //             cout<<j->get_value().int_data<<",";
+    //         }
+    //         else if(j->is_tmp_var())
+    //         {
+    //             cout<<"@"<<j->tmp_index<<",";
+    //         }
+    //         else if(j->is_array_member())
+    //         {
+    //             cout<<j->get_belong_array()->get_var_name()<<"[";
+    //             if(j->get_offset()->is_const())
+    //             {
+    //                 cout<<j->get_offset()->get_value().int_data;
+    //             }
+    //             else if(j->get_offset()->is_tmp_var())
+    //             {
+    //                 cout<<"@"<<j->get_offset()->tmp_index;
+    //             }
+    //             else
+    //             {
+    //                 cout<<j->get_offset()->get_var_name();
+    //             }
+    //             cout<<"],";
+    //         }
+    //         else
+    //         {
+    //             cout<<j->get_var_name()<<",";
+    //         }
+    //     }
+    //     cout<<"}"<<endl;
+    // }
+    // cout<<endl;
     //然后再开始迭代计算每一个基本块的in和out
     while(tag)
     {
@@ -554,89 +567,89 @@ void Intermediate_code_manager::handle_INEFFECTIVE_VALUE_ANALYSIS(struct ic_func
             }
         }
     }
-    cout<<"ins:"<<endl;
-    for(auto i:ineffective_value_info_.ins)
-    {
-        cout<<i.first<<":{";
-        for(auto j:i.second)
-        {
-            if(j->is_const())
-            {
-                cout<<j->get_value().int_data<<",";
-            }
-            else if(j->is_tmp_var())
-            {
-                cout<<"@"<<j->tmp_index<<",";
-            }
-            else if(j->is_array_member())
-            {
-                cout<<j->get_belong_array()->get_var_name()<<"[";
-                if(j->get_offset()->is_const())
-                {
-                    cout<<j->get_offset()->get_value().int_data;
-                }
-                else if(j->get_offset()->is_tmp_var())
-                {
-                    cout<<"@"<<j->get_offset()->tmp_index;
-                }
-                else
-                {
-                    cout<<j->get_offset()->get_var_name();
-                }
-                cout<<"],";
-            }
-            else
-            {
-                cout<<j->get_var_name()<<",";
-            }
-        }
-        cout<<"}"<<endl;
-    }
-    cout<<endl;
-    cout<<"outs:"<<endl;
-    for(auto i:ineffective_value_info_.outs)
-    {
-        cout<<i.first<<":{";
-        for(auto j:i.second)
-        {
-            if(j->is_const())
-            {
-                cout<<j->get_value().int_data<<",";
-            }
-            else if(j->is_tmp_var())
-            {
-                cout<<"@"<<j->tmp_index<<",";
-            }
-            else if(j->is_array_member())
-            {
-                cout<<j->get_belong_array()->get_var_name()<<"[";
-                if(j->get_offset()->is_const())
-                {
-                    cout<<j->get_offset()->get_value().int_data;
-                }
-                else if(j->get_offset()->is_tmp_var())
-                {
-                    cout<<"@"<<j->get_offset()->tmp_index;
-                }
-                else
-                {
-                    cout<<j->get_offset()->get_var_name();
-                }
-                cout<<"],";
-            }
-            else
-            {
-                cout<<j->get_var_name()<<",";
-            }
-        }
-        cout<<"}"<<endl;
-    }
-    cout<<endl<<endl<<endl;
+    // cout<<"ins:"<<endl;
+    // for(auto i:ineffective_value_info_.ins)
+    // {
+    //     cout<<i.first<<":{";
+    //     for(auto j:i.second)
+    //     {
+    //         if(j->is_const())
+    //         {
+    //             cout<<j->get_value().int_data<<",";
+    //         }
+    //         else if(j->is_tmp_var())
+    //         {
+    //             cout<<"@"<<j->tmp_index<<",";
+    //         }
+    //         else if(j->is_array_member())
+    //         {
+    //             cout<<j->get_belong_array()->get_var_name()<<"[";
+    //             if(j->get_offset()->is_const())
+    //             {
+    //                 cout<<j->get_offset()->get_value().int_data;
+    //             }
+    //             else if(j->get_offset()->is_tmp_var())
+    //             {
+    //                 cout<<"@"<<j->get_offset()->tmp_index;
+    //             }
+    //             else
+    //             {
+    //                 cout<<j->get_offset()->get_var_name();
+    //             }
+    //             cout<<"],";
+    //         }
+    //         else
+    //         {
+    //             cout<<j->get_var_name()<<",";
+    //         }
+    //     }
+    //     cout<<"}"<<endl;
+    // }
+    // cout<<endl;
+    // cout<<"outs:"<<endl;
+    // for(auto i:ineffective_value_info_.outs)
+    // {
+    //     cout<<i.first<<":{";
+    //     for(auto j:i.second)
+    //     {
+    //         if(j->is_const())
+    //         {
+    //             cout<<j->get_value().int_data<<",";
+    //         }
+    //         else if(j->is_tmp_var())
+    //         {
+    //             cout<<"@"<<j->tmp_index<<",";
+    //         }
+    //         else if(j->is_array_member())
+    //         {
+    //             cout<<j->get_belong_array()->get_var_name()<<"[";
+    //             if(j->get_offset()->is_const())
+    //             {
+    //                 cout<<j->get_offset()->get_value().int_data;
+    //             }
+    //             else if(j->get_offset()->is_tmp_var())
+    //             {
+    //                 cout<<"@"<<j->get_offset()->tmp_index;
+    //             }
+    //             else
+    //             {
+    //                 cout<<j->get_offset()->get_var_name();
+    //             }
+    //             cout<<"],";
+    //         }
+    //         else
+    //         {
+    //             cout<<j->get_var_name()<<",";
+    //         }
+    //     }
+    //     cout<<"}"<<endl;
+    // }
+    // cout<<endl<<endl<<endl;
 }
 
 void Intermediate_code_manager::handle_DIRTY_VALUE_ANALYSIS(struct ic_func_flow_graph * func_flow_graph)
 {
-    cout<<"DIRTY_VALUE_ANALYSIS"<<endl;
+    // cout<<"DIRTY_VALUE_ANALYSIS"<<endl;
     //脏值分析，目的是为了计算出每一个基本块开始和退出的时候有哪些我们关注的值在虚拟寄存器中可以是（也可以不是）脏值
     //我们关注的变量有：
     //非数组的全局变量
@@ -682,84 +695,84 @@ void Intermediate_code_manager::handle_DIRTY_VALUE_ANALYSIS(struct ic_func_flow_
         }
         set_difference(all_not_array_globals.begin(),all_not_array_globals.end(),temp.begin(),temp.end(),inserter(dirty_not_array_global_value_info_.outs.at(basic_block),dirty_not_array_global_value_info_.outs.at(basic_block).begin()));
     }
-    cout<<"ins:"<<endl;
-    for(auto i:dirty_not_array_global_value_info_.ins)
-    {
-        cout<<i.first<<":{";
-        for(auto j:i.second)
-        {
-            if(j->is_const())
-            {
-                cout<<j->get_value().int_data<<",";
-            }
-            else if(j->is_tmp_var())
-            {
-                cout<<"@"<<j->tmp_index<<",";
-            }
-            else if(j->is_array_member())
-            {
-                cout<<j->get_belong_array()->get_var_name()<<"[";
-                if(j->get_offset()->is_const())
-                {
-                    cout<<j->get_offset()->get_value().int_data;
-                }
-                else if(j->get_offset()->is_tmp_var())
-                {
-                    cout<<"@"<<j->get_offset()->tmp_index;
-                }
-                else
-                {
-                    cout<<j->get_offset()->get_var_name();
-                }
-                cout<<"],";
-            }
-            else
-            {
-                cout<<j->get_var_name()<<",";
-            }
-        }
-        cout<<"}"<<endl;
-    }
-    cout<<endl;
-    cout<<"outs:"<<endl;
-    for(auto i:dirty_not_array_global_value_info_.outs)
-    {
-        cout<<i.first<<":{";
-        for(auto j:i.second)
-        {
-            if(j->is_const())
-            {
-                cout<<j->get_value().int_data<<",";
-            }
-            else if(j->is_tmp_var())
-            {
-                cout<<"@"<<j->tmp_index<<",";
-            }
-            else if(j->is_array_member())
-            {
-                cout<<j->get_belong_array()->get_var_name()<<"[";
-                if(j->get_offset()->is_const())
-                {
-                    cout<<j->get_offset()->get_value().int_data;
-                }
-                else if(j->get_offset()->is_tmp_var())
-                {
-                    cout<<"@"<<j->get_offset()->tmp_index;
-                }
-                else
-                {
-                    cout<<j->get_offset()->get_var_name();
-                }
-                cout<<"],";
-            }
-            else
-            {
-                cout<<j->get_var_name()<<",";
-            }
-        }
-        cout<<"}"<<endl;
-    }
-    cout<<endl<<endl<<endl;
+    // cout<<"ins:"<<endl;
+    // for(auto i:dirty_not_array_global_value_info_.ins)
+    // {
+    //     cout<<i.first<<":{";
+    //     for(auto j:i.second)
+    //     {
+    //         if(j->is_const())
+    //         {
+    //             cout<<j->get_value().int_data<<",";
+    //         }
+    //         else if(j->is_tmp_var())
+    //         {
+    //             cout<<"@"<<j->tmp_index<<",";
+    //         }
+    //         else if(j->is_array_member())
+    //         {
+    //             cout<<j->get_belong_array()->get_var_name()<<"[";
+    //             if(j->get_offset()->is_const())
+    //             {
+    //                 cout<<j->get_offset()->get_value().int_data;
+    //             }
+    //             else if(j->get_offset()->is_tmp_var())
+    //             {
+    //                 cout<<"@"<<j->get_offset()->tmp_index;
+    //             }
+    //             else
+    //             {
+    //                 cout<<j->get_offset()->get_var_name();
+    //             }
+    //             cout<<"],";
+    //         }
+    //         else
+    //         {
+    //             cout<<j->get_var_name()<<",";
+    //         }
+    //     }
+    //     cout<<"}"<<endl;
+    // }
+    // cout<<endl;
+    // cout<<"outs:"<<endl;
+    // for(auto i:dirty_not_array_global_value_info_.outs)
+    // {
+    //     cout<<i.first<<":{";
+    //     for(auto j:i.second)
+    //     {
+    //         if(j->is_const())
+    //         {
+    //             cout<<j->get_value().int_data<<",";
+    //         }
+    //         else if(j->is_tmp_var())
+    //         {
+    //             cout<<"@"<<j->tmp_index<<",";
+    //         }
+    //         else if(j->is_array_member())
+    //         {
+    //             cout<<j->get_belong_array()->get_var_name()<<"[";
+    //             if(j->get_offset()->is_const())
+    //             {
+    //                 cout<<j->get_offset()->get_value().int_data;
+    //             }
+    //             else if(j->get_offset()->is_tmp_var())
+    //             {
+    //                 cout<<"@"<<j->get_offset()->tmp_index;
+    //             }
+    //             else
+    //             {
+    //                 cout<<j->get_offset()->get_var_name();
+    //             }
+    //             cout<<"],";
+    //         }
+    //         else
+    //         {
+    //             cout<<j->get_var_name()<<",";
+    //         }
+    //     }
+    //     cout<<"}"<<endl;
+    // }
+    // cout<<endl<<endl<<endl;
 }
 
 void Intermediate_code_manager::handle_INEFFECTIVE_NOT_ARRAY_GLOBAL_ADDR_ANALYSIS(struct ic_func_flow_graph * func_flow_graph)

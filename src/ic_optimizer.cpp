@@ -1063,6 +1063,23 @@ size_t ic_func_flow_graph::get_exit_num() const
     return res;
 }
 
+//获取函数中的有效指令条数
+size_t ic_func_flow_graph::get_effective_ic_instruction_num() const
+{
+    size_t res=0;
+    for(auto bb:basic_blocks)
+    {
+        for(auto ic_with_info:bb->ic_sequence)
+        {
+            if(ic_with_info.intermediate_code.op!=ic_op::NOP)
+            {
+                res++;
+            }
+        }
+    }
+    return res;
+}
+
 //获取指定位置的中间代码及其信息
 struct quaternion_with_info & ic_func_flow_graph::get_ic_with_info(ic_pos pos)
 {

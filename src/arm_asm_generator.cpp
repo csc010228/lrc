@@ -67,7 +67,6 @@ Return
 struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct event event) const
 {
     struct event res;
-    
     if(sender==instruction_generator_)
     {
         //cout<<"instruction_generator_ send "<<(int)event.type<<endl;
@@ -231,7 +230,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::GET_ALL_CONTEXT_SAVED_VFP_REGS:
                 res=register_manager_->handler(event);
                 break;
-            case event_type::POP_STACK:
+            case event_type::POP_STACK_WHEN_EXIT_BASIC_BLOCK:
                 instruction_generator_->handler(event);
                 break;
             case event_type::GET_TEMP_VARS_OVER_BASIC_BLOCK_IN_CURRENT_FUNC:
@@ -246,6 +245,10 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
         //cout<<"intermediate_code_manager_ send "<<(int)event.type<<endl;
         switch(event.type)
         {
+            case event_type::CHANGE_TO_EASYER_REGISTER_MANAGER:
+            case event_type::CHANGE_TO_BETTER_REGISTER_MANAGER:
+                ((Arm_asm_generator *)this)->handler(event);
+                break;
             case event_type::START_BASIC_BLOCK:
             case event_type::START_FUNC:
                 instruction_generator_->handler(event);

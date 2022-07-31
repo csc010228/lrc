@@ -857,6 +857,12 @@ public:
         }
     };
 
+    //该指令是否影响标志位
+    inline bool is_update_flags() const
+    {
+        return update_flags_;
+    };
+
     void replace_regs(const map<reg_index,reg_index> & regs_map);
 
     //转换成字符串

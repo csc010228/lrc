@@ -475,7 +475,7 @@ Symbol_table * Symbol_table::instance_=nullptr;
 /*
 Symbol_table的私有构造函数
 */
-Symbol_table::Symbol_table():tmp_vars_num_(0),labels_num_(0),current_scope_(nullptr),current_func_(nullptr)
+Symbol_table::Symbol_table():tmp_vars_num_(0),labels_num_(0),current_scope_(nullptr),current_func_(nullptr),optimize_setting_(false)
 {
     list<struct ic_data * > * dimensions_len;
     //把库中的函数进行定义
@@ -668,6 +668,18 @@ struct ic_data * Symbol_table::array_member_not_array_var_entry(struct ic_data *
     return array_member_entry(array_var,array_var->dimensions_len->size(),offset);
 }
 
+//设置优化选项
+void Symbol_table::set_optimize_setting(bool optimize)
+{
+    optimize_setting_=optimize;
+}
+
+//获取优化选项
+bool Symbol_table::get_optimize_setting() const
+{
+    return optimize_setting_;
+}
+
 /*
 往符号表中添加一个用户定义的变量
 
@@ -835,11 +847,12 @@ void Symbol_table::add_func_def_globals_and_f_params(struct ic_func * func,struc
     }
     if(data->is_f_param() || data->is_global())
     {
-        if(funcs_def_globals_and_f_params_.find(func)==funcs_def_globals_and_f_params_.end())
-        {
-            funcs_def_globals_and_f_params_.insert(make_pair(func,set<struct ic_data * >()));
-        }
-        funcs_def_globals_and_f_params_.at(func).insert(data);
+        // if(func_s_def_globals_and_f_params_.find(func)==func_s_def_globals_and_f_params_.end())
+        // {
+        //     func_s_def_globals_and_f_params_.insert(make_pair(func,set<struct ic_data * >()));
+        // }
+        // func_s_def_globals_and_f_params_.at(func).insert(data);
+        map_set_insert(func_s_def_globals_and_f_params_,func,data);
     }
 }
 
@@ -859,11 +872,12 @@ void Symbol_table::add_func_use_globals_and_f_params(struct ic_func * func,struc
     }
     if(data->is_f_param() || data->is_global())
     {
-        if(funcs_use_globals_and_f_params_.find(func)==funcs_use_globals_and_f_params_.end())
-        {
-            funcs_use_globals_and_f_params_.insert(make_pair(func,set<struct ic_data * >()));
-        }
-        funcs_use_globals_and_f_params_.at(func).insert(data);
+        // if(func_s_use_globals_and_f_params_.find(func)==func_s_use_globals_and_f_params_.end())
+        // {
+        //     func_s_use_globals_and_f_params_.insert(make_pair(func,set<struct ic_data * >()));
+        // }
+        // func_s_use_globals_and_f_params_.at(func).insert(data);
+        map_set_insert(func_s_use_globals_and_f_params_,func,data);
     }
 }
 
@@ -878,11 +892,12 @@ called_func:被调用的函数
 void Symbol_table::add_func_direct_calls(struct ic_func * func,struct ic_func * called_func)
 {
     set<struct ic_data * > globals_and_f_params;
-    if(funcs_direct_calls_.find(func)==funcs_direct_calls_.end())
-    {
-        funcs_direct_calls_.insert(make_pair(func,set<struct ic_func * >()));
-    }
-    funcs_direct_calls_.at(func).insert(called_func);
+    // if(func_s_direct_calls_.find(func)==func_s_direct_calls_.end())
+    // {
+    //     func_s_direct_calls_.insert(make_pair(func,set<struct ic_func * >()));
+    // }
+    // func_s_direct_calls_.at(func).insert(called_func);
+    map_set_insert(func_s_direct_calls_,func,called_func);
     //除了增加函数直接调用的信息，还需要增加该函数会更改和使用的全局变量信息
     if(func!=called_func)
     {
@@ -905,6 +920,16 @@ void Symbol_table::add_func_direct_calls(struct ic_func * func,struct ic_func * 
     }
 }
 
+void Symbol_table::add_func_related_data_type(struct ic_func * func,enum language_data_type data_type)
+{
+    map_set_insert(func_s_related_data_type_,func,data_type);
+}
+
+bool Symbol_table::is_func_related_to_a_data_type(struct ic_func * func,enum language_data_type data_type) const
+{
+    return map_set_find(func_s_related_data_type_,func,data_type);
+}
+
 /*
 获取一个函数会更改的所有全局变量和数组形参
 
@@ -916,12 +941,12 @@ Return
 ------
 返回该函数会更改的所有全局变量和数组形参
 */
-set<struct ic_data * > Symbol_table::get_func_def_globals_and_f_params(struct ic_func * func)
+set<struct ic_data * > Symbol_table::get_func_def_globals_and_f_params(struct ic_func * func) const
 {
     set<struct ic_data * > res;
-    if(funcs_def_globals_and_f_params_.find(func)!=funcs_def_globals_and_f_params_.end())
+    if(func_s_def_globals_and_f_params_.find(func)!=func_s_def_globals_and_f_params_.end())
     {
-        res=funcs_def_globals_and_f_params_.at(func);
+        res=func_s_def_globals_and_f_params_.at(func);
     }
     return res;
 }
@@ -937,12 +962,12 @@ Return
 ------
 返回该函数会使用的所有全局变量和数组形参
 */
-set<struct ic_data * > Symbol_table::get_func_use_globals_and_f_params(struct ic_func * func)
+set<struct ic_data * > Symbol_table::get_func_use_globals_and_f_params(struct ic_func * func) const
 {
     set<struct ic_data * > res;
-    if(funcs_use_globals_and_f_params_.find(func)!=funcs_use_globals_and_f_params_.end())
+    if(func_s_use_globals_and_f_params_.find(func)!=func_s_use_globals_and_f_params_.end())
     {
-        res=funcs_use_globals_and_f_params_.at(func);
+        res=func_s_use_globals_and_f_params_.at(func);
     }
     return res;
 }
@@ -958,12 +983,12 @@ Return
 ------
 返回该函数会直接调用的所有函数
 */
-set<struct ic_func * > Symbol_table::get_func_direct_calls(struct ic_func * func)
+set<struct ic_func * > Symbol_table::get_func_direct_calls(struct ic_func * func) const
 {
     set<struct ic_func * > res;
-    if(funcs_direct_calls_.find(func)!=funcs_direct_calls_.end())
+    if(func_s_direct_calls_.find(func)!=func_s_direct_calls_.end())
     {
-        res=funcs_direct_calls_.at(func);
+        res=func_s_direct_calls_.at(func);
     }
     return res;
 }

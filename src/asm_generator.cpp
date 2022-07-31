@@ -31,16 +31,29 @@ optimize:是否需要优化
 */
 bool Asm_generator::create_register_manager(set<struct reg> regs,struct flag_reg flag_reg,bool optimize)
 {
+    easyer_register_manager_=new Local_register_manager(regs,flag_reg);
+    easyer_register_manager_->set_mediator(this);
+    better_register_manager_=new Graph_coloring_register_manager(regs,flag_reg);
+    better_register_manager_->set_mediator(this);
+    // if(optimize)
+    // {
+    //     register_manager_=new Graph_coloring_register_manager(regs,flag_reg);
+    // }
+    // else
+    // {
+    //     register_manager_=new Local_register_manager(regs,flag_reg);
+    // }
     if(optimize)
     {
-        register_manager_=new Graph_coloring_register_manager(regs,flag_reg);
+        register_manager_=better_register_manager_;
     }
     else
     {
-        register_manager_=new Local_register_manager(regs,flag_reg);
+        register_manager_=easyer_register_manager_;
     }
-    register_manager_->set_mediator(this);
-    return register_manager_->is_init_successful();
+    // register_manager_->set_mediator(this);
+    // return register_manager_->is_init_successful();
+    return better_register_manager_->is_init_successful() && easyer_register_manager_->is_init_successful();
 }
 
 /*
@@ -91,9 +104,18 @@ bool Asm_generator::init(set<struct reg> regs,struct flag_reg flag_reg,string me
 */
 Asm_generator::~Asm_generator()
 {
-    if(register_manager_)
+    // if(register_manager_)
+    // {
+    //     delete register_manager_;
+    // }
+    if(easyer_register_manager_)
     {
-        delete register_manager_;
+        delete easyer_register_manager_;
+    }
+
+    if(better_register_manager_)
+    {
+        delete better_register_manager_;
     }
 
     if(memory_manager_)
@@ -111,6 +133,34 @@ Asm_generator::~Asm_generator()
         delete intermediate_code_manager_;
     }
 }
+
+void Asm_generator::handle_CHANGE_TO_EASYER_REGISTER_MANAGER()
+{
+    register_manager_=easyer_register_manager_;
+}
+
+void Asm_generator::handle_CHANGE_TO_BETTER_REGISTER_MANAGER()
+{
+    register_manager_=better_register_manager_;
+}
+
+struct event Asm_generator::handler(struct event event)
+{
+    struct event res;
+    switch(event.type)
+    {
+        case event_type::CHANGE_TO_EASYER_REGISTER_MANAGER:
+            handle_CHANGE_TO_EASYER_REGISTER_MANAGER();
+            break;
+        case event_type::CHANGE_TO_BETTER_REGISTER_MANAGER:
+            handle_CHANGE_TO_BETTER_REGISTER_MANAGER();
+            break;
+        default:
+            break;
+    }
+    return res;
+}
+
 /*
 生成最终的汇编代码文件
 
