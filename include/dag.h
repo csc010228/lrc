@@ -154,6 +154,9 @@ private:
     //尝试进行公共子表达的删除
     bool common_expression_delete(enum ic_op op,struct ic_data * result,struct ic_data * arg1,struct ic_data * arg2=nullptr);
 
+    //尝试进行函数调用的公共子表达式删除
+    bool function_call_common_expression_delete(struct ic_data * result,struct ic_func * func,list<struct ic_data * > * r_params);
+
     //进行DAG节点的建立和节点之间关系的建立
     bool build_DAG_node_and_relation(enum ic_op op,struct ic_data * result,struct ic_data * arg1,struct ic_data * arg2=nullptr);
 

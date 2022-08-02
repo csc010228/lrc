@@ -247,7 +247,11 @@ DAG::DAG(struct ic_basic_block * basic_block):basic_block_(basic_block)
                 result=(struct ic_data *)ic_with_info.intermediate_code.result.second;
                 r_params=(list<struct ic_data * > *)ic_with_info.intermediate_code.arg2.second;
                 func=(struct ic_func *)ic_with_info.intermediate_code.arg1.second;
-                generate_CALL_in_DAG(func,result,r_params);
+                //尝试进行函数调用的公共子表达式删除，如果失败了，就建立对应的DAG节点，并且在DAG节点之间建立联系
+                if(function_call_common_expression_delete(result,func,r_params)==false)
+                {
+                    generate_CALL_in_DAG(func,result,r_params);
+                }
                 delete r_params;
                 break;
             case ic_op::JMP:
@@ -492,7 +496,7 @@ void DAG::generate_CALL_in_DAG(struct ic_func * func,struct ic_data * ret,list<s
     //数组形参对应的实参
     //和上述两类数据相关的数据
     //将这三类可能会被改变的数据和它们对应的DAG节点解除关联
-    func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_f_params(func);
+    func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_array_f_params(func);
     for(auto data:func_def_globals_and_f_params)
     {
         if(data->is_array_var())
@@ -717,6 +721,52 @@ bool DAG::common_expression_delete(enum ic_op op,struct ic_data * result,struct 
     return false;
 }
 
+bool DAG::function_call_common_expression_delete(struct ic_data * result,struct ic_func * func,list<struct ic_data * > * r_params)
+{
+    Symbol_table * symbol_table=Symbol_table::get_instance();
+    set<struct DAG_node * > common_fathers;
+    list<struct DAG_node * > r_params_DAG_nodes;
+    //对于这几类函数调用是不能进行公共子表达式的删除的：
+    //（1）外部函数
+    //（2）调用的函数对全局变量或者函数的数组形参进行了更改或者使用
+    //（3）直接或者间接调用了外部函数的函数
+    if(func->is_external || !symbol_table->get_func_def_globals_and_array_f_params(func).empty() || !symbol_table->get_func_use_globals_and_array_f_params(func).empty() || symbol_table->is_func_call_external_func(func))
+    {
+        return false;
+    }
+    if(!result)
+    {
+        return true;
+    }
+    if(r_params)
+    {
+        for(auto r_param:(*r_params))
+        {
+            r_params_DAG_nodes.push_back(get_DAG_node(copy_progagation(r_param)));
+        }
+    }
+    for(auto node:all_nodes_)
+    {
+        if(node->related_op==ic_op::CALL && node->special_data==func)
+        {
+            common_fathers.insert(node);
+        }
+    }
+    for(auto r_param_DAG_node:r_params_DAG_nodes)
+    {
+        common_fathers=map_key_and_set_intersection(r_param_DAG_node->fathers,common_fathers);
+    }
+    for(auto father:common_fathers)
+    {
+        if(father->related_op==ic_op::CALL && father->special_data==func)
+        {
+            attach_data_to_node(result,father);
+            return true;
+        }
+    }
+    return false;
+}
+
 bool DAG::build_DAG_node_and_relation(enum ic_op op,struct ic_data * result,struct ic_data * arg1,struct ic_data * arg2)
 {
     arg1=copy_progagation(arg1);
@@ -884,12 +934,38 @@ list<struct quaternion> DAG::to_basic_block()
                 }
                 if(result)
                 {
-                    res.push_back(quaternion(op,ic_operand::FUNC,(void *)(node->special_data),ic_operand::DATAS,(void *)(r_params),ic_operand::DATA,(void *)(result)));
+                    result=nullptr;
+                    for(auto data:node->related_datas)
+                    {
+                        if(!result)
+                        {
+                            result=data;
+                            res.push_back(quaternion(op,ic_operand::FUNC,(void *)(node->special_data),ic_operand::DATAS,(void *)(r_params),ic_operand::DATA,(void *)(result)));
+                        }
+                        else
+                        {
+                            res.push_back(quaternion(ic_op::ASSIGN,ic_operand::DATA,(void *)(result),ic_operand::NONE,nullptr,ic_operand::DATA,(void *)(data)));
+                        }
+                    }
                 }
                 else
                 {
                     res.push_back(quaternion(op,ic_operand::FUNC,(void *)(node->special_data),ic_operand::DATAS,(void *)(r_params),ic_operand::NONE,nullptr));
                 }
+                // result=node->get_first_data();
+                // r_params=new list<struct ic_data * >;
+                // for(auto child:node->children)
+                // {
+                //     r_params->push_back(child->get_first_data());
+                // }
+                // if(result)
+                // {
+                //     res.push_back(quaternion(op,ic_operand::FUNC,(void *)(node->special_data),ic_operand::DATAS,(void *)(r_params),ic_operand::DATA,(void *)(result)));
+                // }
+                // else
+                // {
+                //     res.push_back(quaternion(op,ic_operand::FUNC,(void *)(node->special_data),ic_operand::DATAS,(void *)(r_params),ic_operand::NONE,nullptr));
+                // }
                 break;
             case ic_op::IF_JMP:
             case ic_op::IF_NOT_JMP:

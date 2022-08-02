@@ -294,12 +294,12 @@ ic_label::ic_label(string label_name):name(label_name)
 
 //===================================== struct ic_func =====================================//
 
-ic_func::ic_func(string name,enum language_data_type return_type,list<struct ic_data * > * f_params):name(name),return_type(return_type),f_params(f_params),scope(nullptr)
+ic_func::ic_func(string name,enum language_data_type return_type,bool is_external,list<struct ic_data * > * f_params):name(name),return_type(return_type),f_params(f_params),is_external(is_external),scope(nullptr)
 {
     
 }
 
-ic_func::ic_func(string name,enum language_data_type return_type,size_t f_params_num,...):name(name),return_type(return_type),scope(nullptr)
+ic_func::ic_func(string name,enum language_data_type return_type,bool is_external,size_t f_params_num,...):name(name),return_type(return_type),is_external(is_external),scope(nullptr)
 {
     struct ic_data * f_param;
     f_params=new list<struct ic_data * >;
@@ -480,37 +480,37 @@ Symbol_table::Symbol_table():tmp_vars_num_(0),labels_num_(0),current_scope_(null
     list<struct ic_data * > * dimensions_len;
     //把库中的函数进行定义
     //int getint()
-    functions_.insert(make_pair("getint",new struct ic_func("getint",language_data_type::INT,(size_t)0)));
+    functions_.insert(make_pair("getint",new struct ic_func("getint",language_data_type::INT,true,(size_t)0)));
     //int getch()
-    functions_.insert(make_pair("getch",new struct ic_func("getch",language_data_type::INT,(size_t)0)));
+    functions_.insert(make_pair("getch",new struct ic_func("getch",language_data_type::INT,true,(size_t)0)));
     //int getarray(int a[])
     dimensions_len=new list<struct ic_data * >;
     dimensions_len->push_back(const_entry(language_data_type::INT,OAA((int)0)));
-    functions_.insert(make_pair("getarray",new struct ic_func("getarray",language_data_type::INT,(size_t)1,new struct ic_data("a",language_data_type::INT,dimensions_len,false))));
+    functions_.insert(make_pair("getarray",new struct ic_func("getarray",language_data_type::INT,true,(size_t)1,new struct ic_data("a",language_data_type::INT,dimensions_len,false))));
     //int getfarray(float a[])
     dimensions_len=new list<struct ic_data * >;
     dimensions_len->push_back(const_entry(language_data_type::INT,OAA((int)0)));
-    functions_.insert(make_pair("getfarray",new struct ic_func("getfarray",language_data_type::INT,(size_t)1,new struct ic_data("a",language_data_type::FLOAT,dimensions_len,false))));
+    functions_.insert(make_pair("getfarray",new struct ic_func("getfarray",language_data_type::INT,true,(size_t)1,new struct ic_data("a",language_data_type::FLOAT,dimensions_len,false))));
     //float getfloat()
-    functions_.insert(make_pair("getfloat",new struct ic_func("getfloat",language_data_type::FLOAT,(size_t)0)));
+    functions_.insert(make_pair("getfloat",new struct ic_func("getfloat",language_data_type::FLOAT,true,(size_t)0)));
     //void putint(int a)
-    functions_.insert(make_pair("putint",new struct ic_func("putint",language_data_type::VOID,(size_t)1,new struct ic_data("a",language_data_type::INT,nullptr,false))));
+    functions_.insert(make_pair("putint",new struct ic_func("putint",language_data_type::VOID,true,(size_t)1,new struct ic_data("a",language_data_type::INT,nullptr,false))));
     //void putch(int a)
-    functions_.insert(make_pair("putch",new struct ic_func("putch",language_data_type::VOID,(size_t)1,new struct ic_data("a",language_data_type::INT,nullptr,false))));
+    functions_.insert(make_pair("putch",new struct ic_func("putch",language_data_type::VOID,true,(size_t)1,new struct ic_data("a",language_data_type::INT,nullptr,false))));
     //void putarray(int n,int a[])
     dimensions_len=new list<struct ic_data * >;
     dimensions_len->push_back(const_entry(language_data_type::INT,OAA((int)0)));
-    functions_.insert(make_pair("putarray",new struct ic_func("putarray",language_data_type::VOID,(size_t)2,new struct ic_data("n",language_data_type::INT,nullptr,false),new struct ic_data("a",language_data_type::INT,dimensions_len,false))));
+    functions_.insert(make_pair("putarray",new struct ic_func("putarray",language_data_type::VOID,true,(size_t)2,new struct ic_data("n",language_data_type::INT,nullptr,false),new struct ic_data("a",language_data_type::INT,dimensions_len,false))));
     //void putfloat(float a)
-    functions_.insert(make_pair("putfloat",new struct ic_func("putfloat",language_data_type::VOID,(size_t)1,new struct ic_data("a",language_data_type::FLOAT,nullptr,false))));
+    functions_.insert(make_pair("putfloat",new struct ic_func("putfloat",language_data_type::VOID,true,(size_t)1,new struct ic_data("a",language_data_type::FLOAT,nullptr,false))));
     //void putfarray(int n,float a[])
     dimensions_len=new list<struct ic_data * >;
     dimensions_len->push_back(const_entry(language_data_type::INT,OAA((int)0)));
-    functions_.insert(make_pair("putfarray",new struct ic_func("putfarray",language_data_type::VOID,(size_t)2,new struct ic_data("n",language_data_type::INT,nullptr,false),new struct ic_data("a",language_data_type::FLOAT,dimensions_len,false))));
+    functions_.insert(make_pair("putfarray",new struct ic_func("putfarray",language_data_type::VOID,true,(size_t)2,new struct ic_data("n",language_data_type::INT,nullptr,false),new struct ic_data("a",language_data_type::FLOAT,dimensions_len,false))));
     //void _sysy_starttime(int lineno)
-    functions_.insert(make_pair("_sysy_starttime",new struct ic_func("_sysy_starttime",language_data_type::VOID,(size_t)1,new struct ic_data("lineno",language_data_type::INT,nullptr,false))));
+    functions_.insert(make_pair("_sysy_starttime",new struct ic_func("_sysy_starttime",language_data_type::VOID,true,(size_t)1,new struct ic_data("lineno",language_data_type::INT,nullptr,false))));
     //void _sysy_stoptime(int lineno)
-    functions_.insert(make_pair("_sysy_stoptime",new struct ic_func("_sysy_stoptime",language_data_type::VOID,(size_t)1,new struct ic_data("lineno",language_data_type::INT,nullptr,false))));
+    functions_.insert(make_pair("_sysy_stoptime",new struct ic_func("_sysy_stoptime",language_data_type::VOID,true,(size_t)1,new struct ic_data("lineno",language_data_type::INT,nullptr,false))));
     //开始一个全局作用域
     start_scope();
 }
@@ -744,20 +744,20 @@ Parameters
 name:函数名
 return_type:函数返回值类型
 f_params:函数形参列表(如果函数没有形参，那么这个参数就是nullptr)
-func_scope:函数定义域
+is_external:是否是外部函数
 
 Return
 ------
 如果定义成功，返回该函数在符号表中的表项的指针，否则返回nullptr
 */
-struct ic_func * Symbol_table::new_func(string name,enum language_data_type return_type,list<struct ic_data * > * f_params)
+struct ic_func * Symbol_table::new_func(string name,enum language_data_type return_type,bool is_external,list<struct ic_data * > * f_params)
 {
     //需要查看是否有重名的函数被定义了(函数之间不能重名,但是函数和变量可以重名)
     if(func_entry(name)!=nullptr)
     {
         return nullptr;
     }
-    current_func_=new struct ic_func(name,return_type,f_params);
+    current_func_=new struct ic_func(name,return_type,is_external,f_params);
     functions_[name]=current_func_;
     return current_func_;
 }
@@ -845,13 +845,8 @@ void Symbol_table::add_func_def_globals_and_f_params(struct ic_func * func,struc
     {
         data=data->get_belong_array();
     }
-    if(data->is_f_param() || data->is_global())
+    if(data->is_f_param() || data->is_global() && !data->is_const())
     {
-        // if(func_s_def_globals_and_f_params_.find(func)==func_s_def_globals_and_f_params_.end())
-        // {
-        //     func_s_def_globals_and_f_params_.insert(make_pair(func,set<struct ic_data * >()));
-        // }
-        // func_s_def_globals_and_f_params_.at(func).insert(data);
         map_set_insert(func_s_def_globals_and_f_params_,func,data);
     }
 }
@@ -870,13 +865,8 @@ void Symbol_table::add_func_use_globals_and_f_params(struct ic_func * func,struc
     {
         data=data->get_belong_array();
     }
-    if(data->is_f_param() || data->is_global())
+    if(data->is_f_param() || data->is_global() && !data->is_const())
     {
-        // if(func_s_use_globals_and_f_params_.find(func)==func_s_use_globals_and_f_params_.end())
-        // {
-        //     func_s_use_globals_and_f_params_.insert(make_pair(func,set<struct ic_data * >()));
-        // }
-        // func_s_use_globals_and_f_params_.at(func).insert(data);
         map_set_insert(func_s_use_globals_and_f_params_,func,data);
     }
 }
@@ -888,33 +878,51 @@ Parameters
 ----------
 func:要增加直接调用的函数
 called_func:被调用的函数
+r_params:调用时的实参
 */
-void Symbol_table::add_func_direct_calls(struct ic_func * func,struct ic_func * called_func)
+void Symbol_table::add_func_direct_calls(struct ic_func * func,struct ic_func * called_func,list<struct ic_data * > * r_params)
 {
     set<struct ic_data * > globals_and_f_params;
-    // if(func_s_direct_calls_.find(func)==func_s_direct_calls_.end())
-    // {
-    //     func_s_direct_calls_.insert(make_pair(func,set<struct ic_func * >()));
-    // }
-    // func_s_direct_calls_.at(func).insert(called_func);
+    list<struct ic_data * >::iterator f_param,r_param;
+    map<struct ic_data * ,struct ic_data * > f_r_params_map;
     map_set_insert(func_s_direct_calls_,func,called_func);
+    //除了增加函数直接调用的信息，还需要增加该函数会更改和使用的数组形参变量信息
+    if(r_params)
+    {
+        f_param=called_func->f_params->begin();
+        r_param=r_params->begin();
+        while(f_param!=called_func->f_params->end() && r_param!=r_params->end())
+        {
+            f_r_params_map.insert(make_pair(*f_param,*r_param));
+            f_param++;
+            r_param++;
+        }
+    }
     //除了增加函数直接调用的信息，还需要增加该函数会更改和使用的全局变量信息
     if(func!=called_func)
     {
-        globals_and_f_params=get_func_def_globals_and_f_params(called_func);
+        globals_and_f_params=get_func_def_globals_and_array_f_params(called_func);
         for(auto var:globals_and_f_params)
         {
             if(var->is_global())
             {
                 add_func_def_globals_and_f_params(func,var);
             }
+            else if(var->is_f_param() && var->is_array_var() && f_r_params_map.find(var)!=f_r_params_map.end())
+            {
+                add_func_def_globals_and_f_params(func,f_r_params_map.at(var));
+            }
         }
-        globals_and_f_params=get_func_use_globals_and_f_params(called_func);
+        globals_and_f_params=get_func_use_globals_and_array_f_params(called_func);
         for(auto var:globals_and_f_params)
         {
             if(var->is_global())
             {
                 add_func_use_globals_and_f_params(func,var);
+            }
+            else if(var->is_f_param() && var->is_array_var() && f_r_params_map.find(var)!=f_r_params_map.end())
+            {
+                add_func_def_globals_and_f_params(func,f_r_params_map.at(var));
             }
         }
     }
@@ -942,7 +950,7 @@ func:要获取的函数
 
 Return
 ------
-返回该函数会更改的所有全局变量和数组形参
+返回该函数会更改的所有全局变量和形参
 */
 set<struct ic_data * > Symbol_table::get_func_def_globals_and_f_params(struct ic_func * func) const
 {
@@ -950,6 +958,51 @@ set<struct ic_data * > Symbol_table::get_func_def_globals_and_f_params(struct ic
     if(func_s_def_globals_and_f_params_.find(func)!=func_s_def_globals_and_f_params_.end())
     {
         res=func_s_def_globals_and_f_params_.at(func);
+    }
+    return res;
+}
+
+/*
+获取一个函数会使用的所有全局变量和形参
+
+Parameters
+----------
+func:要获取的函数
+
+Return
+------
+返回该函数会使用的所有全局变量和形参
+*/
+set<struct ic_data * > Symbol_table::get_func_use_globals_and_f_params(struct ic_func * func) const
+{
+    set<struct ic_data * > res;
+    if(func_s_use_globals_and_f_params_.find(func)!=func_s_use_globals_and_f_params_.end())
+    {
+        res=func_s_use_globals_and_f_params_.at(func);
+    }
+    return res;
+}
+
+/*
+获取一个函数会更改的所有全局变量和数组形参
+
+Parameters
+----------
+func:要获取的函数
+
+Return
+------
+返回该函数会更改的所有全局变量和数组形参
+*/
+set<struct ic_data * > Symbol_table::get_func_def_globals_and_array_f_params(struct ic_func * func) const
+{
+    set<struct ic_data * > res;
+    for(auto var:get_func_def_globals_and_f_params(func))
+    {
+        if(var->is_global() || (var->is_f_param() && var->is_array_var()))
+        {
+            res.insert(var);
+        }
     }
     return res;
 }
@@ -965,12 +1018,15 @@ Return
 ------
 返回该函数会使用的所有全局变量和数组形参
 */
-set<struct ic_data * > Symbol_table::get_func_use_globals_and_f_params(struct ic_func * func) const
+set<struct ic_data * > Symbol_table::get_func_use_globals_and_array_f_params(struct ic_func * func) const
 {
     set<struct ic_data * > res;
-    if(func_s_use_globals_and_f_params_.find(func)!=func_s_use_globals_and_f_params_.end())
+    for(auto var:get_func_use_globals_and_f_params(func))
     {
-        res=func_s_use_globals_and_f_params_.at(func);
+        if(var->is_global() || (var->is_f_param() && var->is_array_var()))
+        {
+            res.insert(var);
+        }
     }
     return res;
 }
@@ -994,6 +1050,33 @@ set<struct ic_func * > Symbol_table::get_func_direct_calls(struct ic_func * func
         res=func_s_direct_calls_.at(func);
     }
     return res;
+}
+
+bool Symbol_table::is_func_call_external_func(struct ic_func * func) const
+{
+    struct ic_func * called_func;
+    set<struct ic_func * > called_funcs;
+    stack<struct ic_func * > called_funcs_stack;
+    called_funcs_stack.push(func);
+    called_funcs.insert(func);
+    while(!called_funcs_stack.empty())
+    {
+        called_func=called_funcs_stack.top();
+        called_funcs_stack.pop();
+        if(called_func->is_external)
+        {
+            return true;
+        }
+        for(auto f:get_func_direct_calls(called_func))
+        {
+            if(called_funcs.find(f)==called_funcs.end())
+            {
+                called_funcs.insert(f);
+                called_funcs_stack.push(f);
+            }
+        }
+    }
+    return false;
 }
 
 bool Symbol_table::is_a_defined_or_library_func(string func_name) const

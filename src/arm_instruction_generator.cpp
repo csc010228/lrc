@@ -1562,7 +1562,7 @@ void Arm_instruction_generator::handle_WRITE_CONST_TO_REG(OAA const_data,reg_ind
         signed_int_to_unsigned_int.int_data=const_data.int_data;
         push_instruction(new Arm_cpu_data_process_instruction(arm_op::MOVW,arm_condition::NONE,reg,immed_16r(signed_int_to_unsigned_int.unsigned_int_data & 0x0000ffff)));
         signed_int_to_unsigned_int.unsigned_int_data=signed_int_to_unsigned_int.unsigned_int_data >> 16;
-        // if(signed_int_to_unsigned_int.unsigned_int_data>0)
+        if(signed_int_to_unsigned_int.unsigned_int_data>0)
         {
             push_instruction(new Arm_cpu_data_process_instruction(arm_op::MOVT,arm_condition::NONE,reg,immed_16r(signed_int_to_unsigned_int.unsigned_int_data)));
         }

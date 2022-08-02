@@ -70,8 +70,8 @@ Return
 ------
 返回处理完事件之后返回的响应数据
 */
-#include<iostream>
-using namespace std;
+// #include<iostream>
+// using namespace std;
 struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct event event) const
 {
     struct event res;

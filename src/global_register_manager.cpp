@@ -1002,6 +1002,7 @@ void Global_register_manager::handle_FUNC_RET()
 
 void Global_register_manager::handle_SAVE_REGS_WHEN_CALLING_FUNC(struct ic_func * func,list<struct ic_data * > * r_params)
 {
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     list<struct ic_data * > * f_params;
     set<reg_index> regs;
     set<struct ic_data * > func_use_global_vars_and_f_params,arrays_need_disposed,non_arrays_need_disposed;
@@ -1030,7 +1031,7 @@ void Global_register_manager::handle_SAVE_REGS_WHEN_CALLING_FUNC(struct ic_func 
                 r_param++;
             }
         }
-        func_use_global_vars_and_f_params=Symbol_table::get_instance()->get_func_use_globals_and_f_params(func);
+        func_use_global_vars_and_f_params=symbol_table->get_func_use_globals_and_array_f_params(func);
         for(auto var:func_use_global_vars_and_f_params)
         {
             if(var->is_array_var())
@@ -1249,6 +1250,7 @@ void Global_register_manager::handle_PLACE_ARGUMENT_IN_REGS_WHEN_CALLING_ABI_FUN
 
 void Global_register_manager::handle_RET_FROM_CALLED_FUNC(struct ic_func * func,list<struct ic_data * > * r_params,struct ic_data * return_value,reg_index return_reg)
 {
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     set<reg_index> regs;
     set<struct ic_data * > func_define_global_vars_and_f_params,arrays_need_disposed,non_arrays_need_disposed;
     set<struct ic_data * > * array_members;
@@ -1278,7 +1280,7 @@ void Global_register_manager::handle_RET_FROM_CALLED_FUNC(struct ic_func * func,
                 r_param++;
             }
         }
-        func_define_global_vars_and_f_params=Symbol_table::get_instance()->get_func_def_globals_and_f_params(func);
+        func_define_global_vars_and_f_params=symbol_table->get_func_def_globals_and_array_f_params(func);
         for(auto var:func_define_global_vars_and_f_params)
         {
             if(var->is_array_var())

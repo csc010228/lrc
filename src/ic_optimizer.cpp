@@ -119,7 +119,7 @@ void quaternion_with_info::build_info(bool clear_data_flow_analysis_info)
                     add_to_vague_defs(r_param);
                 }
             }
-            func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_f_params(func);
+            func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_array_f_params(func);
             for(auto vague_var:func_def_globals_and_f_params)
             {
                 if(vague_var->is_global())
@@ -670,14 +670,21 @@ void ic_basic_block::add_ic_info(struct quaternion_with_info ic_with_info)
     set<struct ic_data * > all_datas;
     if(ic_with_info.explicit_def!=nullptr)
     {
-        symbol_table->add_func_def_globals_and_f_params(belong_func_flow_graph->func,ic_with_info.explicit_def);
+        if(ic_with_info.explicit_def->is_array_member())
+        {
+            symbol_table->add_func_def_globals_and_f_params(belong_func_flow_graph->func,ic_with_info.explicit_def->get_belong_array());
+        }
+        else
+        {
+            symbol_table->add_func_def_globals_and_f_params(belong_func_flow_graph->func,ic_with_info.explicit_def);
+        }
         all_datas.insert(ic_with_info.explicit_def);
     }
-    for(auto vague_var:ic_with_info.vague_defs)
-    {
-        symbol_table->add_func_def_globals_and_f_params(belong_func_flow_graph->func,vague_var);
-        all_datas.insert(vague_var);
-    }
+    // for(auto vague_var:ic_with_info.vague_defs)
+    // {
+    //     symbol_table->add_func_def_globals_and_f_params(belong_func_flow_graph->func,vague_var);
+    //     all_datas.insert(vague_var);
+    // }
     for(auto use_var:ic_with_info.uses)
     {
         symbol_table->add_func_use_globals_and_f_params(belong_func_flow_graph->func,use_var);
@@ -685,7 +692,7 @@ void ic_basic_block::add_ic_info(struct quaternion_with_info ic_with_info)
     }
     if(ic_with_info.intermediate_code.op==ic_op::CALL)
     {
-        symbol_table->add_func_direct_calls(belong_func_flow_graph->func,(struct ic_func *)ic_with_info.intermediate_code.arg1.second);
+        symbol_table->add_func_direct_calls(belong_func_flow_graph->func,(struct ic_func *)ic_with_info.intermediate_code.arg1.second,(list<struct ic_data * > *)ic_with_info.intermediate_code.arg2.second);
     }
     for(auto data:all_datas)
     {
@@ -1504,7 +1511,15 @@ void Ic_optimizer::DAG_optimize(struct ic_basic_block * basic_block)
 */
 void Ic_optimizer::local_optimize()
 {
-    //先进行函数内联
+    //先进行DAG相关优化
+    for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
+    {
+        for(auto basic_block:func->basic_blocks)
+        {
+            DAG_optimize(basic_block);
+        }
+    }
+    //再进行函数内联
     if(need_optimize_)
     {
         for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
@@ -1512,7 +1527,7 @@ void Ic_optimizer::local_optimize()
             function_inline(func);
         }
     }
-    //再进行DAG相关优化
+    //最后还要再进行一次DAG相关优化
     for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
     {
         for(auto basic_block:func->basic_blocks)

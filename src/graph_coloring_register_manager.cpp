@@ -7,7 +7,6 @@
  *
 */
 #include "graph_coloring_register_manager.h"
-//#include "memory_manager.h"
 #include "util.h"
 
 //===================================== struct live_analysis =====================================//
@@ -895,7 +894,7 @@ void Graph_coloring_register_manager::set_registers_when_spilling_var_value_s_re
                         if(symbol_table->is_a_defined_or_library_func(func_name))
                         {
                             func=symbol_table->func_entry(func_name);
-                            func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_f_params(func);
+                            func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_array_f_params(func);
                             for(auto target_reg:target_regs)
                             {
                                 if(virtual_regs_info_.reg_indexs.at(target_reg).data_type==virtual_related_data_type::VAR_VALUE && 
@@ -960,7 +959,7 @@ void Graph_coloring_register_manager::set_registers_when_spilling_var_value_s_re
                     if(symbol_table->is_a_defined_or_library_func(func_name))
                     {
                         func=symbol_table->func_entry(func_name);
-                        func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_f_params(func);
+                        func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_array_f_params(func);
                         temp=effective_regs;
                         for(auto effective_reg:temp)
                         {
@@ -1280,7 +1279,7 @@ void Graph_coloring_register_manager::rewrite_program()
         }
     }
     //除了存放在寄存器中传递的函数数组形参之外的其他数组变量的值
-    //溢出这类数组变量的值所在的寄存器的时候，只需要在该虚拟寄存器使用之前把地址写入新的虚拟寄存器即可
+    //溢出这类数组变量的值所在的寄存器的时候，只需要在该虚拟寄存器使用之前把地址写入新的虚拟寄存器即可，同时把原本对该虚拟寄存器的赋值全部删除
     current_pos=1;
     for(auto bb:virtual_target_code->basic_blocks)
     {
@@ -1561,7 +1560,6 @@ void Graph_coloring_register_manager::handle_END_FUNC()
     virtual_target_code_to_physical_target_code();
     //把虚拟寄存器堆清空
     virtual_regs_info_.clear();
-    //Global_register_manager::handle_END_FUNC();
     //最后把所有的用于虚拟寄存器分配的信息清空
     clear_info();
 }

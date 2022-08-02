@@ -24,153 +24,301 @@ main:
 	nop
 	add	fp,sp,#36
 	sub	sp,sp,#4
+	sub	sp,sp,#24
 	sub	sp,sp,#8
-	sub	sp,sp,#40
-	bl	getint
-	mov	r7,r0
-	mov	r1,r7
-	movw	r0,#:lower16:a
-	movt	r0,#:upper16:a
-	movw	r0,#:lower16:a
-	movt	r0,#:upper16:a
-	str	r1,[r0]
-	bl	getint
-	mov	r1,r0
-	add	r0,sp,#32
-	add	r0,sp,#32
-	str	r1,[r0]
-	add	r0,sp,#32
-	ldr	r0,[r0]
-	nop
-	movw	r4,#:lower16:b
-	movt	r4,#:upper16:b
-	str	r0,[r4]
 	bl	getint
 	nop
-	add	r8,sp,#28
-	str	r0,[r8]
-	ldr	r0,[r8]
-	nop
-	movw	r5,#:lower16:c
-	movt	r5,#:upper16:c
-	str	r0,[r5]
+	mov	r6,r0
 	bl	getint
+	nop
 	nop
 	add	r9,sp,#24
 	str	r0,[r9]
-	ldr	r0,[r9]
+	movw	r0,#13
 	nop
-	movw	r6,#:lower16:d
-	movt	r6,#:upper16:d
-	str	r0,[r6]
-	bl	getint
+	bl	_sysy_starttime
+	movw	r3,#0
+	mov	r0,r3
+	add	r8,sp,#20
+	str	r0,[r8]
+	mov	r4,r3
+	mov	r0,r3
+	add	r7,sp,#12
+	str	r0,[r7]
+	add	sp,sp,#8
+.0:
 	nop
-	mov	r10,r0
-	movw	r0,#0
-	movt	r0,#0
-	nop
-	add	r1,sp,#44
-	add	r1,sp,#44
-	str	r0,[r1]
 	ldr	r0,[r8]
-	add	r1,sp,#32
-	ldr	r1,[r1]
-	mul	r0,r1,r0
-	sub	r0,r7,r0
-	add	r1,sp,#12
-	add	r1,sp,#12
-	str	r0,[r1]
-	mov	r0,r7
-	ldr	r1,[r8]
+	cmp	r0,r6
+	nop
+	bge	.5
+	nop
+	movw	r3,#0
+	mov	r4,r3
+	mov	r0,r3
+	str	r0,[r7]
+	nop
+.1:
+	nop
+	cmp	r4,r6
+	nop
+	bge	.4
+	nop
+	movw	r3,#0
+	mov	r0,r3
+	str	r0,[r7]
+	nop
+.2:
+	nop
+	ldr	r0,[r7]
+	cmp	r0,r6
+	nop
+	bge	.3
+	nop
+	movw	r0,#600
+	movw	r0,#600
+	mul	r1,r4,r0
+	ldr	r0,[r7]
+	add	r1,r1,r0
+	movw	r0,#32320
+	movt	r0,#5
+	movw	r2,#32320
+	movt	r2,#5
+	ldr	r0,[r8]
+	mul	r0,r0,r2
+	add	r2,r0,r1
+	movw	r1,#1
+	nop
+	movw	r3,#0
+	mov	r0,r3
+	ldr	r3,[r7]
+	add	r3,r3,#1
+	nop
+	str	r3,[r7]
+	movw	r3,#:lower16:y
+	movt	r3,#:upper16:y
+	str	r0,[r3,r2,lsl 2]
+	movw	r5,#:lower16:x
+	movt	r5,#:upper16:x
+	str	r1,[r5,r2,lsl 2]
+	nop
+	b	.2
+.3:
+	nop
+	add	r0,r4,#1
+	mov	r4,r0
+	nop
+	b	.1
+.4:
+	nop
+	ldr	r0,[r8]
+	add	r0,r0,#1
+	nop
+	str	r0,[r8]
+	nop
+	b	.0
+.5:
+	nop
+	movw	r1,#1
+	mov	r0,r1
+	str	r0,[r8]
+	mov	r4,r1
+	mov	r0,r1
+	str	r0,[r7]
+	nop
+.6:
+	nop
+	sub	r1,r6,#1
+	ldr	r0,[r8]
+	cmp	r0,r1
+	nop
+	bge	.11
+	nop
+	movw	r1,#1
+	mov	r4,r1
+	mov	r0,r1
+	str	r0,[r7]
+	nop
+.7:
+	nop
+	sub	r0,r6,#1
+	cmp	r4,r0
+	nop
+	bge	.10
+	nop
+	movw	r1,#1
+	mov	r0,r1
+	str	r0,[r7]
+	nop
+.8:
+	nop
+	sub	r0,r6,#1
+	ldr	r1,[r7]
+	cmp	r1,r0
+	nop
+	bge	.9
+	sub	sp,sp,#120
+	movw	r0,#600
+	movw	r0,#600
+	mul	r1,r4,r0
+	ldr	r0,[r7]
+	add	r0,r1,r0
+	add	r5,sp,#112
+	str	r0,[r5]
+	movw	r0,#32320
+	movt	r0,#5
+	movw	r2,#32320
+	movt	r2,#5
+	ldr	r0,[r8]
+	mul	r2,r0,r2
+	ldr	r0,[r5]
+	add	r3,r2,r0
+	add	r0,sp,#104
+	add	r0,sp,#104
+	str	r3,[r0]
+	ldr	r0,[r8]
+	sub	r0,r0,#1
+	movw	r3,#32320
+	movt	r3,#5
+	mul	r3,r0,r3
+	ldr	r0,[r5]
+	add	r0,r3,r0
+	add	r3,sp,#92
+	str	r0,[r3]
+	ldr	r0,[r8]
+	add	r0,r0,#1
+	movw	r10,#32320
+	movt	r10,#5
+	mul	r10,r0,r10
+	ldr	r0,[r5]
+	add	r0,r10,r0
+	movw	r5,#:lower16:x
+	movt	r5,#:upper16:x
+	ldr	r3,[r3]
+	ldr	r3,[r5,r3,lsl 2]
+	ldr	r0,[r5,r0,lsl 2]
+	add	r0,r3,r0
+	add	r3,sp,#76
+	str	r0,[r3]
+	sub	r0,r4,#1
+	movw	r10,#600
+	movw	r10,#600
+	mul	r10,r0,r10
+	ldr	r0,[r7]
+	add	r0,r10,r0
+	add	r0,r2,r0
+	ldr	r0,[r5,r0,lsl 2]
+	ldr	r3,[r3]
+	add	r0,r3,r0
+	add	r3,sp,#56
+	str	r0,[r3]
+	add	r0,r4,#1
+	movw	r10,#600
+	movw	r10,#600
+	mul	r10,r0,r10
+	ldr	r0,[r7]
+	add	r0,r10,r0
+	add	r0,r2,r0
+	ldr	r10,[r5,r0,lsl 2]
+	ldr	r0,[r3]
+	add	r0,r0,r10
+	ldr	r3,[r7]
+	sub	r3,r3,#1
+	add	r3,r1,r3
+	add	r3,r2,r3
+	ldr	r3,[r5,r3,lsl 2]
+	add	r3,r0,r3
+	ldr	r0,[r7]
+	add	r0,r0,#1
+	add	r10,sp,#16
+	add	r10,sp,#16
+	str	r0,[r10]
+	add	r0,sp,#16
+	ldr	r0,[r0]
+	add	r0,r1,r0
+	add	r0,r2,r0
+	ldr	r0,[r5,r0,lsl 2]
+	add	r0,r3,r0
+	nop
+	ldr	r1,[r9]
 	nop
 	bl	__aeabi_idiv
 	nop
-	ldr	r1,[r9]
-	sub	r0,r1,r0
-	add	r1,sp,#12
+	nop
+	add	r1,sp,#16
 	ldr	r1,[r1]
-	cmp	r1,r0
-	add	sp,sp,#40
-	bne	.0
 	nop
-	movw	r0,#:lower16:a
-	movt	r0,#:upper16:a
-	ldr	r1,[r0]
-	ldr	r0,[r4]
-	mul	r0,r1,r0
+	str	r1,[r7]
+	add	r1,sp,#104
+	ldr	r1,[r1]
+	str	r0,[r5,r1,lsl 2]
+	add	sp,sp,#120
+	b	.8
+.9:
 	nop
-	ldr	r1,[r5]
+	add	r0,r4,#1
+	mov	r4,r0
+	nop
+	b	.7
+.10:
+	nop
+	ldr	r0,[r8]
+	add	r0,r0,#1
+	nop
+	str	r0,[r8]
+	nop
+	b	.6
+.11:
+	nop
+	movw	r0,#53
+	nop
+	bl	_sysy_stoptime
+	mov	r0,r6
+	movw	r5,#:lower16:x
+	movt	r5,#:upper16:x
+	add	r1,r5,#0
+	nop
+	bl	putarray
+	mov	r0,r6
+	movw	r1,#2
 	nop
 	bl	__aeabi_idiv
 	mov	r1,r0
-	ldr	r0,[r6]
-	add	r0,r10,r0
-	cmp	r1,r0
+	movw	r0,#600
+	movw	r0,#600
+	mul	r2,r1,r0
+	movw	r0,#32320
+	movt	r0,#5
+	movw	r0,#32320
+	movt	r0,#5
+	mul	r0,r1,r0
+	add	r1,r0,r2
+	mov	r0,r6
+	add	r1,r5,r1,lsl 2
 	nop
-	beq	.0
+	bl	putarray
+	ldr	r0,[r8]
+	sub	r2,r0,#1
+	sub	r1,r4,#1
+	movw	r0,#600
+	mul	r1,r1,r0
+	movw	r0,#32320
+	movt	r0,#5
+	mul	r0,r2,r0
+	add	r1,r0,r1
+	mov	r0,r6
+	add	r1,r5,r1,lsl 2
 	nop
-	movw	r0,#:lower16:a
-	movt	r0,#:upper16:a
-	ldr	r0,[r0]
-	ldr	r1,[r4]
-	add	r0,r0,r1
-	ldr	r1,[r5]
-	add	r0,r0,r1
-	ldr	r1,[r6]
-	add	r1,r1,r10
-	cmp	r0,r1
+	bl	putarray
+	movw	r0,#0
 	nop
-	beq	.0
-	nop
-	nop
-	b	.1
-.0:
-	sub	sp,sp,#0
-	movw	r0,#1
-	movt	r0,#0
-	nop
-	add	r1,sp,#4
-	str	r0,[r1]
-	add	sp,sp,#0
-.1:
-	sub	sp,sp,#0
-	movw	r0,#:lower16:a
-	movt	r0,#:upper16:a
-	movw	r0,#:lower16:a
-	movt	r0,#:upper16:a
-	ldr	r1,[r0]
-	movw	r0,#:lower16:a
-	movt	r0,#:upper16:a
-	str	r1,[r0]
-	movw	r4,#:lower16:b
-	movt	r4,#:upper16:b
-	ldr	r0,[r4]
-	str	r0,[r4]
-	movw	r5,#:lower16:c
-	movt	r5,#:upper16:c
-	ldr	r0,[r5]
-	str	r0,[r5]
-	movw	r6,#:lower16:d
-	movt	r6,#:upper16:d
-	ldr	r0,[r6]
-	str	r0,[r6]
-	movw	r0,#:lower16:e
-	movt	r0,#:upper16:e
-	str	r10,[r0]
-	add	r0,sp,#4
-	ldr	r0,[r0]
-	nop
-	add	sp,sp,#0
-	add	sp,sp,#8
+	add	sp,sp,#24
 	add	sp,sp,#4
 	nop
 	pop	{r4,r5,r6,r7,r8,r9,r10,fp,pc}
-	add	sp,sp,#0
+	nop
 	.size	main, .-main
-	.comm a,4,4
-	.comm b,4,4
-	.comm c,4,4
-	.comm d,4,4
-	.comm e,4,4
+	.comm x,864000000,4
+	.comm y,864000000,4
 	.ident	"GCC: (Raspbian 8.3.0-6+rpi1) 8.3.0"
 	.section	.note.GNU-stack,"",%progbits

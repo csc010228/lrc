@@ -167,9 +167,9 @@ struct ic_label
 //函数
 struct ic_func
 {
-    ic_func(string name,enum language_data_type return_type,list<struct ic_data * > * f_params);
+    ic_func(string name,enum language_data_type return_type,bool is_external,list<struct ic_data * > * f_params);
 
-    ic_func(string name,enum language_data_type return_type,size_t f_params_num,...);
+    ic_func(string name,enum language_data_type return_type,bool is_external,size_t f_params_num,...);
 
     struct ic_data * get_f_param(string f_param_name) const;
 
@@ -183,6 +183,7 @@ struct ic_func
     enum language_data_type return_type;                //返回值类型
     list<struct ic_data * > * f_params;                 //函数形参
     struct ic_scope * scope;                            //函数作用域
+    bool is_external;                                   //是否是外部函数
 };
 
 //作用域类型
@@ -308,7 +309,7 @@ public:
     struct ic_label * new_label();
 
     //定义一个函数
-    struct ic_func * new_func(string name,enum language_data_type return_type,list<struct ic_data * > * f_params);
+    struct ic_func * new_func(string name,enum language_data_type return_type,bool is_external,list<struct ic_data * > * f_params);
 
     //获取正在生成的函数
     struct ic_func * get_current_func();
@@ -344,7 +345,7 @@ public:
     void add_func_use_globals_and_f_params(struct ic_func * func,struct ic_data * data);
 
     //增加一个函数会直接调用的函数
-    void add_func_direct_calls(struct ic_func * func,struct ic_func * called_func);
+    void add_func_direct_calls(struct ic_func * func,struct ic_func * called_func,list<struct ic_data * > * r_params);
 
     //增加一个函数会涉及的的数据结构
     void add_func_related_data_type(struct ic_func * func,enum language_data_type data_type);
@@ -355,8 +356,17 @@ public:
     //获取一个函数会使用的所有全局变量和形参
     set<struct ic_data * > get_func_use_globals_and_f_params(struct ic_func * func) const;
 
+    //获取一个函数会更改的所有全局变量和数组形参
+    set<struct ic_data * > get_func_def_globals_and_array_f_params(struct ic_func * func) const;
+
+    //获取一个函数会使用的所有全局变量和数组形参
+    set<struct ic_data * > get_func_use_globals_and_array_f_params(struct ic_func * func) const;
+
     //获取一个函数会直接调用的所有函数
     set<struct ic_func * > get_func_direct_calls(struct ic_func * func) const;
+
+    //判断一个函数是否直接或者间接调用过外部函数
+    bool is_func_call_external_func(struct ic_func * func) const;
 
     //查看一个函数是否涉及某一个数据类型
     bool is_func_related_to_a_data_type(struct ic_func * func,enum language_data_type data_type) const;

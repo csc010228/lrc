@@ -21,6 +21,9 @@ Virtual_arm_asm_optimizer::~Virtual_arm_asm_optimizer()
 
 void Virtual_arm_asm_optimizer::optimize_func_and_basic_block_s_enter_and_exit()
 {
+    /*
+    这个优化做了之后有很多情况下性能不升反降???
+    */
     bool optimize_func_enter_exit=true;
     Arm_instruction * instruction;
     Arm_pseudo_instruction * pseudo_instruction;

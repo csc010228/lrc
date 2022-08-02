@@ -32,6 +32,20 @@ set<MAP_KEY> map_key_intersection(const map<MAP_KEY,MAP_VALUE> & map1,const map<
     return res;
 }
 
+template<typename MAP_KEY,typename MAP_VALUE>
+set<MAP_KEY> map_key_and_set_intersection(const map<MAP_KEY,MAP_VALUE> & map,const set<MAP_KEY> & s)
+{
+    set<MAP_KEY> res;
+    for(auto member:map)
+    {
+        if(s.find(member.first)!=s.end())
+        {
+            res.insert(member.first);
+        }
+    }
+    return res;
+}
+
 template<typename MAP_SET_KEY,typename MAP_SET_VALUE>
 void map_set_insert(map<MAP_SET_KEY,set<MAP_SET_VALUE> > & target,const MAP_SET_KEY & key,const MAP_SET_VALUE & value)
 {
