@@ -922,7 +922,10 @@ void Symbol_table::add_func_direct_calls(struct ic_func * func,struct ic_func * 
 
 void Symbol_table::add_func_related_data_type(struct ic_func * func,enum language_data_type data_type)
 {
-    map_set_insert(func_s_related_data_type_,func,data_type);
+    if(!is_func_related_to_a_data_type(func,data_type))
+    {
+        map_set_insert(func_s_related_data_type_,func,data_type);
+    }
 }
 
 bool Symbol_table::is_func_related_to_a_data_type(struct ic_func * func,enum language_data_type data_type) const

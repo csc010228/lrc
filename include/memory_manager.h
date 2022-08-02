@@ -161,6 +161,7 @@ private:
     struct event handle_READY_TO_POP_WHEN_RET();
     struct event handle_GET_VAR_STACK_POS_FROM_SP(struct ic_data * var);
     struct event handle_GET_VAR_STACK_POS_FROM_FP(struct ic_data * var);
+    void handle_CLEAR_CURRENT_BASIC_BLOCK_STACK();
     void handle_PUSH_VAR_TO_STACK(struct ic_data * var);
     void handle_PUSH_ARGUMENT_TO_STACK_WHEN_CALLING_FUNC(struct ic_data * argument);
     void handle_PADDING_WHEN_CALL_FUNC(int padding_bytes);

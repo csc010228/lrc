@@ -45,7 +45,7 @@ protected:
 public:
     Abi_manager();
 
-    ~Abi_manager();
+    virtual ~Abi_manager();
 
     //初始化
     virtual bool init()=0;

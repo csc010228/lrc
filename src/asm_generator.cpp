@@ -96,7 +96,7 @@ bool Asm_generator::init(set<struct reg> regs,struct flag_reg flag_reg,string me
     {
         regs_info.insert(make_pair(i.index,i.name));
     }
-    return create_register_manager(regs,flag_reg,optimize) && create_memory_manager(memory_info) && create_instruction_generator(regs_info) && create_intermediate_code_manager() && create_asm_optimizer(optimize) && create_abi_manager() && init_components();
+    return create_register_manager(regs,flag_reg,optimize) && create_memory_manager(memory_info) && create_instruction_generator(regs_info) && create_intermediate_code_manager() && create_asm_optimizer(optimize) && create_abi_manager() && create_virtual_asm_optimizer(optimize) && init_components();
 }
 
 /*
@@ -126,6 +126,16 @@ Asm_generator::~Asm_generator()
     if(instruction_generator_)
     {
         delete instruction_generator_;
+    }
+
+    if(abi_manager_)
+    {
+        delete abi_manager_;
+    }
+
+    if(virtual_asm_optimizer_)
+    {
+        delete virtual_asm_optimizer_;
     }
 
     if(intermediate_code_manager_)

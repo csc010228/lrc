@@ -18,6 +18,7 @@
 #include "memory_manager.h"
 #include "asm_optimizer.h"
 #include "abi_manager.h"
+#include "virtual_asm_optimizer.h"
 
 //汇编代码生成器
 class Asm_generator
@@ -48,6 +49,9 @@ protected:
     //ABI管理器
     Abi_manager * abi_manager_;
 
+    //虚拟目标代码优化器
+    Virtual_asm_optimizer * virtual_asm_optimizer_;
+
     //初始化寄存器管理器
     virtual bool create_register_manager(set<struct reg> regs,struct flag_reg flag_reg,bool optimize);
 
@@ -59,6 +63,9 @@ protected:
 
     //初始化汇编指令优化器
     virtual bool create_asm_optimizer(bool optimize)=0;
+
+    //初始化虚拟目标代码优化器
+    virtual bool create_virtual_asm_optimizer(bool optimize)=0;
 
     //初始化ABI管理器
     virtual bool create_abi_manager()=0;

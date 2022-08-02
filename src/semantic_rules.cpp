@@ -634,15 +634,10 @@ void quaternion::replace_all_labels(const map<struct ic_label *,struct ic_label 
 
 
 //语法分析时的全局信息
-struct// global_info
+struct
 {
-    // global_info():current_func(nullptr)
-    // {
-
-    // };
-
-    enum language_data_type data_type;
     struct ic_func * current_func=nullptr;
+    enum language_data_type data_type;
 } global_info;
 
 //每一个语义动作规约完成之前和之后，栈顶的指针的差值+1（规约前栈顶指针减去规约后栈顶指针+1）
@@ -1095,7 +1090,7 @@ end_define_semantic_rule
 define_semantic_rule(___B_TYPE_1___)
     set_syntax_symbol_attribute(B_TYPE,b_type,int,(int)language_data_type::INT);
     set_global_info(data_type,language_data_type::INT);
-    //relate_data_type_to_curretn_func(language_data_type::INT);
+    add_data_type_to_current_func(language_data_type::INT);
 end_define_semantic_rule
 
 /*
@@ -1104,7 +1099,7 @@ end_define_semantic_rule
 define_semantic_rule(___B_TYPE_2___)
     set_syntax_symbol_attribute(B_TYPE,b_type,int,(int)language_data_type::FLOAT);
     set_global_info(data_type,language_data_type::FLOAT);
-    //relate_data_type_to_curretn_func(language_data_type::FLOAT);
+    add_data_type_to_current_func(language_data_type::FLOAT);
 end_define_semantic_rule
 
 /*
@@ -1913,7 +1908,7 @@ end_define_semantic_rule
 define_semantic_rule(___FUNC_DEF_1___)
     //在符号表中进行注册
     struct ic_func * func=def_func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)),language_data_type((int)get_syntax_symbol_attribute(B_TYPE,b_type,int)),new list<struct ic_data * >);
-    //set_global_info(current_func,func);
+    set_global_info(current_func,func);
     //生成函数定义的中间代码
     gen_zero_operand_code(ic_op::FUNC_DEFINE,ic_operand::FUNC,func);
 end_define_semantic_rule
@@ -1923,11 +1918,19 @@ end_define_semantic_rule
 */
 define_semantic_rule(___FUNC_DEF_2___)
     struct ic_func * func=func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)));
+    if(func->f_params)
+    {
+        for(auto f_param:(*func->f_params))
+        {
+            add_data_type_to_current_func(f_param->get_data_type());
+        }
+    }
+    add_data_type_to_current_func(func->return_type);
     //检查BLOCK中是否有return
     //检查BLOCK中是否还存在有不匹配的break和continue
     //目前无需实现
     gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func);
-    //set_global_info(current_func,nullptr);
+    set_global_info(current_func,nullptr);
 end_define_semantic_rule
 
 /*
@@ -1936,7 +1939,7 @@ end_define_semantic_rule
 define_semantic_rule(___FUNC_DEF_3___)
     //在符号表中进行注册
     struct ic_func * func=def_func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)),language_data_type((int)get_syntax_symbol_attribute(B_TYPE,b_type,int)),(list<struct ic_data * > *)get_syntax_symbol_attribute(FUNC_F_PARAMS,f_params,pointer));
-    //set_global_info(current_func,func);
+    set_global_info(current_func,func);
     //生成函数定义的中间代码
     gen_zero_operand_code(ic_op::FUNC_DEFINE,ic_operand::FUNC,func);
 end_define_semantic_rule
@@ -1946,11 +1949,19 @@ end_define_semantic_rule
 */
 define_semantic_rule(___FUNC_DEF_4___)
     struct ic_func * func=func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)));
+    if(func->f_params)
+    {
+        for(auto f_param:(*func->f_params))
+        {
+            add_data_type_to_current_func(f_param->get_data_type());
+        }
+    }
+    add_data_type_to_current_func(func->return_type);
     //检查BLOCK中是否有return
     //检查BLOCK中是否还存在有不匹配的break和continue
     //目前无需实现
     gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func);
-    //set_global_info(current_func,nullptr);
+    set_global_info(current_func,nullptr);
 end_define_semantic_rule
 
 /*
@@ -1959,7 +1970,7 @@ end_define_semantic_rule
 define_semantic_rule(___FUNC_DEF_5___)
     //在符号表中进行注册
     struct ic_func * func=def_func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)),language_data_type::VOID,new list<struct ic_data * >);
-    //set_global_info(current_func,func);
+    set_global_info(current_func,func);
     //生成函数定义的中间代码
     gen_zero_operand_code(ic_op::FUNC_DEFINE,ic_operand::FUNC,func);
 end_define_semantic_rule
@@ -1968,13 +1979,22 @@ end_define_semantic_rule
 没有形参，返回值类型为void的函数的定义
 */
 define_semantic_rule(___FUNC_DEF_6___)
+    struct ic_func * func=func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)));
+    if(func->f_params)
+    {
+        for(auto f_param:(*func->f_params))
+        {
+            add_data_type_to_current_func(f_param->get_data_type());
+        }
+    }
+    add_data_type_to_current_func(func->return_type);
     //检查BLOCK中是否有return
     //检查BLOCK中是否还存在有不匹配的break和continue
     //目前无需实现
     //最后显式地增加一条ret
     gen_only_op_code(ic_op::RET);
-    gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer))));
-    //set_global_info(current_func,nullptr);
+    gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func);
+    set_global_info(current_func,nullptr);
 end_define_semantic_rule
 
 /*
@@ -1983,7 +2003,7 @@ end_define_semantic_rule
 define_semantic_rule(___FUNC_DEF_7___)
     //在符号表中进行注册
     struct ic_func * func=def_func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)),language_data_type::VOID,(list<struct ic_data * > *)get_syntax_symbol_attribute(FUNC_F_PARAMS,f_params,pointer));
-    //set_global_info(current_func,func);
+    set_global_info(current_func,func);
     //生成函数定义的中间代码
     gen_zero_operand_code(ic_op::FUNC_DEFINE,ic_operand::FUNC,func);
 end_define_semantic_rule
@@ -1992,13 +2012,22 @@ end_define_semantic_rule
 有形参，返回值类型为void的函数的定义
 */
 define_semantic_rule(___FUNC_DEF_8___)
+    struct ic_func * func=func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer)));
+    if(func->f_params)
+    {
+        for(auto f_param:(*func->f_params))
+        {
+            add_data_type_to_current_func(f_param->get_data_type());
+        }
+    }
+    add_data_type_to_current_func(func->return_type);
     //检查BLOCK中是否有return
     //检查BLOCK中是否还存在有不匹配的break和continue
     //目前无需实现
     //最后显式地增加一条ret
     gen_only_op_code(ic_op::RET);
-    gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func(*((string *)get_syntax_symbol_attribute(id,id_string,pointer))));
-    //set_global_info(current_func,nullptr);
+    gen_zero_operand_code(ic_op::END_FUNC_DEFINE,ic_operand::FUNC,func);
+    set_global_info(current_func,nullptr);
 end_define_semantic_rule
 
 /*
@@ -2717,6 +2746,7 @@ int常数
 */
 define_semantic_rule(___NUMBER_1___)
     set_syntax_symbol_attribute(NUMBER,value,pointer,def_const(language_data_type::INT,get_syntax_symbol_attribute(const_int,int_value,int)));
+    add_data_type_to_current_func(language_data_type::INT);
 end_define_semantic_rule
 
 /*
@@ -2724,6 +2754,7 @@ float常数
 */
 define_semantic_rule(___NUMBER_2___)
     set_syntax_symbol_attribute(NUMBER,value,pointer,def_const(language_data_type::FLOAT,get_syntax_symbol_attribute(const_float,float_value,float)));
+    add_data_type_to_current_func(language_data_type::FLOAT);
 end_define_semantic_rule
 
 /*

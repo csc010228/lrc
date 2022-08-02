@@ -1,10 +1,40 @@
 int a
+int b
+int c
+int d
+int e
 int main (  )  : 
-	int main::a
-	ASSIGN		10 --> main::a
-	GT		main::a , 0 --> (int)@0
-	IF_NOT_JMP		@0 --> .0
-	RET		1
+	CALL		getint (  )  --> (int)@0
+	ASSIGN		@0 --> a
+	CALL		getint (  )  --> (int)@1
+	ASSIGN		@1 --> b
+	CALL		getint (  )  --> (int)@2
+	ASSIGN		@2 --> c
+	CALL		getint (  )  --> (int)@3
+	ASSIGN		@3 --> d
+	CALL		getint (  )  --> (int)@4
+	ASSIGN		@4 --> e
+	int main::flag
+	ASSIGN		0 --> main::flag
+	MUL		b , c --> (int)@5
+	SUB		a , @5 --> (int)@6
+	DIV		a , c --> (int)@7
+	SUB		d , @7 --> (int)@8
+	UEQ		@6 , @8 --> (int)@9
+	IF_JMP		@9 --> .0
+	MUL		a , b --> (int)@10
+	DIV		@10 , c --> (int)@11
+	ADD		e , d --> (int)@12
+	EQ		@11 , @12 --> (int)@13
+	IF_JMP		@13 --> .0
+	ADD		a , b --> (int)@14
+	ADD		@14 , c --> (int)@15
+	ADD		d , e --> (int)@16
+	EQ		@15 , @16 --> (int)@17
+	IF_JMP		@17 --> .0
+	JMP		.1
 .0 : 
-	RET		0
+	ASSIGN		1 --> main::flag
+.1 : 
+	RET		main::flag
 

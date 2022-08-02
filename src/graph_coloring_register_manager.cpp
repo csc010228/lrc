@@ -1555,6 +1555,8 @@ void Graph_coloring_register_manager::handle_END_FUNC()
     // {
     //     cout<<i.first->reg<<"-->"<<i.second<<endl;
     // }
+    //对虚拟目标代码进行优化
+    notify(event(event_type::OPTIMIZE,(void *)virtual_target_code));
     //根据着色的结果从虚拟目标代码生成实际目标代码
     virtual_target_code_to_physical_target_code();
     //把虚拟寄存器堆清空

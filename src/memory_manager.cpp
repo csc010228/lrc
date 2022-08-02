@@ -316,6 +316,26 @@ struct event Memory_manager::handle_GET_VAR_STACK_POS_FROM_FP(struct ic_data * v
     return res;
 }
 
+void Memory_manager::handle_CLEAR_CURRENT_BASIC_BLOCK_STACK()
+{
+    size_t stack_offset=0;
+    //把此时所有的临时变量全部出栈
+    if(current_func_stack_space_.r_params_passed_by_stack_as_caller.empty() && !current_func_stack_space_.temp_vars.empty())
+    {
+        stack_offset=current_func_stack_space_.stack_pointer-current_func_stack_space_.temp_vars.front().first;
+        current_func_stack_space_.stack_pointer=current_func_stack_space_.temp_vars.front().first;
+        current_func_stack_space_.temp_vars.clear();
+        current_func_stack_space_.padding_bytes_after_temp_vars=0;
+    }
+    else if(current_func_stack_space_.padding_bytes_after_temp_vars!=0)
+    {
+        current_func_stack_space_.stack_pointer-=current_func_stack_space_.padding_bytes_after_temp_vars;
+        stack_offset=current_func_stack_space_.padding_bytes_after_temp_vars;
+        current_func_stack_space_.padding_bytes_after_temp_vars=0;
+    }
+    notify(event(event_type::POP_STACK_WHEN_EXIT_BASIC_BLOCK,(int)stack_offset));
+}
+
 void Memory_manager::handle_PUSH_VAR_TO_STACK(struct ic_data * var)
 {
     if(var->is_tmp_var())
@@ -388,7 +408,7 @@ void Memory_manager::handle_END_BASIC_BLOCK_WITHOUT_FLAG(struct ic_basic_block *
     }
     pre_basic_block=basic_block;
     //把此时所有的临时变量全部出栈
-    if(current_func_stack_space_.r_params_passed_by_stack_as_caller.empty() && !current_func_stack_space_.temp_vars.empty())
+    /*if(current_func_stack_space_.r_params_passed_by_stack_as_caller.empty() && !current_func_stack_space_.temp_vars.empty())
     {
         stack_offset=current_func_stack_space_.stack_pointer-current_func_stack_space_.temp_vars.front().first;
         current_func_stack_space_.stack_pointer=current_func_stack_space_.temp_vars.front().first;
@@ -401,7 +421,8 @@ void Memory_manager::handle_END_BASIC_BLOCK_WITHOUT_FLAG(struct ic_basic_block *
         stack_offset=current_func_stack_space_.padding_bytes_after_temp_vars;
         current_func_stack_space_.padding_bytes_after_temp_vars=0;
     }
-    notify(event(event_type::POP_STACK_WHEN_EXIT_BASIC_BLOCK,(int)stack_offset));
+    notify(event(event_type::POP_STACK_WHEN_EXIT_BASIC_BLOCK,(int)stack_offset));*/
+    handle_CLEAR_CURRENT_BASIC_BLOCK_STACK();
 }
 
 struct event Memory_manager::handle_IS_F_PARAM_PASSED_BY_STACK(struct ic_data * var)
@@ -486,6 +507,9 @@ struct event Memory_manager::handler(struct event event)
             break;
         case event_type::READY_TO_POP_WHEN_RET:
             response=handle_READY_TO_POP_WHEN_RET();
+            break;
+        case event_type::CLEAR_CURRENT_BASIC_BLOCK_STACK:
+            handle_CLEAR_CURRENT_BASIC_BLOCK_STACK();
             break;
         case event_type::GET_VAR_STACK_POS_FROM_SP:
             response=handle_GET_VAR_STACK_POS_FROM_SP((struct ic_data *)event.pointer_data);

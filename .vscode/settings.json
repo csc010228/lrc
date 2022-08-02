@@ -53,6 +53,14 @@
         "variant": "cpp",
         "compare": "cpp",
         "cwchar": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "__mutex_base": "cpp",
+        "__tuple": "cpp",
+        "complex": "cpp",
+        "iterator": "cpp",
+        "memory_resource": "cpp",
+        "streambuf": "cpp",
+        "thread": "cpp",
+        "stdexcept": "cpp"
     }
 }

@@ -221,6 +221,24 @@ struct operand2
         return false;
     };
 
+    //获取该operand2涉及的所有寄存器
+    set<reg_index> get_all_regs() const
+    {
+        set<reg_index> res;
+        if(type==operand2_type::RM_SHIFT)
+        {
+            res.insert(Rm_shift.Rm);
+        }
+        if(Rm_shift.shift_op==operand2_shift_op::ASR_RS || 
+        Rm_shift.shift_op==operand2_shift_op::LSL_RS || 
+        Rm_shift.shift_op==operand2_shift_op::LSR_RS || 
+        Rm_shift.shift_op==operand2_shift_op::ROR_RS)
+        {
+            res.insert(Rm_shift.Rs);
+        }
+        return res;
+    };
+
     //转换成字符串
     string to_string() const;
 
@@ -341,6 +359,17 @@ struct flexoffset
         return (expr>=-255 && expr <=4095);
         //return (expr>=-4095 && expr <=4095);
         //return (expr>=-1020 && expr <=1020);
+    };
+
+    //获取该flexoffset所有涉及的寄存器
+    set<reg_index> get_all_regs() const
+    {
+        set<reg_index> res;
+        if(type==flexoffset_type::RM_SHIFT)
+        {
+            res.insert(Rm_shift.Rm);
+        }
+        return res;
     };
 
     //转换成字符串
@@ -476,9 +505,11 @@ public:
 
     virtual void replace_regs(const map<reg_index,reg_index> & regs_map);
 
-    // set<reg_index> get_all_destination_regs(bool as_virtual_target_code) const;
+    virtual set<reg_index> get_all_regs() const;
 
-    // set<reg_index> get_all_source_regs(bool as_virtual_target_code) const;
+    virtual set<reg_index> get_all_destination_regs() const;
+
+    virtual set<reg_index> get_all_source_regs() const;
 
     //转换成字符串
     virtual string to_string() const =0;
@@ -552,6 +583,10 @@ public:
     };
 
     void replace_regs(const map<reg_index,reg_index> & regs_map);
+
+    virtual set<reg_index> get_all_destination_regs() const;
+
+    virtual set<reg_index> get_all_source_regs() const;
 
     bool is_cpu_instruction() const;
 
@@ -638,6 +673,8 @@ public:
 
     void replace_regs(const map<reg_index,reg_index> & regs_map);
 
+    set<reg_index> get_all_destination_regs() const;
+
     //转换成字符串
     string to_string() const;
 };
@@ -650,7 +687,7 @@ public:
     //label的名字
     string name_;
 
-    Arm_label()
+    Arm_label():name_("")
     {
 
     };
@@ -865,6 +902,8 @@ public:
 
     void replace_regs(const map<reg_index,reg_index> & regs_map);
 
+    set<reg_index> get_all_source_regs() const;
+
     //转换成字符串
     string to_string() const;
 };
@@ -992,6 +1031,8 @@ public:
     };
 
     void replace_regs(const map<reg_index,reg_index> & regs_map);
+
+    set<reg_index> get_all_source_regs() const;
 
     //转换成字符串
     string to_string() const;

@@ -22,6 +22,8 @@ private:
 
     bool create_asm_optimizer(bool optimize);
 
+    bool create_virtual_asm_optimizer(bool optimize);
+
     bool create_abi_manager();
 
     bool init_components();

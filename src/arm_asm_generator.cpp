@@ -10,6 +10,7 @@
 #include "arm_instruction_generator.h"
 #include "arm_asm_optimizer.h"
 #include "arm_abi_manager.h"
+#include "virtual_arm_asm_optimizer.h"
 
 //ARM内存信息
 string arm_memory_info="little_ending";
@@ -38,6 +39,13 @@ bool Arm_asm_generator::create_asm_optimizer(bool optimize)
     return true;
 }
 
+bool Arm_asm_generator::create_virtual_asm_optimizer(bool optimize)
+{
+    virtual_asm_optimizer_=new Virtual_arm_asm_optimizer(optimize);
+    virtual_asm_optimizer_->set_mediator(this);
+    return true;
+}
+
 bool Arm_asm_generator::create_abi_manager()
 {
     abi_manager_=new Arm_abi_manager();
@@ -62,8 +70,8 @@ Return
 ------
 返回处理完事件之后返回的响应数据
 */
-// #include<iostream>
-// using namespace std;
+#include<iostream>
+using namespace std;
 struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct event event) const
 {
     struct event res;
@@ -129,6 +137,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::READY_TO_PUSH_F_PARAM_PASSED_BY_REGS_AND_LOCAL_VARS_AND_TEMP_VARS_OVER_BASIC_BLOCK:
             case event_type::READY_TO_PUSH_TEMP_VARS:
             case event_type::READY_TO_POP_WHEN_RET:
+            case event_type::CLEAR_CURRENT_BASIC_BLOCK_STACK:
             case event_type::READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS:
             case event_type::READY_TO_PUSH_CONTEXT_SAVED_VFP_REGS:
             case event_type::READY_TO_POP_CONTEXT_RECOVERED_CPU_REGS:
@@ -212,6 +221,9 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::GET_AN_ABI_FUNC_S_PARAM_REGS:
                 res=abi_manager_->handler(event);
                 break;
+            case event_type::OPTIMIZE:
+                res=virtual_asm_optimizer_->handler(event);
+                break;
             default:
                 break;
         }
@@ -288,6 +300,9 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::IS_FUNC_NEED_PASS_PARAMS_BY_STACK:
                 res=intermediate_code_manager_->handler(event);
                 break;
+            case event_type::IS_AN_ABI_FUNC:
+                res=abi_manager_->handler(event);
+                break;
             default:
                 break;
         }
@@ -298,6 +313,20 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
         switch(event.type)
         {
             case event_type::GET_REG_BY_NAME:
+                res=register_manager_->handler(event);
+                break;
+            default:
+                break;
+        }
+    }
+    else if(sender==virtual_asm_optimizer_)
+    {
+        //cout<<"virtual_asm_optimizer_ send "<<(int)event.type<<endl;
+        switch(event.type)
+        {
+            case event_type::GET_SP_REG:
+            case event_type::GET_FP_REG:
+            case event_type::GET_LR_REG:
                 res=register_manager_->handler(event);
                 break;
             default:

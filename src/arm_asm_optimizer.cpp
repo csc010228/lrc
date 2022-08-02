@@ -30,30 +30,6 @@ Arm_asm_optimizer::~Arm_asm_optimizer()
 }
 
 /*
-优化基本块的出入口代码
-
-Parameters
-----------
-basic_block:要优化的基本块
-*/
-void Arm_asm_optimizer::optimize_basic_block_enter_and_exit(struct arm_basic_block * basic_block)
-{
-    Arm_instruction * instruction;
-    list<Arm_asm_file_line * >::iterator sub_sp,add_sp;
-    reg_index sp=(reg_index)notify(event(event_type::GET_SP_REG,nullptr)).int_data;
-    //当基本块满足下列条件的时候，我们认为该基本块出入口的移动sp为临时变量开辟和释放内存空间是可以省略的
-    //（1）除了出入口的移动sp指令外，没有指令涉及到sp寄存器
-    //（2）没有push和pop指令
-    for(list<Arm_asm_file_line * >::reverse_iterator line=basic_block->arm_sequence.rbegin();line!=basic_block->arm_sequence.rend();line++)
-    {
-        // if((*line)->)
-        // {
-
-        // }
-    }
-}
-
-/*
 利用arm数据处理指令能够更改标志位进行优化
 
 Parameters
@@ -62,6 +38,7 @@ basic_block:要优化的基本块
 */
 void Arm_asm_optimizer::data_process_instructions_change_flags(struct arm_basic_block * basic_block)
 {
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     Arm_instruction * instruction;
     Arm_cpu_instruction * cpu_instruction;
     Arm_cpu_data_process_instruction * cpu_data_process_instruction;
@@ -69,64 +46,60 @@ void Arm_asm_optimizer::data_process_instructions_change_flags(struct arm_basic_
     struct operand2 op2;
     struct arm_registers source_regs,destination_regs;
     reg_index reg;
+    string label_name;
     map<reg_index,list<Arm_asm_file_line * >::reverse_iterator> compare_zero_regs;
-    set<reg_index> * all_argument_regs;
     for(list<Arm_asm_file_line * >::reverse_iterator line=basic_block->arm_sequence.rbegin();line!=basic_block->arm_sequence.rend();line++)
     {
         if((*line)->is_instruction())
         {
             instruction=dynamic_cast<Arm_instruction *>(*line);
-            switch(instruction->get_op())
+            if(instruction->is_cpu_instruction())
             {
-                case arm_op::ADD:
-                case arm_op::SUB:
-                case arm_op::RSB:
-                case arm_op::ADC:
-                case arm_op::SBC:
-                case arm_op::RSC:
-                case arm_op::AND:
-                case arm_op::ORR:
-                case arm_op::EOR:
-                case arm_op::BIC:
-                case arm_op::CLZ:
-                case arm_op::MOV:
-                case arm_op::MVN:
-                case arm_op::MUL:
-                case arm_op::MLA:
-                    cpu_data_process_instruction=dynamic_cast<Arm_cpu_data_process_instruction *>(instruction);
-                    op2=cpu_data_process_instruction->get_operand2();
-                    destination_regs=instruction->get_destination_registers();
-                    if(destination_regs.get_regs_num()==1)
+                cpu_instruction=dynamic_cast<Arm_cpu_instruction * >(instruction);
+                if(cpu_instruction->is_branch_instruction())
+                {
+                    cpu_branch_instruction=dynamic_cast<Arm_cpu_branch_instruction *>(cpu_instruction);
+                    label_name=cpu_branch_instruction->get_label().name_;
+                    if(symbol_table->func_entry(label_name)!=nullptr || notify(event(event_type::IS_AN_ABI_FUNC,(void *)(&label_name))).bool_data)
                     {
-                        reg=destination_regs.get_only_member();
-                        if(compare_zero_regs.find(reg)!=compare_zero_regs.end())
-                        {
-                            cpu_data_process_instruction->set_update_flags(true);
-                            (*compare_zero_regs.at(reg))=new Arm_pseudo_instruction();
-                            compare_zero_regs.erase(reg);
-                        }
+                        //函数调用的时候不能保证标志位寄存器是不变的
+                        break;
                     }
-                    break;
-                case arm_op::CMP:
-                case arm_op::CMN:
-                case arm_op::TST:
-                case arm_op::TEQ:
-                    cpu_data_process_instruction=dynamic_cast<Arm_cpu_data_process_instruction *>(instruction);
+                }
+                else if(cpu_instruction->is_data_process_instruction())
+                {
+                    cpu_data_process_instruction=dynamic_cast<Arm_cpu_data_process_instruction *>(cpu_instruction);
                     op2=cpu_data_process_instruction->get_operand2();
-                    source_regs=instruction->get_source_registers();
-                    if(op2.type==operand2_type::IMMED_8R && op2.immed_8r==0 && source_regs.get_regs_num()==1)
+                    switch(cpu_data_process_instruction->get_op())
                     {
-                        compare_zero_regs.insert(make_pair(source_regs.get_only_member(),line));
+                        case arm_op::CMP:
+                        case arm_op::CMN:
+                        case arm_op::TST:
+                        case arm_op::TEQ:
+                            source_regs=cpu_data_process_instruction->get_source_registers();
+                            if(op2.type==operand2_type::IMMED_8R && op2.immed_8r==0 && source_regs.get_regs_num()==1)
+                            {
+                                compare_zero_regs.insert(make_pair(source_regs.get_only_member(),line));
+                            }
+                            break;
+                        default:
+                            destination_regs=cpu_data_process_instruction->get_destination_registers();
+                            if(destination_regs.get_regs_num()==1)
+                            {
+                                reg=destination_regs.get_only_member();
+                                if(compare_zero_regs.find(reg)!=compare_zero_regs.end())
+                                {
+                                    cpu_data_process_instruction->set_update_flags(true);
+                                    (*compare_zero_regs.at(reg))=new Arm_pseudo_instruction();
+                                    compare_zero_regs.erase(reg);
+                                }
+                            }
+                            break;
                     }
-                    break;
-                case arm_op::LDM:
-                case arm_op::STM:
-                case arm_op::PUSH:
-                case arm_op::POP:
-                case arm_op::LDR:
-                case arm_op::STR:
-                    cpu_data_process_instruction=dynamic_cast<Arm_cpu_data_process_instruction *>(instruction);
-                    destination_regs=instruction->get_destination_registers();
+                }
+                else if(cpu_instruction->is_multiple_registers_load_and_store_instruction() || cpu_instruction->is_single_register_load_and_store_instruction())
+                {
+                    destination_regs=cpu_instruction->get_destination_registers();
                     for(auto des_reg:destination_regs.registers_)
                     {
                         if(compare_zero_regs.find(des_reg)!=compare_zero_regs.end())
@@ -134,28 +107,8 @@ void Arm_asm_optimizer::data_process_instructions_change_flags(struct arm_basic_
                             compare_zero_regs.erase(des_reg);
                         }
                     }
-                    break;
-                case arm_op::B:
-                case arm_op::BL:
-                case arm_op::BLX:
-                case arm_op::BX:
-                    cpu_branch_instruction=dynamic_cast<Arm_cpu_branch_instruction *>(instruction);
-                    all_argument_regs=(set<reg_index> *)notify(event(event_type::GET_ALL_ARGUMENT_REGS,nullptr)).pointer_data;
-                    if(cpu_branch_instruction->get_label().is_func())
-                    {
-                        for(auto argument_reg:(*all_argument_regs))
-                        {
-                            if(compare_zero_regs.find(argument_reg)!=compare_zero_regs.end())
-                            {
-                                compare_zero_regs.erase(argument_reg);
-                            }
-                        }
-                    }
-                    delete all_argument_regs;
-                    break;
-                default:
-                    break;
-            }
+                }
+            }      
         }
     }
 }
@@ -199,14 +152,6 @@ void Arm_asm_optimizer::remove_useless_mov(struct arm_basic_block * basic_block)
 */
 void Arm_asm_optimizer::local_optimize()
 {
-    for(auto func:arm_flow_graph_->func_flow_graphs)
-    {
-        for(auto basic_block:func->basic_blocks)
-        {
-            //优化基本块的出入口代码
-            optimize_basic_block_enter_and_exit(basic_block);
-        }
-    }
     for(auto func:arm_flow_graph_->func_flow_graphs)
     {
         for(auto basic_block:func->basic_blocks)

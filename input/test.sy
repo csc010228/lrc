@@ -1,9 +1,19 @@
 int a;
-
-int main(){
-	int a = 10;
-	if( a>0 ){
-		return 1;
+int b;
+int c;
+int d;
+int e;
+int main()
+{
+	a=getint();
+	b=getint();
+	c=getint();
+	d=getint();
+	e=getint();
+	int flag=0;
+	if(a-b*c!=d-a/c||a*b/c==e+d||a+b+c==d+e)
+	{
+		flag=1;
 	}
-	return 0;
+	return flag;
 }

@@ -1287,7 +1287,7 @@ void Arm_instruction_generator::func_define_ic_to_arm_asm(struct ic_func * resul
     record_stack_space_changed_here();
     //在栈中为函数的函数形参，局部变量以及那些会跨越基本块的临时变量开辟空间
     local_vars_total_byte_size=notify(event(event_type::READY_TO_PUSH_F_PARAM_PASSED_BY_REGS_AND_LOCAL_VARS_AND_TEMP_VARS_OVER_BASIC_BLOCK,(void *)result)).int_data;
-    if(local_vars_total_byte_size>0)
+    // if(local_vars_total_byte_size>0)
     {
         //这里如果需要为local_vars_total_byte_size分配寄存器，那么这个寄存器必须是还没有被使用过的
         //因为此时被使用过的寄存器都是存放了参数，如果使用这些寄存器，会把函数参数进行写回，但是此时的sp还没有正确的移动，因此写回就回出错
@@ -1343,7 +1343,7 @@ void Arm_instruction_generator::ret_ic_to_arm_asm(struct ic_data * result)
     size_t stack_offset=0;
     list<reg_index> * regs;
     set<reg_index> * regs_unaccessible;
-    reg_index const_reg;
+    reg_index const_reg,r0=(reg_index)notify(event(event_type::GET_R0_REG,nullptr)).int_data;
     struct operand2 op2;
     pair<OAA,reg_index> * event_data;
     //先把此时留在寄存器中的脏值全部写回内存
@@ -1357,67 +1357,14 @@ void Arm_instruction_generator::ret_ic_to_arm_asm(struct ic_data * result)
     notify(event(event_type::END_INSTRUCTION,nullptr));
     //把使用到的临时变量，局部变量，前16*32bits的浮点型参数，前4*4bytes的整型参数以及padding退栈
     //先把该基本块开辟的存放临时变量的空间释放
-    // stack_offset=notify(event(event_type::READY_TO_POP_WHEN_RET,nullptr)).int_data;
-    // // if(stack_offset>0)
-    // // {
-    //     //此时需要将存放返回值的寄存器设置为不可获取的，这里默认是r0
-    //     regs_unaccessible=new set<reg_index>;
-    //     regs_unaccessible->insert((reg_index)notify(event(event_type::GET_R0_REG,nullptr)).int_data);
-    //     notify(event(event_type::START_INSTRUCTION,(void *)regs_unaccessible));
-    //     delete regs_unaccessible;
-    //     //这里不能使用如下的方法：
-    //     //op2=get_operand2((int)stack_offset);
-    //     //push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,sp,sp,op2));
-    //     //因为在第1行的get_operand2()的时候可能也会进行变量的出栈入栈，导致stack_offset无效
-    //     //因此我们只能采用如下的比较麻烦的方法
-    //     if(operand2::is_legal_immed_8r((int)stack_offset))
-    //     {
-    //         //如果此时stack_offset可以作为指令的一部分，不需要放入寄存器中
-    //         op2=get_operand2((int)stack_offset);
-    //     }
-    //     else
-    //     {
-    //         //如果此时stack_offset需要放入寄存器之后再使用
-    //         if(notify(event(event_type::CHECK_CONST_INT_VALUE_OWN_CPU_REG,(int)stack_offset)).bool_data)
-    //         {
-    //             //如果此时该stack_offset的值是否已经被放入某一个寄存器中了，那么只需要获取该寄存器即可
-    //             const_reg=(reg_index)notify(event(event_type::GET_CONST_VALUE_S_CPU_REG,(int)stack_offset)).int_data;
-    //             //再查看该常数寄存器此时是否有效，如果无效的话需要重新将值写入该寄存器
-    //             if(!notify(event(event_type::IS_REG_EFFECTIVE,(int)const_reg)).bool_data)
-    //             {
-    //                 event_data=new pair<OAA,reg_index>(OAA((int)stack_offset),const_reg);
-    //                 notify(event(event_type::WRITE_CONST_TO_REG,(void *)event_data));
-    //                 delete event_data;
-    //             }
-    //             op2=operand2(const_reg);
-    //         }
-    //         else
-    //         {
-    //             //如果此时没有寄存器中存放着stack_offset的值，那么就需要给该值新分配一个寄存器
-    //             const_reg=(reg_index)notify(event(event_type::ALLOCATE_IDLE_CPU_REG,nullptr)).int_data;
-    //             //分配完之后还要再得到新的stack_offset，因为上面的ALLOCATE_IDLE_REG可能会使得新的临时变量入栈，从而栈顶的位置发送变化
-    //             stack_offset=notify(event(event_type::READY_TO_POP_WHEN_RET,nullptr)).int_data;
-    //             //然后把新的stack_offset值写入寄存器中
-    //             event_data=new pair<OAA,reg_index>(OAA((int)stack_offset),const_reg);
-    //             notify(event(event_type::WRITE_CONST_TO_REG,(void *)event_data));
-    //             //再通知内存管理模块：寄存器被新的stack_offset占用了
-    //             notify(event(event_type::ATTACH_CONST_TO_REG,(void *)event_data));
-    //             delete event_data;
-    //             //最后把得到的寄存器作为operand2的一部分即可
-    //             op2=operand2(const_reg);
-    //         }
-    //     }
-    //     push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,sp,sp,op2));
-    //     record_stack_space_changed_here();
-    //     notify(event(event_type::END_INSTRUCTION,nullptr));
-    // // }
+    notify(event(event_type::CLEAR_CURRENT_BASIC_BLOCK_STACK,nullptr));
     //再把函数开辟的栈空间释放
     stack_offset=notify(event(event_type::READY_TO_POP_WHEN_RET,nullptr)).int_data;
-    if(stack_offset>0)
+    // if(stack_offset>0)
     {
         //此时需要将存放返回值的寄存器设置为不可获取的，这里默认是r0
         regs_unaccessible=new set<reg_index>;
-        regs_unaccessible->insert((reg_index)notify(event(event_type::GET_R0_REG,nullptr)).int_data);
+        regs_unaccessible->insert(r0);
         notify(event(event_type::START_INSTRUCTION,(void *)regs_unaccessible));
         delete regs_unaccessible;
         //这里不能使用如下的方法：
@@ -1469,7 +1416,7 @@ void Arm_instruction_generator::ret_ic_to_arm_asm(struct ic_data * result)
     //最后计算padding
     stack_offset=notify(event(event_type::GET_PADDING_BYTES_BEFORE_LOCAL_VARS_IN_CURRENT_FUNC,nullptr)).int_data;
     regs_unaccessible=new set<reg_index>;
-    regs_unaccessible->insert((reg_index)notify(event(event_type::GET_R0_REG,nullptr)).int_data);
+    regs_unaccessible->insert(r0);
     notify(event(event_type::START_INSTRUCTION,(void *)regs_unaccessible));
     delete regs_unaccessible;
     push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,sp,sp,get_operand2((int)stack_offset)));
@@ -1478,7 +1425,7 @@ void Arm_instruction_generator::ret_ic_to_arm_asm(struct ic_data * result)
     //最后恢复现场
     //先把保护起来的浮点寄存器恢复
     regs=(list<reg_index> *)notify(event(event_type::READY_TO_POP_CONTEXT_RECOVERED_VFP_REGS,nullptr)).pointer_data;
-    if(regs->size()>0)
+    // if(regs->size()>0)
     {
         push_instruction(new Arm_vfp_multiple_registers_load_and_store_instruction(arm_op::VPOP,arm_condition::NONE,arm_registers(*regs)));
         record_stack_space_changed_here();
@@ -1486,7 +1433,7 @@ void Arm_instruction_generator::ret_ic_to_arm_asm(struct ic_data * result)
     delete regs;
     //再把整型寄存器恢复，把栈中的lr的值赋值给pc即可完成函数返回
     regs=(list<reg_index> *)notify(event(event_type::READY_TO_POP_CONTEXT_RECOVERED_CPU_REGS,nullptr)).pointer_data;
-    if(regs->size()>0)
+    // if(regs->size()>0)
     {
         push_instruction(new Arm_cpu_multiple_registers_load_and_store_instruction(arm_op::POP,arm_condition::NONE,arm_registers(*regs)));
         record_stack_space_changed_here();
@@ -1507,7 +1454,7 @@ void Arm_instruction_generator::start_basic_block_to_arm_asm()
     set_difference(temp_vars_in_basic_block->begin(),temp_vars_in_basic_block->end(),temp_vars_over_basic_blocks->begin(),temp_vars_over_basic_blocks->end(),inserter(temp_vars_not_over_basic_block,temp_vars_not_over_basic_block.begin()));
     delete temp_vars_in_basic_block;
     temp_vars_total_byte_size=notify(event(event_type::READY_TO_PUSH_TEMP_VARS,(void *)(&temp_vars_not_over_basic_block))).int_data;
-    if(temp_vars_total_byte_size>0)
+    // if(temp_vars_total_byte_size>0)
     {
         push_instruction(new Arm_cpu_data_process_instruction(arm_op::SUB,arm_condition::NONE,false,sp,sp,get_operand2((int)temp_vars_total_byte_size)));
         record_stack_space_changed_here();
@@ -1615,7 +1562,7 @@ void Arm_instruction_generator::handle_WRITE_CONST_TO_REG(OAA const_data,reg_ind
         signed_int_to_unsigned_int.int_data=const_data.int_data;
         push_instruction(new Arm_cpu_data_process_instruction(arm_op::MOVW,arm_condition::NONE,reg,immed_16r(signed_int_to_unsigned_int.unsigned_int_data & 0x0000ffff)));
         signed_int_to_unsigned_int.unsigned_int_data=signed_int_to_unsigned_int.unsigned_int_data >> 16;
-        if(signed_int_to_unsigned_int.unsigned_int_data>0)
+        // if(signed_int_to_unsigned_int.unsigned_int_data>0)
         {
             push_instruction(new Arm_cpu_data_process_instruction(arm_op::MOVT,arm_condition::NONE,reg,immed_16r(signed_int_to_unsigned_int.unsigned_int_data)));
         }
@@ -2220,7 +2167,7 @@ void Arm_instruction_generator::handle_POP_STACK_WHEN_EXIT_BASIC_BLOCK(size_t po
         start_basic_block_to_arm_asm();
         is_current_basic_block_starting_=false;
     }
-    if(pop_size>0)
+    // if(pop_size>0)
     {
         push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,sp,sp,get_operand2((int)pop_size)));
         record_stack_space_changed_here();
