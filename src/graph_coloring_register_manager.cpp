@@ -1279,7 +1279,7 @@ void Graph_coloring_register_manager::rewrite_program()
         }
     }
     //除了存放在寄存器中传递的函数数组形参之外的其他数组变量的值
-    //溢出这类数组变量的值所在的寄存器的时候，只需要在该虚拟寄存器使用之前把地址写入新的虚拟寄存器即可，同时把原本对该虚拟寄存器的赋值全部删除
+    //溢出这类数组变量的值所在的寄存器的时候，只需要在该虚拟寄存器使用之前把地址写入新的虚拟寄存器即可
     current_pos=1;
     for(auto bb:virtual_target_code->basic_blocks)
     {
