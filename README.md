@@ -4,7 +4,7 @@
 1. 进入该目录之后执行`make`命令，就会生成一个lrc可执行文件，执行它即可
 2. 执行该lrc可执行文件的格式如下：
    
-   ```./lrc test.sy -S -o test.s -O2 -debug```
+   ```./lrc -S -o ./output/test.s ./input/test.sy -O2 -debug```
    
    * `test.sy`是要编译的源文件
    * `test.s`是要输出的目标文件名

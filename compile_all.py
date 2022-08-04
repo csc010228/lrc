@@ -5,7 +5,7 @@ import os
 TEST_DIR='../compiler2022-master/test/functional'
 
 #是否开启优化
-OPTIMIZE=False
+OPTIMIZE=True
 
 #lrc编译器可执行文件名
 LRC_EXE_FILE='./lrc'

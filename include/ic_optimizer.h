@@ -130,7 +130,7 @@ struct ic_basic_block
     void add_ic_info(struct quaternion_with_info ic_with_info);
 
     //往当前基本块中加入一条中间代码
-    void add_ic(struct quaternion ic);
+    void add_ic(struct quaternion ic,bool do_not_add_ic_info=false);
 
     //往当前基本块的前面加入一条中间代码
     void add_ic_to_front(struct quaternion ic);
@@ -172,6 +172,13 @@ struct ic_basic_block
     } live_analysis_info;
 };
 
+//循环信息
+struct loop_info
+{
+    //set<list<struct ic_basic_block * > > loop_routes;               //循环路径，这这些路径里面不会包括小的循环
+    set<struct ic_basic_block * > all_basic_blocks;                 //循环中的所有基本块，包括小的循环中的基本块
+};
+
 //一个中间代码的函数的流图
 struct ic_func_flow_graph
 {
@@ -184,9 +191,6 @@ struct ic_func_flow_graph
 
     //构建函数流图中各个基本块之间的跳转关系
     void build_nexts_between_basic_blocks();
-
-    //构建循环信息
-   // void build_loop_info();
 
     //构建函数流图中的数组变量和数组元素之间的映射，以及偏移量和数组元素之间的映射
     void build_array_and_offset_to_array_member_map();
@@ -219,6 +223,8 @@ struct ic_func_flow_graph
     map<struct ic_data *,ic_pos> arrays_def_positions;
     //函数流图中所有的变量使用点
     map<struct ic_data *,set<ic_pos> > vars_use_positions;
+    //循环信息，key是循环的开头基本块，value是循环的信息
+    map<struct ic_basic_block *,struct loop_info> loops_info;
 };
 
 //中间代码的流图表示

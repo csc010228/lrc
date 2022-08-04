@@ -15,7 +15,7 @@ Parameters
 ----------
 func:要分析的函数流图
 */
-void prepare_before_data_flow_analyse(struct ic_func_flow_graph * func)
+void Data_flow_analyzer::prepare_before_data_flow_analyse(struct ic_func_flow_graph * func)
 {
     //获取要分析的函数流图的数组元素的所属数组和偏移量信息
     func->build_array_and_offset_to_array_member_map();
@@ -30,7 +30,7 @@ Parameters
 ----------
 func:要分析的函数流图
 */
-void use_define_analysis(struct ic_func_flow_graph * func)
+void Data_flow_analyzer::use_define_analysis(struct ic_func_flow_graph * func)
 {
     map<struct ic_basic_block *,map<struct ic_data *,set<ic_pos> > > gens,kills;
     set<struct ic_basic_block * > precursors;
@@ -222,7 +222,7 @@ Parameters
 ----------
 func:已经完成了到达-定义分析的，要构建ud-链的函数流图
 */
-void build_ud_chain(struct ic_func_flow_graph * func)
+void Data_flow_analyzer::build_ud_chain(struct ic_func_flow_graph * func)
 {
     map<struct ic_data *,set<ic_pos> > defs;
     size_t pos;
@@ -399,7 +399,7 @@ Parameters
 ----------
 func:要分析的函数流图
 */
-void live_variable_analysis(struct ic_func_flow_graph * func)
+void Data_flow_analyzer::live_variable_analysis(struct ic_func_flow_graph * func)
 {
     
 }
@@ -411,7 +411,7 @@ Parameters
 ----------
 func:已经完成了活跃变量分析的，要构建du-链的函数流图
 */
-void build_du_chain(struct ic_func_flow_graph * func)
+void Data_flow_analyzer::build_du_chain(struct ic_func_flow_graph * func)
 {
     size_t pos;
     ic_pos current_pos;
@@ -442,7 +442,65 @@ Parameters
 ----------
 func:要分析的函数流图
 */
-void available_expression_analysis(struct ic_func_flow_graph * func)
+void Data_flow_analyzer::available_expression_analysis(struct ic_func_flow_graph * func)
+{
+
+}
+
+void Data_flow_analyzer::build_loops_info(struct ic_func_flow_graph * func)
+{
+    set<struct ic_basic_block * > pre_bbs;
+    map<struct ic_basic_block *,struct ic_basic_block * > loop_start_end_map,loop_end_start_map;
+    //首先找到每一个循环的开头以及最远的结尾
+    for(auto bb:func->basic_blocks)
+    {
+        pre_bbs.insert(bb);
+        if(pre_bbs.find(bb->jump_next)!=pre_bbs.end())
+        {
+            if(loop_start_end_map.find(bb->jump_next)==loop_start_end_map.end())
+            {
+                loop_start_end_map.insert(make_pair(bb->jump_next,nullptr));
+            }
+            loop_start_end_map.at(bb->jump_next)=bb;
+        }
+    }
+    //然后根据这些循环的开头和最远的结尾构建循环信息
+    for(auto bb:func->basic_blocks)
+    {
+        if(loop_start_end_map.find(bb)!=loop_start_end_map.end())
+        {
+            loop_end_start_map.insert(make_pair(loop_start_end_map.at(bb),bb));
+        }
+        for(auto i:loop_end_start_map)
+        {
+            if(func->loops_info.find(i.second)==func->loops_info.end())
+            {
+                func->loops_info.insert(make_pair(i.second,loop_info()));
+            }
+            func->loops_info.at(i.second).all_basic_blocks.insert(bb);
+        }
+        if(loop_end_start_map.find(bb)!=loop_end_start_map.end())
+        {
+            loop_end_start_map.erase(bb);
+        }
+    }
+}
+
+void Data_flow_analyzer::change_ud_chain(struct ic_func_flow_graph * func,ic_pos old_pos,ic_pos new_pos)
+{
+    for(auto bb:func->basic_blocks)
+    {
+        for(auto ic_with_info:bb->ic_sequence)
+        {
+            for(auto ud_chain_node:ic_with_info.ud_chain)
+            {
+
+            }
+        }
+    }
+}
+
+void Data_flow_analyzer::change_du_chain(struct ic_func_flow_graph * func,ic_pos old_pos,ic_pos new_pos)
 {
 
 }

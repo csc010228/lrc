@@ -46,6 +46,16 @@ enum class ic_op
     RET,                        //函数返回（只有结果，没有操作数，结果就是返回值）
 };
 
+//中间代码操作符的类型
+enum class ic_op_type
+{
+    NONE,
+    DATA_PROCESS,
+    LOGICAL_PROCESS,
+    JUMP,
+    DEFINE
+};
+
 //中间代码的操作数类型
 enum class ic_operand
 {
@@ -85,6 +95,9 @@ struct quaternion
             arg2.second=(void *)new_r_params;
         }
     };
+
+    //获取该中间代码的类型
+    enum ic_op_type get_ic_op_type() const;
 
     //将该条中间代码使用的某一个数据替换成另一个数据
     void replace_datas(struct ic_data * source,struct ic_data * destination,bool only_use_datas=false);

@@ -46,8 +46,20 @@ struct virutal_reg_s_live_interval
     //延长
     void extend(virtual_target_code_pos pos);
 
+    //增加该虚拟寄存器的使用点
+    void add_use_pos(struct arm_basic_block * bb,virtual_target_code_pos pos);
+
+    //增加该虚拟寄存器的定义点
+    void add_def_pos(struct arm_basic_block * bb,virtual_target_code_pos pos);
+
     //该生命周期是否正在延长
     bool is_extending;
+
+    //该虚拟寄存器的所有使用点所在的基本块
+    map<struct arm_basic_block * ,set<virtual_target_code_pos> > use_poses;
+
+    //该虚拟寄存器的所有定义点所在的基本块
+    map<struct arm_basic_block * ,set<virtual_target_code_pos> > def_poses;
 
     //生命周期，每一个pair的first是起点，second是终点
     list<pair<virtual_target_code_pos,virtual_target_code_pos> > live_interval;
@@ -59,11 +71,8 @@ struct live_intervals
     //清空信息
     void clear();
 
-    //将整个虚拟目标代码新增一段空白的
+    //将整个虚拟目标代码新增一段空白
     void new_empty_virtual_code_segment(virtual_target_code_pos pos,size_t add_size);
-
-    //为某一个虚拟寄存器新增一段生命周期
-    void add_live_interval_for_a_reg(reg_index reg,virtual_target_code_pos start_pos,virtual_target_code_pos end_pos);
 
     //获取某一个虚拟寄存器的生命周期
     inline struct virutal_reg_s_live_interval & get_reg_s_live_interval(reg_index reg)

@@ -718,11 +718,14 @@ void ic_basic_block::add_ic_info(struct quaternion_with_info ic_with_info)
     }
 }
 
-void ic_basic_block::add_ic(struct quaternion ic)
+void ic_basic_block::add_ic(struct quaternion ic,bool do_not_add_ic_info)
 {
     struct quaternion_with_info ic_with_def_use_info(ic);
     ic_sequence.push_back(ic_with_def_use_info);
-    add_ic_info(ic_with_def_use_info);
+    if(!do_not_add_ic_info)
+    {
+        add_ic_info(ic_with_def_use_info);
+    }
 }
 
 void ic_basic_block::add_ic_to_front(struct quaternion ic)
@@ -910,8 +913,6 @@ void ic_func_flow_graph::build_nexts_between_basic_blocks()
         pre_basic_block=basic_block;
     }
 }
-
-
 
 //构建函数流图中的数组变量和数组元素之间的映射，以及偏移量和数组元素之间的映射
 void ic_func_flow_graph::build_array_and_offset_to_array_member_map()
@@ -1528,13 +1529,13 @@ void Ic_optimizer::local_optimize()
         {
             function_inline(func);
         }
-    }
-    //最后还要再进行一次DAG相关优化
-    for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
-    {
-        for(auto basic_block:func->basic_blocks)
+        //最后还要再进行一次DAG相关优化
+        for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
         {
-            DAG_optimize(basic_block);
+            for(auto basic_block:func->basic_blocks)
+            {
+                DAG_optimize(basic_block);
+            }
         }
     }
 }
@@ -1547,19 +1548,21 @@ void Ic_optimizer::data_flow_analysis()
     for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
     {
         //准备进行数据流分析
-        prepare_before_data_flow_analyse(func);
+        Data_flow_analyzer::prepare_before_data_flow_analyse(func);
         //到达-定义分析
-        use_define_analysis(func);
+        Data_flow_analyzer::use_define_analysis(func);
         //构建ud-链
-        build_ud_chain(func);
+        Data_flow_analyzer::build_ud_chain(func);
         //活跃变量分析
-        live_variable_analysis(func);
+        Data_flow_analyzer::live_variable_analysis(func);
         //构建du-链
-        build_du_chain(func);
+        Data_flow_analyzer::build_du_chain(func);
         if(need_optimize_)
         {
             //可用表达式分析
-            available_expression_analysis(func);
+            Data_flow_analyzer::available_expression_analysis(func);
+            //循环分析
+            Data_flow_analyzer::build_loops_info(func);
         }
     }
 }
@@ -1667,7 +1670,174 @@ func:要优化的函数流图
 */
 void Ic_optimizer::loop_invariant_computation_motion(struct ic_func_flow_graph * func)
 {
-
+    set<struct ic_basic_block * > bbs_in_loop,precursors,temp;
+    struct ic_basic_block * target_basic_block;
+    ic_pos current_pos;
+    size_t pos;
+    set<ic_pos> unchange_poses;
+    list<ic_pos> ordered_unchange_poses;
+    list<struct quaternion_with_info> target_ic_with_infos;
+    bool tag;
+    //对每一个循环分别进行操作
+    for(auto loop:func->loops_info)
+    {
+        //首先进行循环不变量语句的检测
+        unchange_poses.clear();
+        ordered_unchange_poses.clear();
+        target_basic_block=nullptr;
+        for(auto bb:loop.second.all_basic_blocks)
+        {
+            pos=0;
+            for(auto ic_with_info:bb->ic_sequence)
+            {
+                if(ic_with_info.intermediate_code.get_ic_op_type()!=ic_op_type::DATA_PROCESS)
+                {
+                    goto next_1;
+                }
+                current_pos=ic_pos(bb,pos);
+                for(auto use:ic_with_info.uses)
+                {
+                    if(!use->is_const() && ic_with_info.ud_chain.find(use)!=ic_with_info.ud_chain.end())
+                    {
+                        for(auto define_pos:ic_with_info.ud_chain.at(use))
+                        {
+                            if(loop.second.all_basic_blocks.find(define_pos.basic_block)!=loop.second.all_basic_blocks.end())
+                            {
+                                goto next_1;
+                            }
+                        }
+                    }
+                }
+                unchange_poses.insert(current_pos);
+                ordered_unchange_poses.push_back(current_pos);
+next_1:
+                pos++;
+            }
+        }
+        tag=true;
+        while(tag)
+        {
+            tag=false;
+            for(auto bb:loop.second.all_basic_blocks)
+            {
+                pos=0;
+                for(auto ic_with_info:bb->ic_sequence)
+                {
+                    if(unchange_poses.find(current_pos)!=unchange_poses.end() || ic_with_info.intermediate_code.get_ic_op_type()!=ic_op_type::DATA_PROCESS)
+                    {
+                        goto next_2;
+                    }
+                    current_pos=ic_pos(bb,pos);
+                    for(auto use:ic_with_info.uses)
+                    {
+                        if(!use->is_const() && ic_with_info.ud_chain.find(use)!=ic_with_info.ud_chain.end())
+                        {
+                            if(ic_with_info.ud_chain.at(use).size()!=1)
+                            {
+                                goto next_2;
+                            }
+                            if(unchange_poses.find((*ic_with_info.ud_chain.at(use).begin()))==unchange_poses.end())
+                            {
+                                goto next_2;
+                            }
+                        }
+                    }
+                    if(unchange_poses.find(current_pos)==unchange_poses.end())
+                    {
+                        tag=true;
+                        unchange_poses.insert(current_pos);
+                        ordered_unchange_poses.push_back(current_pos);
+                    }
+next_2:
+                    pos++;
+                }
+            }
+        }
+        //检测完毕之后开始进行外提
+        for(auto unchange_pos:ordered_unchange_poses)
+        {
+            struct quaternion_with_info & ic_with_info=func->get_ic_with_info(unchange_pos);
+            //目前暂时不处理对数组和数组元素的明确定义
+            // if(ic_with_info.explicit_def->is_array_member() || ic_with_info.explicit_def->is_array_var())
+            // {
+            //     goto next_3;
+            // }
+            if(!ic_with_info.explicit_def->is_tmp_var())
+            {
+                goto next_3;
+            }
+            //将要外提的语句s所在的块支配循环L的所有出口
+            //TO-DO
+            for(auto i:loop.second.all_basic_blocks)
+            {
+                pos=0;
+                for(auto j:i->ic_sequence)
+                {
+                    current_pos=ic_pos(i,pos);
+                    //s定义的变量x在L种没有别处的定义
+                    if(current_pos!=unchange_pos && j.explicit_def==ic_with_info.explicit_def || j.vague_defs.find(ic_with_info.explicit_def)!=j.vague_defs.end())
+                    {
+                        goto next_3;
+                    }
+                    //L中所有x的引用只能由s中x的定义到达
+                    if(j.ud_chain.find(ic_with_info.explicit_def)!=j.ud_chain.end() && (j.ud_chain.at(ic_with_info.explicit_def).size()!=1 || (*j.ud_chain.at(ic_with_info.explicit_def).begin())!=unchange_pos))
+                    {
+                        goto next_3;
+                    }
+                    pos++;
+                }
+            }
+            if(target_basic_block==nullptr)
+            {
+                precursors=loop.first->get_precursors();
+                temp.clear();
+                set_difference(precursors.begin(),precursors.end(),loop.second.all_basic_blocks.begin(),loop.second.all_basic_blocks.end(),inserter(temp,temp.begin()));
+                if(temp.size()==1 && (*temp.begin())->get_successors().size()==1)
+                {
+                    target_basic_block=(*temp.begin());
+                }
+                else
+                {
+                    target_basic_block=new struct ic_basic_block(func);
+                    for(auto pre_bb:temp)
+                    {
+                        if(pre_bb->jump_next==loop.first)
+                        {
+                            pre_bb->set_jump_next(target_basic_block);
+                        }
+                        if(pre_bb->sequential_next==loop.first)
+                        {
+                            pre_bb->set_sequential_next(target_basic_block);
+                        }
+                    }
+                    target_basic_block->set_jump_next(nullptr);
+                    target_basic_block->set_sequential_next(loop.first);
+                    for(list<struct ic_basic_block * >::iterator basic_block=func->basic_blocks.begin();basic_block!=func->basic_blocks.end();basic_block++)
+                    {
+                        if(loop.first==(*basic_block))
+                        {
+                            func->basic_blocks.insert(basic_block,target_basic_block);
+                        }
+                    }
+                    for(auto & loop_info:func->loops_info)
+                    {
+                        if(loop_info.first!=loop.first && loop_info.second.all_basic_blocks.find(loop.first)!=loop_info.second.all_basic_blocks.end())
+                        {
+                            loop_info.second.all_basic_blocks.insert(target_basic_block);
+                        }
+                    }
+                }
+            }
+            target_basic_block->add_ic(ic_with_info.intermediate_code,true);
+            ic_with_info=quaternion_with_info();
+            //外提的时候更改ud链和du链的信息
+            // current_pos=ic_pos(target_basic_block,target_basic_block->ic_sequence.size()-1);
+            // Data_flow_analyzer::change_ud_chain(func,unchange_pos,current_pos);
+            // Data_flow_analyzer::change_du_chain(func,unchange_pos,current_pos);
+next_3:
+            ;
+        }
+    }
 }
 
 /*

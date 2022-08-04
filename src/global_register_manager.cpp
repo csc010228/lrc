@@ -714,7 +714,7 @@ void Global_register_manager::handle_START_FUNC(struct ic_func_flow_graph * func
     set<struct ic_data * > * f_params_in_regs=(set<struct ic_data * > *)notify(event(event_type::GET_FUNC_S_F_PARAMS_IN_REGS,(void *)func->func)).pointer_data;
     Register_manager::handle_START_FUNC(func);
     //在函数开始的时候进行有效常量分析，有效变量分析,有效地址分析和脏值分析
-    notify(event(event_type::INEFFECTIVE_CONST_VALUE_ANALYSIS,(void *)(func)));
+    //notify(event(event_type::INEFFECTIVE_CONST_VALUE_ANALYSIS,(void *)(func)));
     notify(event(event_type::INEFFECTIVE_VALUE_ANALYSIS,(void *)(func)));
     notify(event(event_type::DIRTY_VALUE_ANALYSIS,(void *)(func)));
     //notify(event(event_type::INEFFECTIVE_NOT_ARRAY_GLOBAL_ADDR_ANALYSIS,(void *)(func)));

@@ -51,6 +51,16 @@ void virutal_reg_s_live_interval::extend(virtual_target_code_pos pos)
     live_interval.front().first=pos;
 }
 
+void virutal_reg_s_live_interval::add_use_pos(struct arm_basic_block * bb,virtual_target_code_pos pos)
+{
+    map_set_insert(use_poses,bb,pos);
+}
+
+void virutal_reg_s_live_interval::add_def_pos(struct arm_basic_block * bb,virtual_target_code_pos pos)
+{
+    map_set_insert(def_poses,bb,pos);
+}
+
 //==========================================================================//
 
 
@@ -77,6 +87,26 @@ void live_intervals::new_empty_virtual_code_segment(virtual_target_code_pos pos,
                 live_interval_segment.second+=add_size;
             }
         }
+        // for(auto & use_bb_and_pos:reg_s_live_interval.second.use_poses)
+        // {
+        //     for(auto & use_pos:use_bb_and_pos.second)
+        //     {
+        //         if(use_pos>=pos)
+        //         {
+        //             use_pos+=pos;
+        //         }
+        //     }
+        // }
+        // for(auto & def_bb_and_pos:reg_s_live_interval.second.def_poses)
+        // {
+        //     for(auto & def_pos:def_bb_and_pos.second)
+        //     {
+        //         if(def_pos>=pos)
+        //         {
+        //             def_pos+=pos;
+        //         }
+        //     }
+        // }
     }
 }
 
@@ -550,6 +580,7 @@ void Graph_coloring_register_manager::build_live_intervals()
                 {
                     continue;
                 }
+                current_func_s_live_intervals.get_reg_s_live_interval(reg).add_def_pos(*bb,current_pos);
                 //截断
                 current_func_s_live_intervals.get_reg_s_live_interval(reg).cut_off(current_pos);   
             }
@@ -561,6 +592,7 @@ void Graph_coloring_register_manager::build_live_intervals()
                 {
                     continue;
                 }
+                current_func_s_live_intervals.get_reg_s_live_interval(reg).add_use_pos(*bb,current_pos);
                 if(current_func_s_live_intervals.get_reg_s_live_interval(reg).is_extending)
                 {
                     //延长range

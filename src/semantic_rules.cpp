@@ -414,6 +414,50 @@ map<ic_op,ic_output> ic_outputs={
 
 //===================================== struct quaternion =====================================//
 
+enum ic_op_type quaternion::get_ic_op_type() const
+{
+    enum ic_op_type res;
+    switch(op)
+    {
+        case ic_op::NOP:
+            res=ic_op_type::NONE;
+            break;
+        case ic_op::ASSIGN:
+        case ic_op::ADD:
+        case ic_op::SUB:
+        case ic_op::MUL:
+        case ic_op::DIV:
+        case ic_op::MOD:
+            res=ic_op_type::DATA_PROCESS;
+            break;
+        case ic_op::NOT:
+        case ic_op::EQ:
+        case ic_op::UEQ:
+        case ic_op::GT:
+        case ic_op::GE:
+        case ic_op::LT:
+        case ic_op::LE:
+            res=ic_op_type::LOGICAL_PROCESS;
+            break;
+        case ic_op::JMP:
+        case ic_op::IF_JMP:
+        case ic_op::IF_NOT_JMP:
+        case ic_op::CALL:
+        case ic_op::RET:
+            res=ic_op_type::JUMP;
+            break;
+        case ic_op::VAR_DEFINE:
+        case ic_op::LABEL_DEFINE:
+        case ic_op::FUNC_DEFINE:
+        case ic_op::END_FUNC_DEFINE:
+            res=ic_op_type::DEFINE;
+            break;
+        default:
+            break;
+    }
+    return res;
+}
+
 inline struct ic_data * replace_datas_in_var(struct ic_data * var,struct ic_data * source,struct ic_data * destination)
 {
     static Symbol_table * symbol_table=Symbol_table::get_instance();
