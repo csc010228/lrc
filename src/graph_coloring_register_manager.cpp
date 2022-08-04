@@ -22,7 +22,7 @@ void live_analysis::clear()
 
 //===================================== struct virutal_reg_s_live_interval =====================================//
 
-virutal_reg_s_live_interval::virutal_reg_s_live_interval():is_extending(false)
+virutal_reg_s_live_interval::virutal_reg_s_live_interval():is_extending(false),score(0)
 {
 
 }
@@ -59,6 +59,28 @@ void virutal_reg_s_live_interval::add_use_pos(struct arm_basic_block * bb,virtua
 void virutal_reg_s_live_interval::add_def_pos(struct arm_basic_block * bb,virtual_target_code_pos pos)
 {
     map_set_insert(def_poses,bb,pos);
+}
+
+size_t virutal_reg_s_live_interval::get_score()
+{
+    if(score==0)
+    {
+        for(auto i:use_poses)
+        {
+            if(score<i.first->loop_count)
+            {
+                score=i.first->loop_count;
+            }
+        }
+        for(auto i:def_poses)
+        {
+            if(score<i.first->loop_count)
+            {
+                score=i.first->loop_count;
+            }
+        }
+    }
+    return score;
 }
 
 //==========================================================================//
@@ -116,7 +138,7 @@ void live_intervals::new_empty_virtual_code_segment(virtual_target_code_pos pos,
 
 //===================================== struct coherent_diagram_node =====================================//
 
-coherent_diagram_node::coherent_diagram_node(reg_index reg):reg(reg),degree(0)
+coherent_diagram_node::coherent_diagram_node(reg_index reg,struct virutal_reg_s_live_interval live_interval):reg(reg),degree(0),live_interval(live_interval)
 {
 
 }
@@ -133,6 +155,11 @@ void coherent_diagram_node::add_a_collision_neighbour(struct coherent_diagram_no
         collision_nodes.insert(node);
         degree++;
     }
+}
+
+size_t coherent_diagram_node::get_score()
+{
+    return collision_nodes.size();
 }
 
 //==========================================================================//
@@ -160,7 +187,7 @@ struct coherent_diagram_node * coherent_diagram::new_node(reg_index reg)
     struct coherent_diagram_node * res=nullptr;
     if(nodes.find(reg)==nodes.end())
     {
-        res=new coherent_diagram_node(reg);
+        res=new coherent_diagram_node(reg,current_func_s_live_intervals.virtual_regs_s_live_intervals.at(reg));
         nodes.insert(make_pair(reg,res));
     }
     return res;
@@ -432,7 +459,8 @@ set<reg_index> Graph_coloring_register_manager::get_virtual_traget_instruction_s
     set_union(source_regs.begin(),source_regs.end(),destination_regs.begin(),destination_regs.end(),inserter(res,res.begin()));
     return res;
 }
-
+#include<iostream>
+using namespace std;
 void Graph_coloring_register_manager::live_analyze()
 {
     set<reg_index> registers,old_out;
@@ -680,6 +708,7 @@ void Graph_coloring_register_manager::build_coherent_diagram()
 {
     //首先构建live_intervals
     build_live_intervals();
+    current_func_s_coherent_diagram=coherent_diagram(current_func_s_live_intervals);
     //已经检查过的寄存器
     map<reg_index,set<reg_index> > regs_checked_1,regs_checked_2;
     virtual_target_code_pos min_start,max_end;
@@ -747,7 +776,7 @@ void Graph_coloring_register_manager::mk_worklists()
     {
         if(virtual_regs_info_.is_physical_reg(reg_s_node.first))
         {
-                precolored.insert(reg_s_node.second);
+            precolored.insert(reg_s_node.second);
         }
         else
         {
@@ -777,12 +806,28 @@ void Graph_coloring_register_manager::decrement_degree(struct coherent_diagram_n
     }
 }
 
+bool sort_func(struct coherent_diagram_node * node_1,struct coherent_diagram_node * node_2)
+{
+    //return node_1->get_score()>node_2->get_score();
+    //return node_1->live_interval.get_score()<node_2->live_interval.get_score();
+    if(node_1->live_interval.get_score()==node_2->live_interval.get_score())
+    {
+        return node_1->get_score()>node_2->get_score();
+    }
+    return node_1->live_interval.get_score()<node_2->live_interval.get_score();
+}
+
 void Graph_coloring_register_manager::simplify()
 {
-    set<struct coherent_diagram_node * > temp;
+    vector<struct coherent_diagram_node * > temp;
     while(!simplify_worklist.empty())
     {
-        temp=simplify_worklist;
+        //对simplify_worklist排序，把最不想溢出的节点尽量放在最前面
+        for(auto node:simplify_worklist)
+        {
+            temp.push_back(node);
+        }
+        sort(temp.begin(),temp.end(),sort_func);
         for(auto node:temp)
         {
             simplify_worklist.erase(node);
@@ -1103,7 +1148,7 @@ void Graph_coloring_register_manager::rewrite_program()
     struct runtime_stack_space * stack_space;
     map<struct ic_data *,bool> f_param_in_regs_array_has_been_spilled;
     set<struct ic_data * > * f_params_in_regs=(set<struct ic_data * > *)notify(event(event_type::GET_FUNC_S_F_PARAMS_IN_REGS,(void *)(virtual_target_code->function->func))).pointer_data;
-    // map<reg_index,set<reg_index> > map_for_debug;
+    map<reg_index,set<reg_index> > map_for_debug;
     //找出要溢出的虚拟寄存器，并对这些要溢出的虚拟寄存器决定溢出的处理顺序
     // cout<<"VAR_SPILLED:"<<endl;
     for(auto node:spilled_nodes)
@@ -1141,12 +1186,6 @@ void Graph_coloring_register_manager::rewrite_program()
                 break;
         }
     }
-    // cout<<spilled_regs.const_regs.size()<<endl;
-    // cout<<spilled_regs.addr_regs.size()<<endl;
-    // cout<<spilled_regs.array_member_regs.size()<<endl;
-    // cout<<spilled_regs.f_param_in_regs_array_regs.size()<<endl;
-    // cout<<spilled_regs.not_f_param_in_regs_array_regs.size()<<endl;
-    // cout<<spilled_regs.var_regs.size()<<endl;
     delete f_params_in_regs;
     //溢出处理的顺序如下（不是强制的，只是这样处理会更好）：
     //数组元素
@@ -1167,7 +1206,7 @@ void Graph_coloring_register_manager::rewrite_program()
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-                    // map_set_insert(map_for_debug,reg,new_reg);
+                    map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_loading_var_value(var,new_reg);
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
@@ -1188,7 +1227,7 @@ void Graph_coloring_register_manager::rewrite_program()
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-                    // map_set_insert(map_for_debug,reg,new_reg);
+                    map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_storing_var_value(var,new_reg);
                     new_ins_pos=ins_pos;
@@ -1219,7 +1258,7 @@ void Graph_coloring_register_manager::rewrite_program()
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-                    // map_set_insert(map_for_debug,reg,new_reg);
+                    map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_loading_var_value(var,new_reg);
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
@@ -1240,7 +1279,7 @@ void Graph_coloring_register_manager::rewrite_program()
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-                    // map_set_insert(map_for_debug,reg,new_reg);
+                    map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_storing_var_value(var,new_reg);
                     new_ins_pos=ins_pos;
@@ -1271,7 +1310,7 @@ void Graph_coloring_register_manager::rewrite_program()
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-                    // map_set_insert(map_for_debug,reg,new_reg);
+                    map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_loading_var_value(var,new_reg);
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
@@ -1297,7 +1336,7 @@ void Graph_coloring_register_manager::rewrite_program()
                     f_param_in_regs_array_has_been_spilled.insert(make_pair(var,true));
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-                    //map_set_insert(map_for_debug,reg,new_reg);
+                    map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_storing_var_value(var,new_reg);
                     new_ins_pos=ins_pos;
@@ -1328,7 +1367,7 @@ void Graph_coloring_register_manager::rewrite_program()
                 {
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-                    // map_set_insert(map_for_debug,reg,new_reg);
+                    map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_loading_var_value(var,new_reg);
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
@@ -1359,7 +1398,7 @@ void Graph_coloring_register_manager::rewrite_program()
                 {
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     new_reg=virtual_regs_info_.new_temp_for_var_addr(var,virtual_regs_info_.get_reg_s_processor(reg));
-                    // map_set_insert(map_for_debug,reg,new_reg);
+                    map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_writing_var_addr_to_new_reg(var,new_reg);
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
@@ -1489,7 +1528,6 @@ void Graph_coloring_register_manager::graph_coloring_register_distribute()
     //     }
     // }
     // cout<<endl;
-    // //
     // cout<<"VIRTUAL CODE:"<<endl;
     // size_t count=1;
     // for(auto i:virtual_target_code->basic_blocks)
@@ -1575,6 +1613,7 @@ void Graph_coloring_register_manager::handle_END_FUNC()
     //获取当前函数的虚拟目标代码
     virtual_target_code=(struct arm_func_flow_graph *)notify(event(event_type::GET_VIRTUAL_TRAGET_CODE_OF_CURRENT_FUNC,nullptr)).pointer_data;
     virtual_target_code->build_nexts_between_basic_blocks();
+    virtual_target_code->build_loop_info();
     // cout<<endl<<endl<<endl<<endl<<endl<<endl<<endl<<virtual_target_code->function->func->name<<endl<<endl;
     //把物理寄存器堆清空
     regs_info_.clear();

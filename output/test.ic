@@ -1,157 +1,279 @@
-int x[600][600][600]
-int y[600][600][600]
-int main (  )  : 
-	int main::i
-	int main::j
-	int main::k
-	int main::f
-	int main::N
-	CALL		getint (  )  --> (int)@0
-	ASSIGN		@0 --> main::N
-	CALL		getint (  )  --> (int)@1
-	ASSIGN		@1 --> main::f
-	CALL		_sysy_starttime ( 13 ) 
-	ASSIGN		0 --> main::i
-	ASSIGN		0 --> main::j
-	ASSIGN		0 --> main::k
+const int max = 1073741824
+int checkrange ( int checkrange::num )  : 
 .0 : 
-	LT		main::i , main::N --> (int)@2
-	IF_NOT_JMP		@2 --> .5
-	ASSIGN		0 --> main::j
-	ASSIGN		0 --> main::k
+	GT		checkrange::num , max --> (int)@0
+	IF_NOT_JMP		@0 --> .1
+	SUB		checkrange::num , max --> (int)@1
+	ASSIGN		@1 --> checkrange::num
+	JMP		.0
 .1 : 
-	LT		main::j , main::N --> (int)@3
-	IF_NOT_JMP		@3 --> .4
-	ASSIGN		0 --> main::k
 .2 : 
-	LT		main::k , main::N --> (int)@4
-	IF_NOT_JMP		@4 --> .3
-	MUL		main::k , 1 --> (int)@5
-	ADD		@5 , 0 --> (int)@6
-	MUL		main::j , 600 --> (int)@7
-	ADD		@7 , @6 --> (int)@8
-	MUL		main::i , 360000 --> (int)@9
-	ADD		@9 , @8 --> (int)@10
-	ASSIGN		1 --> x[@10]
-	MUL		main::k , 1 --> (int)@11
-	ADD		@11 , 0 --> (int)@12
-	MUL		main::j , 600 --> (int)@13
-	ADD		@13 , @12 --> (int)@14
-	MUL		main::i , 360000 --> (int)@15
-	ADD		@15 , @14 --> (int)@16
-	ASSIGN		0 --> y[@16]
-	ADD		main::k , 1 --> (int)@17
-	ASSIGN		@17 --> main::k
+	LT		checkrange::num , 0 --> (int)@2
+	IF_NOT_JMP		@2 --> .3
+	ADD		checkrange::num , max --> (int)@3
+	ASSIGN		@3 --> checkrange::num
 	JMP		.2
 .3 : 
-	ADD		main::j , 1 --> (int)@18
-	ASSIGN		@18 --> main::j
-	JMP		.1
+	RET		checkrange::num
+
+int reduce ( int reduce::kernelid , int reduce::x , int reduce::y )  : 
+	EQ		reduce::kernelid , 0 --> (int)@4
+	IF_NOT_JMP		@4 --> .4
+	ADD		reduce::x , reduce::y --> (int)@5
+	CALL		checkrange ( @5 )  --> (int)@6
+	RET		@6
 .4 : 
-	ADD		main::i , 1 --> (int)@19
-	ASSIGN		@19 --> main::i
-	JMP		.0
+	EQ		reduce::kernelid , 1 --> (int)@7
+	IF_NOT_JMP		@7 --> .9
+	int reduce::if_0::ret
+	ASSIGN		0 --> reduce::if_0::ret
+	int reduce::if_0::i
+	ASSIGN		1 --> reduce::if_0::i
 .5 : 
-	ASSIGN		1 --> main::i
-	ASSIGN		1 --> main::j
-	ASSIGN		1 --> main::k
-.6 : 
-	SUB		main::N , 1 --> (int)@20
-	LT		main::i , @20 --> (int)@21
-	IF_NOT_JMP		@21 --> .11
-	ASSIGN		1 --> main::j
-	ASSIGN		1 --> main::k
-.7 : 
-	SUB		main::N , 1 --> (int)@22
-	LT		main::j , @22 --> (int)@23
-	IF_NOT_JMP		@23 --> .10
-	ASSIGN		1 --> main::k
-.8 : 
-	SUB		main::N , 1 --> (int)@24
-	LT		main::k , @24 --> (int)@25
-	IF_NOT_JMP		@25 --> .9
-	MUL		main::k , 1 --> (int)@26
-	ADD		@26 , 0 --> (int)@27
-	MUL		main::j , 600 --> (int)@28
-	ADD		@28 , @27 --> (int)@29
-	MUL		main::i , 360000 --> (int)@30
-	ADD		@30 , @29 --> (int)@31
-	SUB		main::i , 1 --> (int)@32
-	MUL		main::k , 1 --> (int)@33
-	ADD		@33 , 0 --> (int)@34
-	MUL		main::j , 600 --> (int)@35
-	ADD		@35 , @34 --> (int)@36
-	MUL		@32 , 360000 --> (int)@37
-	ADD		@37 , @36 --> (int)@38
-	ADD		main::i , 1 --> (int)@39
-	MUL		main::k , 1 --> (int)@40
-	ADD		@40 , 0 --> (int)@41
-	MUL		main::j , 600 --> (int)@42
-	ADD		@42 , @41 --> (int)@43
-	MUL		@39 , 360000 --> (int)@44
-	ADD		@44 , @43 --> (int)@45
-	ADD		x[@38] , x[@45] --> (int)@46
-	SUB		main::j , 1 --> (int)@47
-	MUL		main::k , 1 --> (int)@48
-	ADD		@48 , 0 --> (int)@49
-	MUL		@47 , 600 --> (int)@50
-	ADD		@50 , @49 --> (int)@51
-	MUL		main::i , 360000 --> (int)@52
-	ADD		@52 , @51 --> (int)@53
-	ADD		@46 , x[@53] --> (int)@54
-	ADD		main::j , 1 --> (int)@55
-	MUL		main::k , 1 --> (int)@56
-	ADD		@56 , 0 --> (int)@57
-	MUL		@55 , 600 --> (int)@58
-	ADD		@58 , @57 --> (int)@59
-	MUL		main::i , 360000 --> (int)@60
-	ADD		@60 , @59 --> (int)@61
-	ADD		@54 , x[@61] --> (int)@62
-	SUB		main::k , 1 --> (int)@63
-	MUL		@63 , 1 --> (int)@64
-	ADD		@64 , 0 --> (int)@65
-	MUL		main::j , 600 --> (int)@66
-	ADD		@66 , @65 --> (int)@67
-	MUL		main::i , 360000 --> (int)@68
-	ADD		@68 , @67 --> (int)@69
-	ADD		@62 , x[@69] --> (int)@70
-	ADD		main::k , 1 --> (int)@71
-	MUL		@71 , 1 --> (int)@72
-	ADD		@72 , 0 --> (int)@73
-	MUL		main::j , 600 --> (int)@74
-	ADD		@74 , @73 --> (int)@75
-	MUL		main::i , 360000 --> (int)@76
-	ADD		@76 , @75 --> (int)@77
-	ADD		@70 , x[@77] --> (int)@78
-	DIV		@78 , main::f --> (int)@79
-	ASSIGN		@79 --> x[@31]
-	ADD		main::k , 1 --> (int)@80
-	ASSIGN		@80 --> main::k
-	JMP		.8
-.9 : 
-	ADD		main::j , 1 --> (int)@81
-	ASSIGN		@81 --> main::j
+	LT		reduce::if_0::i , max --> (int)@8
+	IF_NOT_JMP		@8 --> .8
+	DIV		reduce::x , reduce::if_0::i --> (int)@9
+	MOD		@9 , 2 --> (int)@10
+	DIV		reduce::y , reduce::if_0::i --> (int)@11
+	MOD		@11 , 2 --> (int)@12
+	EQ		@10 , @12 --> (int)@13
+	IF_NOT_JMP		@13 --> .6
+	MUL		reduce::if_0::ret , 2 --> (int)@14
+	ASSIGN		@14 --> reduce::if_0::ret
 	JMP		.7
+.6 : 
+	MUL		reduce::if_0::ret , 2 --> (int)@15
+	ADD		@15 , 1 --> (int)@16
+	ASSIGN		@16 --> reduce::if_0::ret
+.7 : 
+	MUL		reduce::if_0::i , 2 --> (int)@17
+	ASSIGN		@17 --> reduce::if_0::i
+	JMP		.5
+.8 : 
+	RET		reduce::if_0::ret
+.9 : 
+	EQ		reduce::kernelid , 2 --> (int)@18
+	IF_NOT_JMP		@18 --> .12
+	GT		reduce::x , reduce::y --> (int)@19
+	IF_NOT_JMP		@19 --> .10
+	RET		reduce::x
+	JMP		.11
 .10 : 
-	ADD		main::i , 1 --> (int)@82
-	ASSIGN		@82 --> main::i
-	JMP		.6
+	RET		reduce::y
 .11 : 
-	CALL		_sysy_stoptime ( 53 ) 
-	CALL		putarray ( main::N , x[0] ) 
-	DIV		main::N , 2 --> (int)@83
-	DIV		main::N , 2 --> (int)@84
-	MUL		@84 , 600 --> (int)@85
-	ADD		@85 , 0 --> (int)@86
-	MUL		@83 , 360000 --> (int)@87
-	ADD		@87 , @86 --> (int)@88
-	CALL		putarray ( main::N , x[@88] ) 
-	SUB		main::i , 1 --> (int)@89
-	SUB		main::j , 1 --> (int)@90
-	MUL		@90 , 600 --> (int)@91
-	ADD		@91 , 0 --> (int)@92
-	MUL		@89 , 360000 --> (int)@93
-	ADD		@93 , @92 --> (int)@94
-	CALL		putarray ( main::N , x[@94] ) 
+.12 : 
+	EQ		reduce::kernelid , 3 --> (int)@20
+	IF_NOT_JMP		@20 --> .18
+	int reduce::if_1::ret
+	ASSIGN		0 --> reduce::if_1::ret
+	int reduce::if_1::i
+	ASSIGN		1 --> reduce::if_1::i
+.13 : 
+	LT		reduce::if_1::i , max --> (int)@21
+	IF_NOT_JMP		@21 --> .17
+	DIV		reduce::x , reduce::if_1::i --> (int)@22
+	MOD		@22 , 2 --> (int)@23
+	EQ		@23 , 1 --> (int)@24
+	IF_JMP		@24 --> .14
+	DIV		reduce::y , reduce::if_1::i --> (int)@25
+	MOD		@25 , 2 --> (int)@26
+	EQ		@26 , 1 --> (int)@27
+	IF_JMP		@27 --> .14
+	JMP		.15
+.14 : 
+	MUL		reduce::if_1::ret , 2 --> (int)@28
+	ADD		@28 , 1 --> (int)@29
+	ASSIGN		@29 --> reduce::if_1::ret
+	JMP		.16
+.15 : 
+	MUL		reduce::if_1::ret , 2 --> (int)@30
+	ASSIGN		@30 --> reduce::if_1::ret
+.16 : 
+	MUL		reduce::if_1::i , 2 --> (int)@31
+	ASSIGN		@31 --> reduce::if_1::i
+	JMP		.13
+.17 : 
+	RET		reduce::if_1::ret
+.18 : 
+	EQ		reduce::kernelid , 4 --> (int)@32
+	IF_NOT_JMP		@32 --> .23
+	int reduce::if_2::ret
+	ASSIGN		0 --> reduce::if_2::ret
+	int reduce::if_2::i
+	ASSIGN		1 --> reduce::if_2::i
+.19 : 
+	LT		reduce::if_2::i , max --> (int)@33
+	IF_NOT_JMP		@33 --> .22
+	DIV		reduce::x , reduce::if_2::i --> (int)@34
+	MOD		@34 , 2 --> (int)@35
+	EQ		@35 , 1 --> (int)@36
+	IF_NOT_JMP		@36 --> .20
+	DIV		reduce::y , reduce::if_2::i --> (int)@37
+	MOD		@37 , 2 --> (int)@38
+	EQ		@38 , 1 --> (int)@39
+	IF_NOT_JMP		@39 --> .20
+	MUL		reduce::if_2::ret , 2 --> (int)@40
+	ADD		@40 , 1 --> (int)@41
+	ASSIGN		@41 --> reduce::if_2::ret
+	JMP		.21
+.20 : 
+	MUL		reduce::if_2::ret , 2 --> (int)@42
+	ASSIGN		@42 --> reduce::if_2::ret
+.21 : 
+	MUL		reduce::if_2::i , 2 --> (int)@43
+	ASSIGN		@43 --> reduce::if_2::i
+	JMP		.19
+.22 : 
+	RET		reduce::if_2::ret
+.23 : 
+	RET		0
+
+int getvalue ( int getvalue::array[0] , int getvalue::n , int getvalue::m , int getvalue::x , int getvalue::y )  : 
+	LT		getvalue::x , 0 --> (int)@44
+	IF_JMP		@44 --> .24
+	LT		getvalue::y , 0 --> (int)@45
+	IF_JMP		@45 --> .24
+	GE		getvalue::x , getvalue::n --> (int)@46
+	IF_JMP		@46 --> .24
+	GE		getvalue::y , getvalue::m --> (int)@47
+	IF_JMP		@47 --> .24
+	JMP		.25
+.24 : 
+	RET		0
+.25 : 
+	MUL		getvalue::x , getvalue::m --> (int)@48
+	ADD		@48 , getvalue::y --> (int)@49
+	MUL		@49 , 1 --> (int)@50
+	ADD		@50 , 0 --> (int)@51
+	RET		getvalue::array[@51]
+
+int convn ( int convn::kernelid , int convn::input[0] , int convn::output[0] , int convn::n , int convn::m , int convn::c )  : 
+	int convn::i
+	ASSIGN		0 --> convn::i
+	int convn::j
+	ASSIGN		0 --> convn::j
+	int convn::x
+	int convn::y
+	int convn::curr
+	const int convn::true = 1
+	DIV		convn::c , 2 --> (int)@52
+	int convn::t0
+	ASSIGN		@52 --> convn::t0
+.26 : 
+	ASSIGN		0 --> convn::j
+	SUB		convn::i , convn::t0 --> (int)@53
+	ADD		convn::i , convn::t0 --> (int)@54
+	MUL		convn::i , convn::m --> (int)@55
+	int convn::while_0::t1
+	ASSIGN		@53 --> convn::while_0::t1
+	int convn::while_0::t4
+	ASSIGN		@54 --> convn::while_0::t4
+	int convn::while_0::t5
+	ASSIGN		@55 --> convn::while_0::t5
+.27 : 
+	ASSIGN		0 --> convn::curr
+	ASSIGN		convn::while_0::t1 --> convn::x
+	SUB		convn::j , convn::t0 --> (int)@56
+	ADD		convn::j , convn::t0 --> (int)@57
+	int convn::while_0::while_0::t2
+	ASSIGN		@56 --> convn::while_0::while_0::t2
+	int convn::while_0::while_0::t3
+	ASSIGN		@57 --> convn::while_0::while_0::t3
+.28 : 
+	ASSIGN		convn::while_0::while_0::t2 --> convn::y
+.29 : 
+	CALL		getvalue ( convn::input , convn::n , convn::m , convn::x , convn::y )  --> (int)@58
+	CALL		reduce ( convn::kernelid , convn::curr , @58 )  --> (int)@59
+	ASSIGN		@59 --> convn::curr
+	ADD		convn::y , 1 --> (int)@60
+	ASSIGN		@60 --> convn::y
+	GE		convn::y , convn::while_0::while_0::t3 --> (int)@61
+	IF_NOT_JMP		@61 --> .30
+	JMP		.31
+.30 : 
+	JMP		.29
+.31 : 
+	ADD		convn::x , 1 --> (int)@62
+	ASSIGN		@62 --> convn::x
+	GE		convn::x , convn::while_0::t4 --> (int)@63
+	IF_NOT_JMP		@63 --> .32
+	JMP		.33
+.32 : 
+	JMP		.28
+.33 : 
+	ADD		convn::while_0::t5 , convn::j --> (int)@64
+	MUL		@64 , 1 --> (int)@65
+	ADD		@65 , 0 --> (int)@66
+	ASSIGN		convn::curr --> convn::output[@66]
+	ADD		convn::j , 1 --> (int)@67
+	ASSIGN		@67 --> convn::j
+	GE		convn::j , convn::m --> (int)@68
+	IF_NOT_JMP		@68 --> .34
+	JMP		.35
+.34 : 
+	JMP		.27
+.35 : 
+	ADD		convn::i , 1 --> (int)@69
+	ASSIGN		@69 --> convn::i
+	GE		convn::i , convn::n --> (int)@70
+	IF_NOT_JMP		@70 --> .36
+	JMP		.37
+.36 : 
+	JMP		.26
+.37 : 
+	RET		0
+
+int a[10000000]
+int b[10000000]
+int kernelid[10000]
+void memmove ( int memmove::dst[0] , int memmove::src[0] , int memmove::n )  : 
+	int memmove::i
+	ASSIGN		0 --> memmove::i
+.38 : 
+	LT		memmove::i , memmove::n --> (int)@71
+	IF_NOT_JMP		@71 --> .39
+	MUL		memmove::i , 1 --> (int)@72
+	ADD		@72 , 0 --> (int)@73
+	MUL		memmove::i , 1 --> (int)@74
+	ADD		@74 , 0 --> (int)@75
+	ASSIGN		memmove::src[@75] --> memmove::dst[@73]
+	ADD		memmove::i , 1 --> (int)@76
+	ASSIGN		@76 --> memmove::i
+	JMP		.38
+.39 : 
+	RET
+
+int main (  )  : 
+	CALL		getint (  )  --> (int)@77
+	CALL		getint (  )  --> (int)@78
+	CALL		getint (  )  --> (int)@79
+	int main::c
+	ASSIGN		@77 --> main::c
+	int main::n
+	ASSIGN		@78 --> main::n
+	int main::m
+	ASSIGN		@79 --> main::m
+	CALL		getarray ( a )  --> (int)@80
+	CALL		getarray ( kernelid )  --> (int)@81
+	int main::task
+	ASSIGN		@81 --> main::task
+	CALL		_sysy_starttime ( 112 ) 
+	int main::i
+	ASSIGN		0 --> main::i
+.40 : 
+	LT		main::i , main::task --> (int)@82
+	IF_NOT_JMP		@82 --> .41
+	MUL		main::i , 1 --> (int)@83
+	ADD		@83 , 0 --> (int)@84
+	CALL		convn ( kernelid[@84] , a , b , main::n , main::m , main::c )  --> (int)@85
+	MUL		main::n , main::m --> (int)@86
+	CALL		memmove ( a , b , @86 ) 
+	ADD		main::i , 1 --> (int)@87
+	ASSIGN		@87 --> main::i
+	JMP		.40
+.41 : 
+	CALL		_sysy_stoptime ( 119 ) 
+	MUL		main::n , main::m --> (int)@88
+	CALL		putarray ( @88 , a ) 
 	RET		0
 

@@ -52,6 +52,9 @@ struct virutal_reg_s_live_interval
     //增加该虚拟寄存器的定义点
     void add_def_pos(struct arm_basic_block * bb,virtual_target_code_pos pos);
 
+    //获取寄存器溢出时的分数，分数越高，越不能溢出
+    size_t get_score();
+
     //该生命周期是否正在延长
     bool is_extending;
 
@@ -63,6 +66,9 @@ struct virutal_reg_s_live_interval
 
     //生命周期，每一个pair的first是起点，second是终点
     list<pair<virtual_target_code_pos,virtual_target_code_pos> > live_interval;
+
+    //分数
+    size_t score;
 };
 
 //一个函数中的所有虚拟寄存器的生命周期
@@ -91,7 +97,7 @@ struct live_intervals
 //虚拟寄存器相干图中的一个点
 struct coherent_diagram_node
 {
-    coherent_diagram_node(reg_index reg);
+    coherent_diagram_node(reg_index reg,struct virutal_reg_s_live_interval live_interval);
 
     //增加一个点重合（移动关联）的邻居
     void add_a_move_related_neighbour(struct coherent_diagram_node * node);
@@ -99,6 +105,9 @@ struct coherent_diagram_node
     //增加一个线重合（冲突）的邻居
     void add_a_collision_neighbour(struct coherent_diagram_node * node);
     
+    //获取分数
+    size_t get_score();
+
     //该点对应的虚拟寄存器
     reg_index reg;
 
@@ -110,11 +119,24 @@ struct coherent_diagram_node
 
     //和该点线重合的所有点
     set<struct coherent_diagram_node * > collision_nodes;
+
+    //该点对应的虚拟寄存器的live interval
+    struct virutal_reg_s_live_interval live_interval;
 };
 
 //虚拟寄存器的相干图
 struct coherent_diagram
-{   
+{
+    coherent_diagram()
+    {
+
+    };
+
+    coherent_diagram(struct live_intervals current_func_s_live_intervals):current_func_s_live_intervals(current_func_s_live_intervals)
+    {
+
+    };
+
     ~coherent_diagram();
 
     //清空信息
@@ -134,6 +156,8 @@ struct coherent_diagram
 
     //相干图中的所有点
     map<reg_index,struct coherent_diagram_node * > nodes;
+    //当前函数中的寄存器的live intervals
+    struct live_intervals current_func_s_live_intervals;
 };
 
 class Graph_coloring_register_manager:public Global_register_manager

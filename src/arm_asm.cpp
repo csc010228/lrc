@@ -1132,6 +1132,30 @@ void arm_func_flow_graph::build_nexts_between_basic_blocks()
     }
 }
 
+void arm_func_flow_graph::build_loop_info()
+{
+    map<struct arm_basic_block * ,struct ic_basic_block * > arm_to_ic_basic_block_map;
+    map<struct ic_basic_block * ,struct arm_basic_block * > ic_to_arm_basic_block_map;
+    list<struct arm_basic_block * >::iterator arm_bb=basic_blocks.begin();
+    list<struct ic_basic_block * >::iterator ic_bb=function->basic_blocks.begin();
+    while(arm_bb!=basic_blocks.end() && ic_bb!=function->basic_blocks.end())
+    {
+        //arm_to_ic_basic_block_map.insert(make_pair(*arm_bb,*ic_bb));
+        //basic_block_s_loop_count.insert(make_pair(*arm_bb,0));
+        ic_to_arm_basic_block_map.insert(make_pair(*ic_bb,*arm_bb));
+        arm_bb++;
+        ic_bb++;
+    }
+    for(auto loop:function->loops_info)
+    {
+        for(auto bb_in_loop:loop.second.all_basic_blocks)
+        {
+            //basic_block_s_loop_count.at(ic_to_arm_basic_block_map.at(bb_in_loop))++;
+            ic_to_arm_basic_block_map.at(bb_in_loop)->loop_count++;
+        }
+    }
+}
+
 void arm_func_flow_graph::add_arm_asm(Arm_asm_file_line * arm_asm,bool new_basic_block)
 {
     if(new_basic_block)

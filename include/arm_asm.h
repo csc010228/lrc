@@ -1238,7 +1238,7 @@ public:
 //arm流图中的基本块
 struct arm_basic_block
 {
-    arm_basic_block(struct arm_func_flow_graph * belong_arm_func_flow_graph):belong_arm_func_flow_graph(belong_arm_func_flow_graph)
+    arm_basic_block(struct arm_func_flow_graph * belong_arm_func_flow_graph):belong_arm_func_flow_graph(belong_arm_func_flow_graph),loop_count(0)
     {
         sequential_next=nullptr;
         jump_next=nullptr;
@@ -1274,6 +1274,7 @@ struct arm_basic_block
     list<Arm_asm_file_line * > arm_sequence;
     struct arm_basic_block * sequential_next,* jump_next;
     set<struct arm_basic_block * > precursors;
+    size_t loop_count;
 };
 
 //arm汇编函数的流图
@@ -1295,6 +1296,9 @@ struct arm_func_flow_graph
     //构建函数中的基本块之间的跳转关系
     void build_nexts_between_basic_blocks();
 
+    //构建函数中的循环信息
+    void build_loop_info();
+
     //往汇编函数流图中添加一条arm汇编
     void add_arm_asm(Arm_asm_file_line * arm_asm,bool new_basic_block);
 
@@ -1310,6 +1314,8 @@ struct arm_func_flow_graph
     struct arm_basic_block * current_arm_basic_block;
     //函数流图中的所有基本块序列，顺序就是中间代码的书写顺序
     list<struct arm_basic_block * > basic_blocks;
+    //各个基本块的循环层数
+    //map<struct arm_basic_block *,size_t > basic_block_s_loop_count;
 };
 
 //arm汇编的流图
