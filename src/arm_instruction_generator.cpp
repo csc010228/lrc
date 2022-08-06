@@ -55,7 +55,7 @@ intermediate_code:要转换的一条中间代码
 // using namespace std;
 void Arm_instruction_generator::ic_to_arm_asm(struct quaternion intermediate_code)
 {
-    // cout<<((int)intermediate_code.op)<<endl;
+    //cout<<((int)intermediate_code.op)<<endl;
     if(is_current_basic_block_starting_ && intermediate_code.op!=ic_op::FUNC_DEFINE && intermediate_code.op!=ic_op::LABEL_DEFINE)
     {
         start_basic_block_to_arm_asm();
@@ -470,14 +470,32 @@ void Arm_instruction_generator::sub_ic_to_arm_asm(struct ic_data * arg1,struct i
 void Arm_instruction_generator::mul_ic_to_arm_asm(struct ic_data * arg1,struct ic_data * arg2,struct ic_data * result)
 {
     reg_index Rd,Rm,Rs;
+    struct operand2 operand2;
     notify(event(event_type::START_INSTRUCTION,nullptr));
     switch(result->get_data_type())
     {
         case language_data_type::INT:
-            Rm=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_READING_VAR,(void *)arg1)).int_data;
-            Rs=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_READING_VAR,(void *)arg2)).int_data;
-            Rd=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_WRITING_VAR,(void *)result)).int_data;
-            push_instruction(new Arm_cpu_data_process_instruction(arm_op::MUL,arm_condition::NONE,false,Rd,Rm,Rs));
+            if(arg1->is_const() && is_two_s_power(arg1->get_value().int_data))
+            {
+                Rm=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_READING_VAR,(void *)arg2)).int_data;
+                operand2=get_operand2(get_two_s_power_exponent(arg1->get_value().int_data));
+                Rd=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_WRITING_VAR,(void *)result)).int_data;
+                push_instruction(new Arm_cpu_data_process_instruction(arm_op::LSL,arm_condition::NONE,false,Rd,Rm,operand2));
+            }
+            else if(arg2->is_const() && is_two_s_power(arg2->get_value().int_data))
+            {
+                Rm=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_READING_VAR,(void *)arg1)).int_data;
+                operand2=get_operand2(get_two_s_power_exponent(arg2->get_value().int_data));
+                Rd=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_WRITING_VAR,(void *)result)).int_data;
+                push_instruction(new Arm_cpu_data_process_instruction(arm_op::LSL,arm_condition::NONE,false,Rd,Rm,operand2));
+            }
+            else
+            {
+                Rm=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_READING_VAR,(void *)arg1)).int_data;
+                Rs=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_READING_VAR,(void *)arg2)).int_data;
+                Rd=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_WRITING_VAR,(void *)result)).int_data;
+                push_instruction(new Arm_cpu_data_process_instruction(arm_op::MUL,arm_condition::NONE,false,Rd,Rm,Rs));
+            }
             break;
         case language_data_type::FLOAT:
             Rm=(reg_index)notify(event(event_type::GET_VFP_REG_FOR_READING_VAR,(void *)arg1)).int_data;
@@ -499,33 +517,46 @@ void Arm_instruction_generator::div_ic_to_arm_asm(struct ic_data * arg1,struct i
     list<struct ic_data * > * r_params;
     pair<pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >,list<reg_index> * > * event_data;
     reg_index Rd,Rm,Rs;
+    struct operand2 operand2_1,operand2_2;
+    notify(event(event_type::START_INSTRUCTION,nullptr));
     switch(result->get_data_type())
     {
         case language_data_type::INT:
-            r_params=new list<struct ic_data * >;
-            event_data=new pair<pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >,list<reg_index> * >;
-            event_data->first.first.first="__aeabi_idiv";
-            r_params->push_back(arg1);
-            r_params->push_back(arg2);
-            event_data->first.first.second=r_params;
-            event_data->first.second.first=result;
-            event_data->first.second.second=(reg_index)notify(event(event_type::GET_R0_REG,nullptr)).int_data;
-            event_data->second=nullptr;
-            notify(event(event_type::CALL_ABI_FUNC,(void *)event_data));
-            delete r_params;
-            delete event_data;
+            if(arg2->is_const() && arg2->get_value().int_data==2)
+            {
+                Rm=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_READING_VAR,(void *)arg1)).int_data;
+                operand2_1=operand2(Rm,operand2_shift_op::LSR_N,31);
+                operand2_2=get_operand2(1);
+                Rd=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_WRITING_VAR,(void *)result)).int_data;
+                push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,Rd,Rm,operand2_1));
+                push_instruction(new Arm_cpu_data_process_instruction(arm_op::ASR,arm_condition::NONE,false,Rd,Rm,operand2_2));
+            }
+            else
+            {
+                r_params=new list<struct ic_data * >;
+                event_data=new pair<pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >,list<reg_index> * >;
+                event_data->first.first.first="__aeabi_idiv";
+                r_params->push_back(arg1);
+                r_params->push_back(arg2);
+                event_data->first.first.second=r_params;
+                event_data->first.second.first=result;
+                event_data->first.second.second=(reg_index)notify(event(event_type::GET_R0_REG,nullptr)).int_data;
+                event_data->second=nullptr;
+                notify(event(event_type::CALL_ABI_FUNC,(void *)event_data));
+                delete r_params;
+                delete event_data;
+            }
             break;
         case language_data_type::FLOAT:
-            notify(event(event_type::START_INSTRUCTION,nullptr));
             Rm=(reg_index)notify(event(event_type::GET_VFP_REG_FOR_READING_VAR,(void *)arg1)).int_data;
             Rs=(reg_index)notify(event(event_type::GET_VFP_REG_FOR_READING_VAR,(void *)arg2)).int_data;
             Rd=(reg_index)notify(event(event_type::GET_VFP_REG_FOR_WRITING_VAR,(void *)result)).int_data;
             push_instruction(new Arm_vfp_data_process_instruction(arm_op::VDIV,arm_condition::NONE,precision::S,Rd,Rm,Rs));
-            notify(event(event_type::END_INSTRUCTION,nullptr));
             break;
         default:
             break;
     }
+    notify(event(event_type::END_INSTRUCTION,nullptr));
 }
 
 /*
@@ -535,19 +566,37 @@ void Arm_instruction_generator::mod_ic_to_arm_asm(struct ic_data * arg1,struct i
 {
     list<struct ic_data * > * r_params;
     pair<pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >,list<reg_index> * > * event_data;
+    struct operand2 operand2_1,operand2_2;
+    reg_index Rd,Rm,Rs;
     //不能对浮点数进行mod
-    r_params=new list<struct ic_data * >;
-    event_data=new pair<pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >,list<reg_index> * >;
-    event_data->first.first.first="__aeabi_idivmod";
-    r_params->push_back(arg1);
-    r_params->push_back(arg2);
-    event_data->first.first.second=r_params;
-    event_data->first.second.first=result;
-    event_data->first.second.second=(reg_index)notify(event(event_type::GET_R1_REG,nullptr)).int_data;
-    event_data->second=nullptr;
-    notify(event(event_type::CALL_ABI_FUNC,(void *)event_data));
-    delete r_params;
-    delete event_data;
+    notify(event(event_type::START_INSTRUCTION,nullptr));
+    if(arg2->is_const() && arg2->get_value().int_data==2)
+    {
+        Rm=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_READING_VAR,(void *)arg1)).int_data;
+        operand2_1=get_operand2(0);
+        operand2_2=get_operand2(1);
+        Rd=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_WRITING_VAR,(void *)result)).int_data;
+        push_instruction(new Arm_cpu_data_process_instruction(arm_op::CMP,arm_condition::NONE,Rm,operand2_1));
+        push_instruction(new Arm_cpu_data_process_instruction(arm_op::AND,arm_condition::NONE,false,Rd,Rm,operand2_2));
+        push_pseudo_instruction(new Arm_pseudo_instruction("lt"));
+        push_instruction(new Arm_cpu_data_process_instruction(arm_op::RSB,arm_condition::LT,false,Rd,Rd,operand2_1));
+    }
+    else
+    {
+        r_params=new list<struct ic_data * >;
+        event_data=new pair<pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >,list<reg_index> * >;
+        event_data->first.first.first="__aeabi_idivmod";
+        r_params->push_back(arg1);
+        r_params->push_back(arg2);
+        event_data->first.first.second=r_params;
+        event_data->first.second.first=result;
+        event_data->first.second.second=(reg_index)notify(event(event_type::GET_R1_REG,nullptr)).int_data;
+        event_data->second=nullptr;
+        notify(event(event_type::CALL_ABI_FUNC,(void *)event_data));
+        delete r_params;
+        delete event_data;
+    }
+    notify(event(event_type::END_INSTRUCTION,nullptr));
 }
 
 // /*

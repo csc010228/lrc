@@ -1555,8 +1555,8 @@ void Ic_optimizer::DAG_optimize(struct ic_basic_block * basic_block)
 void Ic_optimizer::local_optimize()
 {
     //窥孔优化最先进行
-    //if(need_optimize_)
-    //{
+    if(need_optimize_)
+    {
         for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
         {
             for(auto basic_block:func->basic_blocks)
@@ -1564,7 +1564,7 @@ void Ic_optimizer::local_optimize()
                 peephole_optimization(basic_block);
             }
         }
-    //}
+    }
     //DAG优化
     for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
     {

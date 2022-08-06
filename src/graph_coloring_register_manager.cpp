@@ -161,7 +161,7 @@ coherent_diagram_node::coherent_diagram_node(reg_index reg,enum coherent_diagram
 
 void coherent_diagram_node::add_a_move_related_neighbour(struct coherent_diagram_node * node)
 {
-    //TO-DO
+    
 }
 
 void coherent_diagram_node::add_a_collision_neighbour(struct coherent_diagram_node * node)
@@ -216,7 +216,7 @@ struct coherent_diagram_node * coherent_diagram::get_coherent_diagram_node(reg_i
 
 void coherent_diagram::add_move_related(reg_index reg_1,reg_index reg_2)
 {
-    //TO-DO
+    
 }
 
 void coherent_diagram::add_collision(reg_index reg_1,reg_index reg_2)
@@ -233,12 +233,16 @@ void coherent_diagram::add_collision(reg_index reg_1,reg_index reg_2)
 
 
 //===================================== class Graph_coloring_register_manager =====================================//
-
+map<struct ic_data *,reg_index> try_it_map_var;
+map<struct ic_data *,reg_index> try_it_map_addr;
+map<OAA,reg_index> try_it_map_const;
+set<reg_index> try_it_set;
 Graph_coloring_register_manager::Graph_coloring_register_manager(set<struct reg> regs,struct flag_reg flag_reg):Global_register_manager(regs,flag_reg),current_processor(reg_processor::CPU)
 {
+    //TO-DO
     for(auto reg:regs_info_.reg_indexs)
     {
-        if(reg.second.processor==reg_processor::CPU && (reg.second.attr==reg_attr::ARGUMENT || reg.second.attr==reg_attr::TEMP))
+        if(reg.second.processor==reg_processor::CPU && (reg.second.attr==reg_attr::ARGUMENT || reg.second.attr==reg_attr::TEMP) /*|| reg.second.attr==reg_attr::FRAME_POINTER || reg.second.attr==reg_attr::INTRA_PROCEDURE*/)
         {
             available_physical_cpu_regs.insert(reg.first);
         }
@@ -466,8 +470,7 @@ set<reg_index> Graph_coloring_register_manager::get_virtual_traget_instruction_s
     }
     return res;
 }
-#include<iostream>
-using namespace std;
+
 set<reg_index> Graph_coloring_register_manager::get_virtual_traget_instruction_s_all_regs(Arm_asm_file_line * line)
 {
     set<reg_index> source_regs,destination_regs,res;
@@ -1340,7 +1343,46 @@ void Graph_coloring_register_manager::rewrite_program()
                     old_new_regs.insert(make_pair(reg,new_reg));
                     map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
-                    instructions=generate_instructions_for_loading_var_value(var,new_reg);
+                    //instructions=generate_instructions_for_loading_var_value(var,new_reg);
+
+
+
+
+                    reg_index vreg;
+                    if(try_it_map_var.find(var)!=try_it_map_var.end())
+                    {
+                        vreg=try_it_map_var.at(var);
+                        list<Arm_asm_file_line * > * temp;
+                        pair<reg_index,reg_index> * event_data=new pair<reg_index,reg_index>(vreg,new_reg);
+                        notify(event(event_type::START_GENERATING_SPILLING_VIRTUAL_CODES,nullptr));
+                        notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data));
+                        delete event_data;
+                        temp=(list<Arm_asm_file_line * > *)notify(event(event_type::GET_SPILLING_VIRTUAL_CODES,nullptr)).pointer_data;
+                        instructions=*temp;
+                        delete temp;
+                    }
+                    else if(!try_it_set.empty())
+                    {
+                        vreg=*try_it_set.begin();
+                        try_it_map_var.insert(make_pair(var,vreg));
+                        try_it_set.erase(vreg);
+                        list<Arm_asm_file_line * > * temp;
+                        pair<reg_index,reg_index> * event_data=new pair<reg_index,reg_index>(vreg,new_reg);
+                        notify(event(event_type::START_GENERATING_SPILLING_VIRTUAL_CODES,nullptr));
+                        notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data));
+                        delete event_data;
+                        temp=(list<Arm_asm_file_line * > *)notify(event(event_type::GET_SPILLING_VIRTUAL_CODES,nullptr)).pointer_data;
+                        instructions=*temp;
+                        delete temp;
+                    }else
+                    {
+                        instructions=generate_instructions_for_loading_var_value(var,new_reg);
+                    }
+
+
+
+
+
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
                     current_func_s_live_intervals.new_empty_virtual_code_segment(current_pos-1,instructions.size());
                     current_pos+=instructions.size();
@@ -1367,7 +1409,43 @@ void Graph_coloring_register_manager::rewrite_program()
                         map_set_insert(map_for_debug,reg,new_reg);
                     }
                     replace_regs_map.insert(make_pair(reg,new_reg));
-                    instructions=generate_instructions_for_storing_var_value(var,new_reg);
+                    //instructions=generate_instructions_for_storing_var_value(var,new_reg);
+
+
+
+                    reg_index vreg;
+                    if(try_it_map_var.find(var)!=try_it_map_var.end())
+                    {
+                        vreg=try_it_map_var.at(var);
+                        list<Arm_asm_file_line * > * temp;
+                        pair<reg_index,reg_index> * event_data=new pair<reg_index,reg_index>(new_reg,vreg);
+                        notify(event(event_type::START_GENERATING_SPILLING_VIRTUAL_CODES,nullptr));
+                        notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data));
+                        delete event_data;
+                        temp=(list<Arm_asm_file_line * > *)notify(event(event_type::GET_SPILLING_VIRTUAL_CODES,nullptr)).pointer_data;
+                        instructions=*temp;
+                        delete temp;
+                    }
+                    else if(!try_it_set.empty())
+                    {
+                        vreg=*try_it_set.begin();
+                        try_it_map_var.insert(make_pair(var,vreg));
+                        try_it_set.erase(vreg);
+                        list<Arm_asm_file_line * > * temp;
+                        pair<reg_index,reg_index> * event_data=new pair<reg_index,reg_index>(new_reg,vreg);
+                        notify(event(event_type::START_GENERATING_SPILLING_VIRTUAL_CODES,nullptr));
+                        notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data));
+                        delete event_data;
+                        temp=(list<Arm_asm_file_line * > *)notify(event(event_type::GET_SPILLING_VIRTUAL_CODES,nullptr)).pointer_data;
+                        instructions=*temp;
+                        delete temp;
+                    }else
+                    {
+                        instructions=generate_instructions_for_storing_var_value(var,new_reg);
+                    }
+
+
+
                     new_ins_pos=ins_pos;
                     advance(new_ins_pos,1);
                     bb->arm_sequence.insert(new_ins_pos,instructions.cbegin(),instructions.cend());
@@ -1401,7 +1479,47 @@ void Graph_coloring_register_manager::rewrite_program()
                     old_new_regs.insert(make_pair(reg,new_reg));
                     map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
-                    instructions=generate_instructions_for_loading_var_value(var,new_reg);
+                    //instructions=generate_instructions_for_loading_var_value(var,new_reg);
+
+
+
+
+
+                    reg_index vreg;
+                    if(try_it_map_var.find(var)!=try_it_map_var.end())
+                    {
+                        vreg=try_it_map_var.at(var);
+                        list<Arm_asm_file_line * > * temp;
+                        pair<reg_index,reg_index> * event_data=new pair<reg_index,reg_index>(vreg,new_reg);
+                        notify(event(event_type::START_GENERATING_SPILLING_VIRTUAL_CODES,nullptr));
+                        notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data));
+                        delete event_data;
+                        temp=(list<Arm_asm_file_line * > *)notify(event(event_type::GET_SPILLING_VIRTUAL_CODES,nullptr)).pointer_data;
+                        instructions=*temp;
+                        delete temp;
+                    }
+                    else if(!try_it_set.empty())
+                    {
+                        vreg=*try_it_set.begin();
+                        try_it_map_var.insert(make_pair(var,vreg));
+                        try_it_set.erase(vreg);
+                        list<Arm_asm_file_line * > * temp;
+                        pair<reg_index,reg_index> * event_data=new pair<reg_index,reg_index>(vreg,new_reg);
+                        notify(event(event_type::START_GENERATING_SPILLING_VIRTUAL_CODES,nullptr));
+                        notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data));
+                        delete event_data;
+                        temp=(list<Arm_asm_file_line * > *)notify(event(event_type::GET_SPILLING_VIRTUAL_CODES,nullptr)).pointer_data;
+                        instructions=*temp;
+                        delete temp;
+                    }else
+                    {
+                        instructions=generate_instructions_for_loading_var_value(var,new_reg);
+                    }
+
+
+
+
+
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
                     current_func_s_live_intervals.new_empty_virtual_code_segment(current_pos-1,instructions.size());
                     current_pos+=instructions.size();
@@ -1434,7 +1552,41 @@ void Graph_coloring_register_manager::rewrite_program()
                         map_set_insert(map_for_debug,reg,new_reg);
                     }
                     replace_regs_map.insert(make_pair(reg,new_reg));
-                    instructions=generate_instructions_for_storing_var_value(var,new_reg);
+                    //instructions=generate_instructions_for_storing_var_value(var,new_reg);
+
+
+                    reg_index vreg;
+                    if(try_it_map_var.find(var)!=try_it_map_var.end())
+                    {
+                        vreg=try_it_map_var.at(var);
+                        list<Arm_asm_file_line * > * temp;
+                        pair<reg_index,reg_index> * event_data=new pair<reg_index,reg_index>(new_reg,vreg);
+                        notify(event(event_type::START_GENERATING_SPILLING_VIRTUAL_CODES,nullptr));
+                        notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data));
+                        delete event_data;
+                        temp=(list<Arm_asm_file_line * > *)notify(event(event_type::GET_SPILLING_VIRTUAL_CODES,nullptr)).pointer_data;
+                        instructions=*temp;
+                        delete temp;
+                    }
+                    else if(!try_it_set.empty())
+                    {
+                        vreg=*try_it_set.begin();
+                        try_it_map_var.insert(make_pair(var,vreg));
+                        try_it_set.erase(vreg);
+                        list<Arm_asm_file_line * > * temp;
+                        pair<reg_index,reg_index> * event_data=new pair<reg_index,reg_index>(new_reg,vreg);
+                        notify(event(event_type::START_GENERATING_SPILLING_VIRTUAL_CODES,nullptr));
+                        notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data));
+                        delete event_data;
+                        temp=(list<Arm_asm_file_line * > *)notify(event(event_type::GET_SPILLING_VIRTUAL_CODES,nullptr)).pointer_data;
+                        instructions=*temp;
+                        delete temp;
+                    }else
+                    {
+                        instructions=generate_instructions_for_storing_var_value(var,new_reg);
+                    }
+
+
                     new_ins_pos=ins_pos;
                     advance(new_ins_pos,1);
                     bb->arm_sequence.insert(new_ins_pos,instructions.cbegin(),instructions.cend());
@@ -1465,7 +1617,44 @@ void Graph_coloring_register_manager::rewrite_program()
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
                     map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
-                    instructions=generate_instructions_for_loading_var_value(var,new_reg);
+                    //instructions=generate_instructions_for_loading_var_value(var,new_reg);
+
+
+
+                    reg_index vreg;
+                    if(try_it_map_var.find(var)!=try_it_map_var.end())
+                    {
+                        vreg=try_it_map_var.at(var);
+                        list<Arm_asm_file_line * > * temp;
+                        pair<reg_index,reg_index> * event_data=new pair<reg_index,reg_index>(vreg,new_reg);
+                        notify(event(event_type::START_GENERATING_SPILLING_VIRTUAL_CODES,nullptr));
+                        notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data));
+                        delete event_data;
+                        temp=(list<Arm_asm_file_line * > *)notify(event(event_type::GET_SPILLING_VIRTUAL_CODES,nullptr)).pointer_data;
+                        instructions=*temp;
+                        delete temp;
+                    }
+                    else if(!try_it_set.empty())
+                    {
+                        vreg=*try_it_set.begin();
+                        try_it_map_var.insert(make_pair(var,vreg));
+                        try_it_set.erase(vreg);
+                        list<Arm_asm_file_line * > * temp;
+                        pair<reg_index,reg_index> * event_data=new pair<reg_index,reg_index>(vreg,new_reg);
+                        notify(event(event_type::START_GENERATING_SPILLING_VIRTUAL_CODES,nullptr));
+                        notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data));
+                        delete event_data;
+                        temp=(list<Arm_asm_file_line * > *)notify(event(event_type::GET_SPILLING_VIRTUAL_CODES,nullptr)).pointer_data;
+                        instructions=*temp;
+                        delete temp;
+                    }else
+                    {
+                        instructions=generate_instructions_for_loading_var_value(var,new_reg);
+                    }
+
+
+
+
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
                     current_func_s_live_intervals.new_empty_virtual_code_segment(current_pos-1,instructions.size());
                     current_pos+=instructions.size();
@@ -1496,7 +1685,48 @@ void Graph_coloring_register_manager::rewrite_program()
                     new_reg=virtual_regs_info_.new_temp_for_var_addr(var,virtual_regs_info_.get_reg_s_processor(reg));
                     map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
-                    instructions=generate_instructions_for_writing_var_addr_to_new_reg(var,new_reg);
+                    //instructions=generate_instructions_for_writing_var_addr_to_new_reg(var,new_reg);
+                    
+                    
+                    
+                    
+                    
+                    reg_index vreg;
+                    if(try_it_map_addr.find(var)!=try_it_map_addr.end())
+                    {
+                        vreg=try_it_map_addr.at(var);
+                        list<Arm_asm_file_line * > * temp;
+                        pair<reg_index,reg_index> * event_data=new pair<reg_index,reg_index>(new_reg,vreg);
+                        notify(event(event_type::START_GENERATING_SPILLING_VIRTUAL_CODES,nullptr));
+                        notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data));
+                        delete event_data;
+                        temp=(list<Arm_asm_file_line * > *)notify(event(event_type::GET_SPILLING_VIRTUAL_CODES,nullptr)).pointer_data;
+                        instructions=*temp;
+                        delete temp;
+                    }
+                    else if(!try_it_set.empty())
+                    {
+                        vreg=*try_it_set.begin();
+                        try_it_map_addr.insert(make_pair(var,vreg));
+                        try_it_set.erase(vreg);
+                        list<Arm_asm_file_line * > * temp;
+                        pair<reg_index,reg_index> * event_data=new pair<reg_index,reg_index>(new_reg,vreg);
+                        notify(event(event_type::START_GENERATING_SPILLING_VIRTUAL_CODES,nullptr));
+                        notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data));
+                        delete event_data;
+                        temp=(list<Arm_asm_file_line * > *)notify(event(event_type::GET_SPILLING_VIRTUAL_CODES,nullptr)).pointer_data;
+                        instructions=*temp;
+                        delete temp;
+                    }else
+                    {
+                        instructions=generate_instructions_for_writing_var_addr_to_new_reg(var,new_reg);
+                    }
+                    
+                    
+                    
+                    
+                    
+                    
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
                     current_func_s_live_intervals.new_empty_virtual_code_segment(current_pos-1,instructions.size());
                     current_pos+=instructions.size();
@@ -1524,9 +1754,57 @@ void Graph_coloring_register_manager::rewrite_program()
                 {
                     const_value=virtual_regs_info_.reg_indexs.at(reg).related_const;
                     new_reg=virtual_regs_info_.new_temp_for_const(const_value,virtual_regs_info_.get_reg_s_processor(reg));
-                    // map_set_insert(map_for_debug,reg,new_reg);
+                    map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
-                    instructions=generate_instructions_for_writing_const_value_to_new_reg(const_value,new_reg);
+                    //instructions=generate_instructions_for_writing_const_value_to_new_reg(const_value,new_reg);
+                    
+
+
+
+
+
+
+
+
+                    reg_index vreg;
+                    if(try_it_map_const.find(const_value)!=try_it_map_const.end())
+                    {
+                        vreg=try_it_map_const.at(const_value);
+                        list<Arm_asm_file_line * > * temp;
+                        pair<reg_index,reg_index> * event_data=new pair<reg_index,reg_index>(new_reg,vreg);
+                        notify(event(event_type::START_GENERATING_SPILLING_VIRTUAL_CODES,nullptr));
+                        notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data));
+                        delete event_data;
+                        temp=(list<Arm_asm_file_line * > *)notify(event(event_type::GET_SPILLING_VIRTUAL_CODES,nullptr)).pointer_data;
+                        instructions=*temp;
+                        delete temp;
+                    }
+                    else if(!try_it_set.empty())
+                    {
+                        vreg=*try_it_set.begin();
+                        try_it_map_const.insert(make_pair(const_value,vreg));
+                        try_it_set.erase(vreg);
+                        list<Arm_asm_file_line * > * temp;
+                        pair<reg_index,reg_index> * event_data=new pair<reg_index,reg_index>(new_reg,vreg);
+                        notify(event(event_type::START_GENERATING_SPILLING_VIRTUAL_CODES,nullptr));
+                        notify(event(event_type::MOVE_DATA_BETWEEN_REGS,(void *)event_data));
+                        delete event_data;
+                        temp=(list<Arm_asm_file_line * > *)notify(event(event_type::GET_SPILLING_VIRTUAL_CODES,nullptr)).pointer_data;
+                        instructions=*temp;
+                        delete temp;
+                    }else
+                    {
+                        instructions=generate_instructions_for_writing_const_value_to_new_reg(const_value,new_reg);
+                    }
+
+
+
+
+
+
+
+
+
                     bb->arm_sequence.insert(ins_pos,instructions.cbegin(),instructions.cend());
                     current_func_s_live_intervals.new_empty_virtual_code_segment(current_pos-1,instructions.size());
                     current_pos+=instructions.size();
@@ -1717,7 +1995,18 @@ void Graph_coloring_register_manager::handle_END_FUNC()
     virtual_target_code=(struct arm_func_flow_graph *)notify(event(event_type::GET_VIRTUAL_TRAGET_CODE_OF_CURRENT_FUNC,nullptr)).pointer_data;
     virtual_target_code->build_nexts_between_basic_blocks();
     virtual_target_code->build_loop_info();
-    //cout<<endl<<endl<<endl<<endl<<endl<<endl<<endl<<virtual_target_code->function->func->name<<endl<<endl;
+    try_it_set.clear();
+    try_it_map_var.clear();
+    try_it_map_const.clear();
+    try_it_map_addr.clear();
+    // for(auto reg:regs_info_.reg_indexs)
+    // {
+    //     if(reg.second.processor==reg_processor::VFP && reg.second.attr==reg_attr::TEMP)
+    //     {
+    //         try_it_set.insert(reg.first);
+    //     }
+    // }
+    // cout<<endl<<endl<<endl<<endl<<endl<<endl<<endl<<virtual_target_code->function->func->name<<endl<<endl;
     //把物理寄存器堆清空
     regs_info_.clear();
     //对其进行图着色寄存器分配

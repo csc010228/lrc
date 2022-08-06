@@ -254,6 +254,11 @@ void Arm_asm_optimizer::optimize_func_enter_and_exit(struct arm_func_flow_graph 
                     case arm_op::ORR:
                     case arm_op::EOR:
                     case arm_op::BIC:
+                    case arm_op::ASR:
+                    case arm_op::LSL:
+                    case arm_op::LSR:
+                    case arm_op::ROR:
+                    case arm_op::RRX:
                     case arm_op::CMP:
                     case arm_op::CMN:
                     case arm_op::TST:
@@ -433,7 +438,10 @@ next:
 */
 void Arm_asm_optimizer::conditional_execute(struct arm_func_flow_graph * func)
 {
-
+    for(list<struct arm_basic_block * >::iterator bb=func->basic_blocks.begin();bb!=func->basic_blocks.end();bb++)
+    {
+        
+    }
 }
 
 

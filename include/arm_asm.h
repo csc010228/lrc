@@ -37,6 +37,11 @@ enum class arm_op
     ORR,
     EOR,
     BIC,
+    ASR,
+    LSL,
+    LSR,
+    ROR,
+    RRX,
     CLZ,
     CMP,
     CMN,
@@ -822,7 +827,7 @@ protected:
     };
 
 public:
-    //ADD,SUB,RSB,ADC,SBC,RSC,AND,ORR,EOR,BIC的构造函数
+    //ADD,SUB,RSB,ADC,SBC,RSC,AND,ORR,EOR,BIC,ASR,LSL,LSR,ROR,RRX,的构造函数
     Arm_cpu_data_process_instruction(enum arm_op op,enum arm_condition cond,bool update_flags,reg_index Rd,reg_index Rn,struct operand2 operand2):Arm_cpu_instruction(op,cond,arm_registers(1,Rd),arm_registers(1,Rn)),update_flags_(update_flags),operand2_(operand2),data_type_(arm_data_process_instruction_data_type::OPERNAD2)
     {
 

@@ -149,4 +149,8 @@ MAP_MAP_VALUE map_map_at(const map<MAP_MAP_KEY_1,map<MAP_MAP_KEY_2,MAP_MAP_VALUE
     return target.at(key_1).at(key_2);
 }
 
+bool is_two_s_power(int num);
+
+int get_two_s_power_exponent(int num);
+
 #endif //__UTIL_H

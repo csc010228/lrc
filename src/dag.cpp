@@ -702,6 +702,7 @@ bool DAG::common_expression_delete(enum ic_op op,struct ic_data * result,struct 
         {
             if(op==father->related_op && (father->get_left_child()==arg1_node && father->get_right_child()==arg2_node) || (father->get_left_child()==arg2_node && father->get_right_child()==arg1_node))
             {
+                //new_DAG_node(ic_op::ASSIGN,result,1,father->related_datas.front());
                 attach_data_to_node(result,father);
                 return true;
             }
@@ -713,6 +714,7 @@ bool DAG::common_expression_delete(enum ic_op op,struct ic_data * result,struct 
         {
             if(op==father.first->related_op)
             {
+                //new_DAG_node(ic_op::ASSIGN,result,1,father.first->related_datas.front());
                 attach_data_to_node(result,father.first);
                 return true;
             }
