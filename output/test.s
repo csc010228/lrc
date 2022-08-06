@@ -20,39 +20,23 @@
 	.fpu vfp
 	.type	memmove, %function
 memmove:
-	push	{r4,r5,fp,lr}
-	nop
-	add	fp,sp,#16
-	sub	sp,sp,#0
-	nop
-	mov	r5,r0
-	mov	r4,r1
-	mov	r3,r2
-	nop
+	push	{r4,fp,lr}
+	add	fp,sp,#12
+	sub	sp,sp,#4
+	mov	r4,r0
+	mov	r3,r1
 	movw	r0,#0
-	mov	r2,r0
-	nop
-.38:
-	nop
-	cmp	r2,r3
-	nop
-	bge	.39
-	nop
-	ldr	r0,[r4,r2,lsl 2]
 	mov	r1,r0
-	add	r0,r2,#1
-	str	r1,[r5,r2,lsl 2]
-	mov	r2,r0
-	nop
+.38:
+	cmp	r1,r2
+	bge	.39
+	ldr	r0,[r3,r1,lsl 2]
+	str	r0,[r4,r1,lsl 2]
+	add	r1,r1,#1
 	b	.38
 .39:
-	nop
-	nop
-	nop
-	add	sp,sp,#0
-	nop
-	pop	{r4,r5,fp,pc}
-	nop
+	add	sp,sp,#4
+	pop	{r4,fp,pc}
 	.size	memmove, .-memmove
 	.text
 	.align 1
@@ -66,7 +50,6 @@ memmove:
 	.type	main, %function
 main:
 	push	{r4,r5,r6,r7,r8,r9,r10,fp,lr}
-	nop
 	add	fp,sp,#36
 	sub	sp,sp,#4
 	sub	sp,sp,#24
@@ -81,626 +64,68 @@ main:
 	add	r0,sp,#44
 	add	r0,sp,#44
 	str	r1,[r0]
-	mov	r10,r5
-	mov	r9,r2
-	movw	r0,#:lower16:a
-	movt	r0,#:upper16:a
-	movw	r0,#:lower16:a
-	movt	r0,#:upper16:a
-	nop
+	mov	r1,r5
+	add	r0,sp,#32
+	add	r0,sp,#32
+	str	r1,[r0]
+	mov	r10,r2
+	movw	r5,#:lower16:a
+	movt	r5,#:upper16:a
+	mov	r0,r5
 	bl	getarray
-	nop
-	movw	r8,#:lower16:kernelid
-	movt	r8,#:upper16:kernelid
-	mov	r0,r8
+	movw	r9,#:lower16:kernelid
+	movt	r9,#:upper16:kernelid
+	mov	r0,r9
 	bl	getarray
-	nop
-	mov	r7,r0
-	movw	r0,#112
-	nop
+	mov	r8,r0
+	movw	r0,#109
 	bl	_sysy_starttime
 	movw	r0,#0
-	mov	r5,r0
-	mul	r6,r10,r9
+	mov	r7,r0
+	add	r0,sp,#32
+	ldr	r0,[r0]
+	mul	r6,r0,r10
 	add	sp,sp,#24
 .40:
-	nop
-	cmp	r5,r7
-	nop
+	cmp	r7,r8
 	bge	.41
 	sub	sp,sp,#8
 	add	r0,sp,#28
 	ldr	r0,[r0]
 	push	{r0}
-	push	{r9}
-	ldr	r0,[r8,r5,lsl 2]
-	nop
-	movw	r1,#:lower16:a
-	movt	r1,#:upper16:a
-	nop
+	push	{r10}
+	ldr	r0,[r9,r7,lsl 2]
+	mov	r1,r5
 	movw	r4,#:lower16:b
 	movt	r4,#:upper16:b
 	mov	r2,r4
-	mov	r3,r10
+	add	r3,sp,#24
+	ldr	r3,[r3]
 	bl	convn
-	nop
 	add	sp,sp,#8
-	movw	r0,#:lower16:a
-	movt	r0,#:upper16:a
-	nop
+	mov	r0,r5
 	mov	r1,r4
 	mov	r2,r6
 	bl	memmove
-	add	r0,r5,#1
-	mov	r5,r0
+	add	r7,r7,#1
 	add	sp,sp,#8
 	b	.40
 .41:
-	nop
-	movw	r0,#119
-	nop
+	sub	sp,sp,#8
+	movw	r0,#116
 	bl	_sysy_stoptime
-	mul	r0,r10,r9
-	nop
-	movw	r1,#:lower16:a
-	movt	r1,#:upper16:a
-	nop
+	add	r0,sp,#16
+	ldr	r0,[r0]
+	mul	r0,r0,r10
+	mov	r1,r5
 	bl	putarray
 	movw	r0,#0
-	nop
+	add	sp,sp,#8
 	add	sp,sp,#24
 	add	sp,sp,#4
-	nop
 	pop	{r4,r5,r6,r7,r8,r9,r10,fp,pc}
-	nop
-	.size	main, .-main
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
-	.global getvalue
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	getvalue, %function
-getvalue:
-	push	{r4,r5,r6,fp,lr}
-	nop
-	add	fp,sp,#20
-	sub	sp,sp,#4
-	nop
-	mov	r4,r0
-	mov	r5,r1
-	mov	r6,r2
-	movs	r1,r3
-	nop
-	nop
-	nop
-	blt	.24
-	nop
-	add	r0,fp,#0
-	ldr	r2,[r0]
-	cmp	r2,#0
-	nop
-	blt	.24
-	nop
-	cmp	r1,r5
-	nop
-	bge	.24
-	nop
-	cmp	r2,r6
-	nop
-	bge	.24
-	nop
-	nop
-	b	.25
-.24:
-	nop
-	movw	r0,#0
-	nop
-	nop
-	add	sp,sp,#4
-	nop
-	pop	{r4,r5,r6,fp,pc}
-	nop
-.25:
-	nop
-	mul	r0,r1,r6
-	add	r0,r0,r2
-	ldr	r0,[r4,r0,lsl 2]
-	nop
-	nop
-	add	sp,sp,#4
-	nop
-	pop	{r4,r5,r6,fp,pc}
-	nop
-	.size	getvalue, .-getvalue
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
-	.global convn
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	convn, %function
-convn:
-	push	{r4,r5,r6,r7,r8,r9,r10,fp,lr}
-	nop
-	add	fp,sp,#36
-	sub	sp,sp,#4
-	sub	sp,sp,#96
-	mov	r4,r0
-	add	r0,sp,#80
-	str	r4,[r0]
-	nop
-	add	r0,sp,#84
-	str	r1,[r0]
-	mov	r1,r2
-	add	r0,sp,#88
-	str	r1,[r0]
-	mov	r0,r3
-	add	r1,sp,#92
-	str	r0,[r1]
-	sub	sp,sp,#8
-	movw	r0,#0
-	mov	r1,r0
-	add	r5,sp,#80
-	str	r1,[r5]
-	nop
-	add	r5,sp,#76
-	str	r0,[r5]
-	add	r0,fp,#4
-	ldr	r0,[r0]
-	nop
-	movw	r5,#2
-	mov	r1,r5
-	bl	__aeabi_idiv
-	nop
-	nop
-	add	r2,sp,#72
-	str	r0,[r2]
-	add	sp,sp,#8
-.26:
-	sub	sp,sp,#16
-	movw	r0,#0
-	nop
-	add	r5,sp,#84
-	str	r0,[r5]
-	add	r5,sp,#88
-	ldr	r0,[r5]
-	add	r2,sp,#80
-	ldr	r1,[r2]
-	sub	r4,r0,r1
-	ldr	r1,[r5]
-	ldr	r0,[r2]
-	add	r3,r1,r0
-	add	r2,fp,#0
-	ldr	r2,[r2]
-	ldr	r0,[r5]
-	mul	r2,r0,r2
-	mov	r1,r4
-	add	r0,sp,#40
-	str	r1,[r0]
-	mov	r1,r3
-	add	r0,sp,#36
-	str	r1,[r0]
-	mov	r1,r2
-	add	r0,sp,#32
-	str	r1,[r0]
-	add	sp,sp,#16
-.27:
-	sub	sp,sp,#8
-	movw	r0,#0
-	mov	r9,r0
-	add	r0,sp,#32
-	ldr	r0,[r0]
-	nop
-	add	r3,sp,#68
-	str	r0,[r3]
-	add	r5,sp,#76
-	ldr	r1,[r5]
-	add	r2,sp,#72
-	ldr	r0,[r2]
-	sub	r3,r1,r0
-	ldr	r1,[r5]
-	ldr	r0,[r2]
-	add	r2,r1,r0
-	mov	r1,r3
-	add	r0,sp,#20
-	str	r1,[r0]
-	mov	r1,r2
-	add	r0,sp,#16
-	str	r1,[r0]
-	add	sp,sp,#8
-.28:
-	sub	sp,sp,#0
-	add	r0,sp,#12
-	ldr	r0,[r0]
-	mov	r10,r0
 	add	sp,sp,#0
-.29:
-	sub	sp,sp,#8
-	sub	sp,sp,#4
-	push	{r10}
-	add	r0,sp,#100
-	ldr	r0,[r0]
-	nop
-	add	r1,sp,#108
-	ldr	r1,[r1]
-	nop
-	add	r2,fp,#0
-	ldr	r2,[r2]
-	nop
-	add	r3,sp,#76
-	ldr	r3,[r3]
-	nop
-	bl	getvalue
-	mov	r8,r0
-	add	sp,sp,#8
-	add	r0,sp,#88
-	ldr	r1,[r0]
-	cmp	r1,#0
-	add	sp,sp,#8
-	bne	.46
-	nop
-	add	r0,r9,r8
-	nop
-	nop
-.47:
-	nop
-	cmp	r0,#1073741824
-	nop
-	ble	.48
-	nop
-	sub	r0,r0,#1073741824
-	nop
-	nop
-	b	.47
-.48:
-	nop
-	nop
-.49:
-	nop
-	cmp	r0,#0
-	nop
-	bge	.50
-	nop
-	add	r0,r0,#1073741824
-	nop
-	nop
-	b	.49
-.50:
-	nop
-	mov	r1,r0
-	nop
-	b	.70
-.46:
-	nop
-	ldr	r1,[r0]
-	cmp	r1,#1
-	nop
-	bne	.51
-	nop
-	movw	r0,#0
-	mov	r6,r0
-	movw	r0,#1
-	mov	r7,r0
-	nop
-.52:
-	nop
-	cmp	r7,#1073741824
-	nop
-	bge	.53
-	nop
-	mov	r0,r9
-	mov	r1,r7
-	bl	__aeabi_idiv
-	nop
-	nop
-	movw	r5,#2
-	mov	r1,r5
-	bl	__aeabi_idivmod
-	mov	r4,r1
-	mov	r0,r8
-	mov	r1,r7
-	bl	__aeabi_idiv
-	nop
-	nop
-	mov	r1,r5
-	bl	__aeabi_idivmod
-	mov	r0,r1
-	cmp	r4,r0
-	nop
-	bne	.54
-	nop
-	movw	r5,#2
-	mul	r0,r6,r5
-	mov	r6,r0
-	nop
-	b	.55
-.54:
-	nop
-	movw	r5,#2
-	mul	r0,r6,r5
-	add	r0,r0,#1
-	mov	r6,r0
-	nop
-.55:
-	nop
-	movw	r5,#2
-	mul	r0,r7,r5
-	mov	r7,r0
-	nop
-	b	.52
-.53:
-	nop
-	mov	r1,r6
-	nop
-	b	.70
-.51:
-	nop
-	ldr	r0,[r0]
-	cmp	r0,#2
-	nop
-	bne	.56
-	nop
-	cmp	r9,r8
-	nop
-	ble	.57
-	nop
-	mov	r1,r9
-	nop
-	b	.70
-.57:
-	nop
-	mov	r1,r8
-	nop
-	b	.70
-.58:
-	nop
-	nop
-.56:
-	sub	sp,sp,#8
-	add	r0,sp,#88
-	ldr	r1,[r0]
-	cmp	r1,#3
-	add	sp,sp,#8
-	bne	.59
-	nop
-	movw	r0,#0
-	mov	r4,r0
-	movw	r0,#1
-	mov	r6,r0
-	nop
-.60:
-	nop
-	cmp	r6,#1073741824
-	nop
-	bge	.61
-	nop
-	mov	r0,r9
-	mov	r1,r6
-	bl	__aeabi_idiv
-	nop
-	nop
-	movw	r5,#2
-	mov	r1,r5
-	bl	__aeabi_idivmod
-	mov	r0,r1
-	cmp	r0,#1
-	nop
-	beq	.62
-	nop
-	mov	r0,r8
-	mov	r1,r6
-	bl	__aeabi_idiv
-	nop
-	nop
-	movw	r5,#2
-	mov	r1,r5
-	bl	__aeabi_idivmod
-	mov	r0,r1
-	cmp	r0,#1
-	nop
-	beq	.62
-	nop
-	nop
-	b	.63
-.62:
-	nop
-	movw	r5,#2
-	mul	r0,r4,r5
-	add	r0,r0,#1
-	mov	r4,r0
-	nop
-	b	.64
-.63:
-	nop
-	movw	r5,#2
-	mul	r0,r4,r5
-	mov	r4,r0
-	nop
-.64:
-	nop
-	movw	r5,#2
-	mul	r0,r6,r5
-	mov	r6,r0
-	nop
-	b	.60
-.61:
-	nop
-	mov	r1,r4
-	nop
-	b	.70
-.59:
-	nop
-	ldr	r0,[r0]
-	cmp	r0,#4
-	nop
-	bne	.65
-	nop
-	movw	r0,#0
-	mov	r4,r0
-	movw	r0,#1
-	mov	r6,r0
-	nop
-.66:
-	nop
-	cmp	r6,#1073741824
-	nop
-	bge	.67
-	nop
-	mov	r0,r9
-	mov	r1,r6
-	bl	__aeabi_idiv
-	nop
-	nop
-	movw	r5,#2
-	mov	r1,r5
-	bl	__aeabi_idivmod
-	mov	r0,r1
-	cmp	r0,#1
-	nop
-	bne	.68
-	nop
-	mov	r0,r8
-	mov	r1,r6
-	bl	__aeabi_idiv
-	nop
-	nop
-	movw	r5,#2
-	mov	r1,r5
-	bl	__aeabi_idivmod
-	mov	r0,r1
-	cmp	r0,#1
-	nop
-	bne	.68
-	nop
-	movw	r5,#2
-	mul	r0,r4,r5
-	add	r0,r0,#1
-	mov	r4,r0
-	nop
-	b	.69
-.68:
-	nop
-	movw	r5,#2
-	mul	r0,r4,r5
-	mov	r4,r0
-	nop
-.69:
-	nop
-	movw	r5,#2
-	mul	r0,r6,r5
-	mov	r6,r0
-	nop
-	b	.66
-.67:
-	nop
-	mov	r1,r4
-	nop
-	b	.70
-.65:
-	nop
-	movw	r0,#0
-	mov	r1,r0
-	nop
-	b	.70
-.70:
-	sub	sp,sp,#8
-	mov	r9,r1
-	add	r1,r10,#1
-	mov	r10,r1
-	add	r0,sp,#16
-	ldr	r0,[r0]
-	cmp	r1,r0
-	add	sp,sp,#8
-	blt	.30
-	nop
-	nop
-	b	.31
-.30:
-	nop
-	nop
-	b	.29
-.31:
-	sub	sp,sp,#8
-	add	r3,sp,#68
-	ldr	r0,[r3]
-	add	r1,r0,#1
-	mov	r0,r1
-	str	r0,[r3]
-	add	r0,sp,#28
-	ldr	r0,[r0]
-	cmp	r1,r0
-	add	sp,sp,#8
-	blt	.32
-	nop
-	nop
-	b	.33
-.32:
-	nop
-	nop
-	b	.28
-.33:
-	sub	sp,sp,#16
-	add	r5,sp,#84
-	ldr	r1,[r5]
-	add	r0,sp,#32
-	ldr	r0,[r0]
-	add	r4,r0,r1
-	mov	r3,r9
-	ldr	r0,[r5]
-	add	r1,r0,#1
-	mov	r0,r1
-	str	r0,[r5]
-	add	r2,fp,#0
-	ldr	r2,[r2]
-	cmp	r1,r2
-	add	r0,sp,#104
-	ldr	r0,[r0]
-	str	r3,[r0,r4,lsl 2]
-	add	sp,sp,#16
-	blt	.34
-	nop
-	nop
-	b	.35
-.34:
-	nop
-	nop
-	b	.27
-.35:
-	sub	sp,sp,#8
-	add	r5,sp,#80
-	ldr	r0,[r5]
-	add	r2,r0,#1
-	mov	r0,r2
-	str	r0,[r5]
-	add	r1,sp,#100
-	ldr	r0,[r1]
-	cmp	r2,r0
-	add	sp,sp,#8
-	blt	.36
-	nop
-	nop
-	b	.37
-.36:
-	nop
-	nop
-	b	.26
-.37:
-	nop
-	movw	r0,#0
-	nop
-	add	sp,sp,#96
-	add	sp,sp,#4
-	nop
-	pop	{r4,r5,r6,r7,r8,r9,r10,fp,pc}
-	nop
-	.size	convn, .-convn
+	.size	main, .-main
 	.text
 	.align 1
 	.global	__aeabi_idiv
@@ -713,45 +138,22 @@ convn:
 	.type	checkrange, %function
 checkrange:
 	push	{fp,lr}
-	nop
 	add	fp,sp,#8
 	sub	sp,sp,#0
-	nop
-	nop
-	nop
-	nop
 .0:
-	nop
 	cmp	r0,#1073741824
-	nop
 	ble	.1
-	nop
 	sub	r0,r0,#1073741824
-	nop
-	nop
 	b	.0
 .1:
-	nop
-	nop
 .2:
-	nop
 	cmp	r0,#0
-	nop
 	bge	.3
-	nop
 	add	r0,r0,#1073741824
-	nop
-	nop
 	b	.2
 .3:
-	nop
-	nop
-	nop
-	nop
 	add	sp,sp,#0
-	nop
 	pop	{fp,pc}
-	nop
 	.size	checkrange, .-checkrange
 	.text
 	.align 1
@@ -765,304 +167,572 @@ checkrange:
 	.type	reduce, %function
 reduce:
 	push	{r4,r5,r6,r7,r8,r9,fp,lr}
-	nop
 	add	fp,sp,#32
 	sub	sp,sp,#0
-	nop
 	movs	r3,r0
-	mov	r8,r1
-	mov	r9,r2
-	nop
-	nop
-	nop
+	mov	r9,r1
+	mov	r8,r2
 	bne	.4
-	nop
-	add	r0,r8,r9
-	nop
-	nop
+	add	r0,r9,r8
 .42:
-	nop
 	cmp	r0,#1073741824
-	nop
 	ble	.43
-	nop
 	sub	r0,r0,#1073741824
-	nop
-	nop
 	b	.42
 .43:
-	nop
-	nop
 .44:
-	nop
 	cmp	r0,#0
-	nop
 	bge	.45
-	nop
 	add	r0,r0,#1073741824
-	nop
-	nop
 	b	.44
 .45:
-	nop
-	nop
-	nop
-	nop
 	add	sp,sp,#0
-	nop
 	pop	{r4,r5,r6,r7,r8,r9,fp,pc}
-	nop
 .4:
-	nop
 	cmp	r3,#1
-	nop
 	bne	.9
-	nop
 	movw	r0,#0
 	mov	r6,r0
 	movw	r0,#1
 	mov	r7,r0
-	nop
 .5:
-	nop
 	cmp	r7,#1073741824
-	nop
 	bge	.8
-	nop
-	mov	r0,r8
+	mov	r0,r9
 	mov	r1,r7
 	bl	__aeabi_idiv
-	nop
-	nop
 	movw	r5,#2
 	mov	r1,r5
 	bl	__aeabi_idivmod
 	mov	r4,r1
-	mov	r0,r9
+	mov	r0,r8
 	mov	r1,r7
 	bl	__aeabi_idiv
-	nop
-	nop
 	mov	r1,r5
 	bl	__aeabi_idivmod
 	mov	r0,r1
 	cmp	r4,r0
-	nop
 	bne	.6
-	nop
 	movw	r5,#2
-	mul	r0,r6,r5
-	mov	r6,r0
-	nop
+	mul	r6,r6,r5
 	b	.7
 .6:
-	nop
 	movw	r5,#2
 	mul	r0,r6,r5
-	add	r0,r0,#1
-	mov	r6,r0
-	nop
+	add	r6,r0,#1
 .7:
-	nop
 	movw	r5,#2
-	mul	r0,r7,r5
-	mov	r7,r0
-	nop
+	mul	r7,r7,r5
 	b	.5
 .8:
-	nop
 	mov	r0,r6
-	nop
-	nop
 	add	sp,sp,#0
-	nop
 	pop	{r4,r5,r6,r7,r8,r9,fp,pc}
-	nop
 .9:
-	nop
 	cmp	r3,#2
-	nop
 	bne	.12
-	nop
-	cmp	r8,r9
-	nop
+	cmp	r9,r8
 	ble	.10
-	nop
-	mov	r0,r8
-	nop
-	nop
-	add	sp,sp,#0
-	nop
-	pop	{r4,r5,r6,r7,r8,r9,fp,pc}
-	nop
-.10:
-	nop
 	mov	r0,r9
-	nop
-	nop
 	add	sp,sp,#0
-	nop
 	pop	{r4,r5,r6,r7,r8,r9,fp,pc}
-	nop
+.10:
+	mov	r0,r8
+	add	sp,sp,#0
+	pop	{r4,r5,r6,r7,r8,r9,fp,pc}
 .11:
-	nop
-	nop
 .12:
-	nop
 	cmp	r3,#3
-	nop
 	bne	.18
-	nop
 	movw	r0,#0
 	mov	r4,r0
 	movw	r0,#1
 	mov	r6,r0
-	nop
 .13:
-	nop
 	cmp	r6,#1073741824
-	nop
 	bge	.17
-	nop
-	mov	r0,r8
-	mov	r1,r6
-	bl	__aeabi_idiv
-	nop
-	nop
-	movw	r5,#2
-	mov	r1,r5
-	bl	__aeabi_idivmod
-	mov	r0,r1
-	cmp	r0,#1
-	nop
-	beq	.14
-	nop
 	mov	r0,r9
 	mov	r1,r6
 	bl	__aeabi_idiv
-	nop
-	nop
 	movw	r5,#2
 	mov	r1,r5
 	bl	__aeabi_idivmod
 	mov	r0,r1
 	cmp	r0,#1
-	nop
 	beq	.14
-	nop
-	nop
+	mov	r0,r8
+	mov	r1,r6
+	bl	__aeabi_idiv
+	movw	r5,#2
+	mov	r1,r5
+	bl	__aeabi_idivmod
+	mov	r0,r1
+	cmp	r0,#1
+	beq	.14
 	b	.15
 .14:
-	nop
 	movw	r5,#2
 	mul	r0,r4,r5
-	add	r0,r0,#1
-	mov	r4,r0
-	nop
+	add	r4,r0,#1
 	b	.16
 .15:
-	nop
 	movw	r5,#2
-	mul	r0,r4,r5
-	mov	r4,r0
-	nop
+	mul	r4,r4,r5
 .16:
-	nop
 	movw	r5,#2
-	mul	r0,r6,r5
-	mov	r6,r0
-	nop
+	mul	r6,r6,r5
 	b	.13
 .17:
-	nop
 	mov	r0,r4
-	nop
-	nop
 	add	sp,sp,#0
-	nop
 	pop	{r4,r5,r6,r7,r8,r9,fp,pc}
-	nop
 .18:
-	nop
 	cmp	r3,#4
-	nop
 	bne	.23
-	nop
 	movw	r0,#0
 	mov	r4,r0
 	movw	r0,#1
 	mov	r6,r0
-	nop
 .19:
-	nop
 	cmp	r6,#1073741824
-	nop
 	bge	.22
-	nop
-	mov	r0,r8
-	mov	r1,r6
-	bl	__aeabi_idiv
-	nop
-	nop
-	movw	r5,#2
-	mov	r1,r5
-	bl	__aeabi_idivmod
-	mov	r0,r1
-	cmp	r0,#1
-	nop
-	bne	.20
-	nop
 	mov	r0,r9
 	mov	r1,r6
 	bl	__aeabi_idiv
-	nop
-	nop
 	movw	r5,#2
 	mov	r1,r5
 	bl	__aeabi_idivmod
 	mov	r0,r1
 	cmp	r0,#1
-	nop
 	bne	.20
-	nop
+	mov	r0,r8
+	mov	r1,r6
+	bl	__aeabi_idiv
+	movw	r5,#2
+	mov	r1,r5
+	bl	__aeabi_idivmod
+	mov	r0,r1
+	cmp	r0,#1
+	bne	.20
 	movw	r5,#2
 	mul	r0,r4,r5
-	add	r0,r0,#1
-	mov	r4,r0
-	nop
+	add	r4,r0,#1
 	b	.21
 .20:
-	nop
 	movw	r5,#2
-	mul	r0,r4,r5
-	mov	r4,r0
-	nop
+	mul	r4,r4,r5
 .21:
-	nop
 	movw	r5,#2
-	mul	r0,r6,r5
-	mov	r6,r0
-	nop
+	mul	r6,r6,r5
 	b	.19
 .22:
-	nop
 	mov	r0,r4
-	nop
-	nop
 	add	sp,sp,#0
-	nop
 	pop	{r4,r5,r6,r7,r8,r9,fp,pc}
-	nop
 .23:
-	nop
 	movw	r0,#0
-	nop
-	nop
 	add	sp,sp,#0
-	nop
 	pop	{r4,r5,r6,r7,r8,r9,fp,pc}
-	nop
 	.size	reduce, .-reduce
+	.text
+	.align 1
+	.global	__aeabi_idiv
+	.global	__aeabi_idivmod
+	.global getvalue
+	.syntax unified
+	.thumb
+	.thumb_func
+	.fpu vfp
+	.type	getvalue, %function
+getvalue:
+	push	{r4,r5,r6,fp,lr}
+	add	fp,sp,#20
+	sub	sp,sp,#4
+	mov	r4,r0
+	mov	r5,r1
+	mov	r6,r2
+	movs	r1,r3
+	blt	.24
+	add	r0,fp,#0
+	ldr	r2,[r0]
+	cmp	r2,#0
+	blt	.24
+	cmp	r1,r5
+	bge	.24
+	cmp	r2,r6
+	bge	.24
+	b	.25
+.24:
+	movw	r0,#0
+	add	sp,sp,#4
+	pop	{r4,r5,r6,fp,pc}
+.25:
+	mul	r0,r1,r6
+	add	r0,r0,r2
+	ldr	r0,[r4,r0,lsl 2]
+	add	sp,sp,#4
+	pop	{r4,r5,r6,fp,pc}
+	.size	getvalue, .-getvalue
+	.text
+	.align 1
+	.global	__aeabi_idiv
+	.global	__aeabi_idivmod
+	.global convn
+	.syntax unified
+	.thumb
+	.thumb_func
+	.fpu vfp
+	.type	convn, %function
+convn:
+	push	{r4,r5,r6,r7,r8,r9,r10,fp,lr}
+	add	fp,sp,#36
+	sub	sp,sp,#4
+	sub	sp,sp,#96
+	add	r4,sp,#80
+	str	r0,[r4]
+	add	r0,sp,#84
+	str	r1,[r0]
+	mov	r1,r2
+	add	r0,sp,#88
+	str	r1,[r0]
+	mov	r0,r3
+	add	r1,sp,#92
+	str	r0,[r1]
+	sub	sp,sp,#0
+	movw	r0,#0
+	mov	r1,r0
+	add	r3,sp,#72
+	str	r1,[r3]
+	mov	r1,r0
+	add	r0,sp,#68
+	str	r1,[r0]
+	add	r0,fp,#4
+	ldr	r4,[r0]
+	mov	r0,r4
+	movw	r5,#2
+	mov	r1,r5
+	bl	__aeabi_idiv
+	mov	r1,r0
+	add	r0,sp,#28
+	str	r1,[r0]
+	mov	r0,r4
+	mov	r1,r5
+	bl	__aeabi_idiv
+	mov	r1,r0
+	add	r0,sp,#24
+	str	r1,[r0]
+	mov	r0,r4
+	mov	r1,r5
+	bl	__aeabi_idiv
+	mov	r1,r0
+	add	r0,sp,#8
+	str	r1,[r0]
+	mov	r0,r4
+	mov	r1,r5
+	bl	__aeabi_idiv
+	mov	r1,r0
+	add	r0,sp,#16
+	str	r1,[r0]
+	add	sp,sp,#0
+.26:
+	sub	sp,sp,#0
+	movw	r0,#0
+	mov	r1,r0
+	add	r0,sp,#68
+	str	r1,[r0]
+	add	r3,sp,#72
+	ldr	r1,[r3]
+	add	r0,sp,#8
+	ldr	r0,[r0]
+	add	r1,r1,r0
+	add	r0,sp,#4
+	str	r1,[r0]
+	add	r2,fp,#0
+	ldr	r2,[r2]
+	ldr	r0,[r3]
+	mul	r0,r0,r2
+	add	r1,sp,#0
+	str	r0,[r1]
+	add	sp,sp,#0
+.27:
+	sub	sp,sp,#0
+	movw	r0,#0
+	mov	r9,r0
+	add	r3,sp,#72
+	ldr	r1,[r3]
+	add	r0,sp,#28
+	ldr	r0,[r0]
+	sub	r10,r1,r0
+	add	r0,sp,#68
+	ldr	r1,[r0]
+	add	r0,sp,#16
+	ldr	r0,[r0]
+	add	r1,r1,r0
+	add	r0,sp,#12
+	str	r1,[r0]
+	add	sp,sp,#0
+.28:
+	sub	sp,sp,#0
+	add	r0,sp,#68
+	ldr	r1,[r0]
+	add	r0,sp,#24
+	ldr	r0,[r0]
+	sub	r0,r1,r0
+	add	r1,sp,#60
+	str	r0,[r1]
+	add	sp,sp,#0
+.29:
+	sub	sp,sp,#8
+	sub	sp,sp,#4
+	add	r1,sp,#72
+	ldr	r0,[r1]
+	push	{r0}
+	add	r0,sp,#100
+	ldr	r0,[r0]
+	add	r1,sp,#108
+	ldr	r1,[r1]
+	add	r2,fp,#0
+	ldr	r2,[r2]
+	mov	r3,r10
+	bl	getvalue
+	mov	r8,r0
+	add	sp,sp,#8
+	add	r4,sp,#88
+	ldr	r0,[r4]
+	cmp	r0,#0
+	add	sp,sp,#8
+	bne	.46
+	add	r0,r9,r8
+.47:
+	cmp	r0,#1073741824
+	ble	.48
+	sub	r0,r0,#1073741824
+	b	.47
+.48:
+.49:
+	cmp	r0,#0
+	bge	.50
+	add	r0,r0,#1073741824
+	b	.49
+.50:
+	mov	r9,r0
+	b	.70
+.46:
+	ldr	r0,[r4]
+	cmp	r0,#1
+	bne	.51
+	movw	r0,#0
+	mov	r6,r0
+	movw	r0,#1
+	mov	r7,r0
+.52:
+	cmp	r7,#1073741824
+	bge	.53
+	mov	r0,r9
+	mov	r1,r7
+	bl	__aeabi_idiv
+	movw	r5,#2
+	mov	r1,r5
+	bl	__aeabi_idivmod
+	mov	r4,r1
+	mov	r0,r8
+	mov	r1,r7
+	bl	__aeabi_idiv
+	mov	r1,r5
+	bl	__aeabi_idivmod
+	mov	r0,r1
+	cmp	r4,r0
+	bne	.54
+	movw	r5,#2
+	mul	r6,r6,r5
+	b	.55
+.54:
+	movw	r5,#2
+	mul	r0,r6,r5
+	add	r6,r0,#1
+.55:
+	movw	r5,#2
+	mul	r7,r7,r5
+	b	.52
+.53:
+	mov	r9,r6
+	b	.70
+.51:
+	ldr	r0,[r4]
+	cmp	r0,#2
+	bne	.56
+	cmp	r9,r8
+	ble	.57
+	b	.70
+.57:
+	mov	r9,r8
+	b	.70
+.58:
+.56:
+	sub	sp,sp,#8
+	add	r4,sp,#88
+	ldr	r0,[r4]
+	cmp	r0,#3
+	add	sp,sp,#8
+	bne	.59
+	movw	r0,#0
+	mov	r4,r0
+	movw	r0,#1
+	mov	r6,r0
+.60:
+	cmp	r6,#1073741824
+	bge	.61
+	mov	r0,r9
+	mov	r1,r6
+	bl	__aeabi_idiv
+	movw	r5,#2
+	mov	r1,r5
+	bl	__aeabi_idivmod
+	mov	r0,r1
+	cmp	r0,#1
+	beq	.62
+	mov	r0,r8
+	mov	r1,r6
+	bl	__aeabi_idiv
+	movw	r5,#2
+	mov	r1,r5
+	bl	__aeabi_idivmod
+	mov	r0,r1
+	cmp	r0,#1
+	beq	.62
+	b	.63
+.62:
+	movw	r5,#2
+	mul	r0,r4,r5
+	add	r4,r0,#1
+	b	.64
+.63:
+	movw	r5,#2
+	mul	r4,r4,r5
+.64:
+	movw	r5,#2
+	mul	r6,r6,r5
+	b	.60
+.61:
+	mov	r9,r4
+	b	.70
+.59:
+	ldr	r0,[r4]
+	cmp	r0,#4
+	bne	.65
+	movw	r0,#0
+	mov	r4,r0
+	movw	r0,#1
+	mov	r6,r0
+.66:
+	cmp	r6,#1073741824
+	bge	.67
+	mov	r0,r9
+	mov	r1,r6
+	bl	__aeabi_idiv
+	movw	r5,#2
+	mov	r1,r5
+	bl	__aeabi_idivmod
+	mov	r0,r1
+	cmp	r0,#1
+	bne	.68
+	mov	r0,r8
+	mov	r1,r6
+	bl	__aeabi_idiv
+	movw	r5,#2
+	mov	r1,r5
+	bl	__aeabi_idivmod
+	mov	r0,r1
+	cmp	r0,#1
+	bne	.68
+	movw	r5,#2
+	mul	r0,r4,r5
+	add	r4,r0,#1
+	b	.69
+.68:
+	movw	r5,#2
+	mul	r4,r4,r5
+.69:
+	movw	r5,#2
+	mul	r6,r6,r5
+	b	.66
+.67:
+	mov	r9,r4
+	b	.70
+.65:
+	movw	r0,#0
+	mov	r9,r0
+	b	.70
+.70:
+	sub	sp,sp,#8
+	add	r1,sp,#68
+	ldr	r0,[r1]
+	add	r0,r0,#1
+	str	r0,[r1]
+	ldr	r1,[r1]
+	add	r0,sp,#20
+	ldr	r0,[r0]
+	cmp	r1,r0
+	add	sp,sp,#8
+	blt	.30
+	b	.31
+.30:
+	b	.29
+.31:
+	sub	sp,sp,#8
+	add	r10,r10,#1
+	add	r0,sp,#12
+	ldr	r0,[r0]
+	cmp	r10,r0
+	add	sp,sp,#8
+	blt	.32
+	b	.33
+.32:
+	b	.28
+.33:
+	sub	sp,sp,#8
+	add	r0,sp,#76
+	ldr	r2,[r0]
+	add	r1,sp,#8
+	ldr	r1,[r1]
+	add	r4,r1,r2
+	mov	r3,r9
+	ldr	r1,[r0]
+	add	r1,r1,#1
+	str	r1,[r0]
+	add	r2,fp,#0
+	ldr	r2,[r2]
+	ldr	r0,[r0]
+	cmp	r0,r2
+	add	r0,sp,#96
+	ldr	r0,[r0]
+	str	r3,[r0,r4,lsl 2]
+	add	sp,sp,#8
+	blt	.34
+	b	.35
+.34:
+	b	.27
+.35:
+	sub	sp,sp,#8
+	add	r3,sp,#80
+	ldr	r0,[r3]
+	add	r0,r0,#1
+	str	r0,[r3]
+	add	r1,sp,#100
+	ldr	r1,[r1]
+	ldr	r0,[r3]
+	cmp	r0,r1
+	add	sp,sp,#8
+	blt	.36
+	b	.37
+.36:
+	b	.26
+.37:
+	movw	r0,#0
+	add	sp,sp,#96
+	add	sp,sp,#4
+	pop	{r4,r5,r6,r7,r8,r9,r10,fp,pc}
+	.size	convn, .-convn
 	.comm a,40000000,4
 	.comm b,40000000,4
 	.comm kernelid,40000,4

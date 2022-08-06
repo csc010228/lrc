@@ -91,8 +91,7 @@ struct quaternion_with_info
     bool check_if_def_global_or_f_param_array();
 
     //将该条中间代码使用的某一个数据替换成另一个数据
-    void replace_datas(struct ic_data * source,struct ic_data * destination,bool only_use_datas=false);
-
+    void replace_datas(struct ic_data * source,struct ic_data * destination,bool only_source,bool update_info);
     //将中间代码中涉及的所有数据都进行替换
     void replace_all_vars(const map<struct ic_data *,struct ic_data *> & old_and_new_vars_map);
 
@@ -254,6 +253,8 @@ protected:
     //目前正在处理的中间代码流图
     struct ic_flow_graph * intermediate_codes_flow_graph_;
 
+    //窥孔优化
+    void peephole_optimization(struct ic_basic_block * basic_block);
     //函数内联
     void function_inline(struct ic_func_flow_graph * func);
     //DAG相关优化

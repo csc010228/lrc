@@ -959,16 +959,6 @@ void Global_register_manager::handle_END_BASIC_BLOCK_WITHOUT_FLAG(struct ic_basi
     delete f_params_in_regs;
 }
 
-void Global_register_manager::handle_START_INSRUCTION(set<reg_index> * regs_unaccessible)
-{
-    ;//虚拟寄存器分配，不会产生寄存器冲突，因此无需做操作
-}
-
-void Global_register_manager::handle_END_INSTRUCTION()
-{
-    ;//虚拟寄存器分配，不会产生寄存器冲突，因此无需做操作
-}
-
 void Global_register_manager::handle_FUNC_RET()
 {
     struct ic_data * var;

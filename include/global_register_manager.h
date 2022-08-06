@@ -198,8 +198,6 @@ protected:
     void handle_START_BASIC_BLOCK(struct ic_basic_block * basic_block);
     void handle_END_BASIC_BLOCK(struct ic_basic_block * basic_block);
     void handle_END_BASIC_BLOCK_WITHOUT_FLAG(struct ic_basic_block * basic_block);
-    void handle_START_INSRUCTION(set<reg_index> * regs_unaccessible);
-    void handle_END_INSTRUCTION();
     void handle_FUNC_RET();
     void handle_SAVE_REGS_WHEN_CALLING_FUNC(struct ic_func * func,list<struct ic_data * > * r_params);
     void handle_SAVE_REGS_WHEN_CALLING_ABI_FUNC(string func_name,list<struct ic_data * > * r_params);

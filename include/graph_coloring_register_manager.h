@@ -94,10 +94,18 @@ struct live_intervals
     map<reg_index,struct virutal_reg_s_live_interval> virtual_regs_s_live_intervals;
 };
 
+enum class coherent_diagram_node_s_data_type
+{
+    CONST,
+    ADDR,
+    ARRAY_MEMBER_VALUE,
+    VALUE,
+};
+
 //虚拟寄存器相干图中的一个点
 struct coherent_diagram_node
 {
-    coherent_diagram_node(reg_index reg,struct virutal_reg_s_live_interval live_interval);
+    coherent_diagram_node(reg_index reg,enum coherent_diagram_node_s_data_type data_type,struct virutal_reg_s_live_interval live_interval);
 
     //增加一个点重合（移动关联）的邻居
     void add_a_move_related_neighbour(struct coherent_diagram_node * node);
@@ -113,6 +121,9 @@ struct coherent_diagram_node
 
     //度数
     size_t degree;
+
+    //对应的类型
+    enum coherent_diagram_node_s_data_type data_type;
 
     //和该点点重合的所有点
     set<struct coherent_diagram_node * > move_related_nodes;
@@ -143,7 +154,7 @@ struct coherent_diagram
     void clear();
 
     //新建一个相干图中的节点
-    struct coherent_diagram_node * new_node(reg_index reg);
+    struct coherent_diagram_node * new_node(reg_index reg,enum coherent_diagram_node_s_data_type data_type);
 
     //获取一个寄存器对应的相干图中的点
     struct coherent_diagram_node * get_coherent_diagram_node(reg_index reg);

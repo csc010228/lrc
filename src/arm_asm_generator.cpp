@@ -136,6 +136,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
                 break;
             case event_type::READY_TO_PUSH_F_PARAM_PASSED_BY_REGS_AND_LOCAL_VARS_AND_TEMP_VARS_OVER_BASIC_BLOCK:
             case event_type::READY_TO_PUSH_TEMP_VARS:
+            case event_type::PUSH_TEMP_VARS:
             case event_type::READY_TO_POP_WHEN_RET:
             case event_type::CLEAR_CURRENT_BASIC_BLOCK_STACK:
             case event_type::READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS:

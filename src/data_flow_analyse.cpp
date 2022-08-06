@@ -488,13 +488,17 @@ void Data_flow_analyzer::build_loops_info(struct ic_func_flow_graph * func)
 
 void Data_flow_analyzer::change_ud_chain(struct ic_func_flow_graph * func,ic_pos old_pos,ic_pos new_pos)
 {
-    for(auto bb:func->basic_blocks)
+    for(auto & bb:func->basic_blocks)
     {
-        for(auto ic_with_info:bb->ic_sequence)
+        for(auto & ic_with_info:bb->ic_sequence)
         {
-            for(auto ud_chain_node:ic_with_info.ud_chain)
+            for(auto & ud_chain_node:ic_with_info.ud_chain)
             {
-
+                if(ud_chain_node.second.find(old_pos)!=ud_chain_node.second.end())
+                {
+                    ud_chain_node.second.erase(old_pos);
+                    ud_chain_node.second.insert(new_pos);
+                }
             }
         }
     }
@@ -502,5 +506,18 @@ void Data_flow_analyzer::change_ud_chain(struct ic_func_flow_graph * func,ic_pos
 
 void Data_flow_analyzer::change_du_chain(struct ic_func_flow_graph * func,ic_pos old_pos,ic_pos new_pos)
 {
-
+    for(auto & bb:func->basic_blocks)
+    {
+        for(auto & ic_with_info:bb->ic_sequence)
+        {
+            for(auto & du_chain_node:ic_with_info.du_chain)
+            {
+                if(du_chain_node.second.find(old_pos)!=du_chain_node.second.end())
+                {
+                    du_chain_node.second.erase(old_pos);
+                    du_chain_node.second.insert(new_pos);
+                }
+            }
+        }
+    }
 }

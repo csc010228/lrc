@@ -572,6 +572,11 @@ public:
         return op_;
     };
 
+    inline enum arm_condition get_cond() const
+    {
+        return cond_;
+    };
+
     inline struct arm_registers get_destination_registers() const
     {
         return destination_registers_;

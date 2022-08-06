@@ -659,7 +659,12 @@ set<reg_index> Arm_pseudo_instruction::get_all_destination_regs() const
 
 string Arm_pseudo_instruction::to_string() const
 {
-    string res="\t"+pseudo_instruction_output_map[op_],cond1;
+    string res,cond1;
+    if(op_==arm_pseudo_op::NOP)
+    {
+        return res;
+    }
+    res="\t"+pseudo_instruction_output_map[op_];
     bool tag=false;
     switch(op_)
     {
@@ -1093,8 +1098,14 @@ set<struct arm_basic_block * > arm_basic_block::get_precursors() const
 list<string> arm_basic_block::to_string()
 {
     list<string> res;
+    string temp;
     for(auto i:arm_sequence)
     {
+        temp=i->to_string();
+        if(temp.empty())
+        {
+            continue;
+        }
         res.push_back(i->to_string());
     }
     return res;

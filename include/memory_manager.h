@@ -151,6 +151,7 @@ private:
     void handle_FUNC_DEFINE(struct ic_func * func);
     struct event handle_READY_TO_PUSH_F_PARAM_PASSED_BY_REGS_AND_LOCAL_VARS_AND_TEMP_VARS_OVER_BASIC_BLOCK(struct ic_func * func);
     struct event handle_READY_TO_PUSH_TEMP_VARS(set<struct ic_data * > * temp_vars);
+    void handle_PUSH_TEMP_VARS(set<struct ic_data * > * temp_vars);
     struct event handle_READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS(struct ic_func * func);
     struct event handle_READY_TO_PUSH_CONTEXT_SAVED_VFP_REGS(struct ic_func * func);
     struct event handle_GET_CURRENT_FUNC_STACK_SIZE();

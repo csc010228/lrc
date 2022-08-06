@@ -67,16 +67,32 @@ size_t virutal_reg_s_live_interval::get_score()
     {
         for(auto i:use_poses)
         {
-            if(score<i.first->loop_count)
+            // if(score<i.first->loop_count)
+            // {
+            //     score=i.first->loop_count;
+            // }
+            if(score<i.first->loop_count*100)
             {
-                score=i.first->loop_count;
+                score=i.first->loop_count*100+i.second.size();
+                if(def_poses.find(i.first)!=def_poses.end())
+                {
+                    score+=def_poses.at(i.first).size();
+                }
             }
         }
         for(auto i:def_poses)
         {
-            if(score<i.first->loop_count)
+            // if(score<i.first->loop_count)
+            // {
+            //     score=i.first->loop_count;
+            // }
+            if(score<i.first->loop_count*100)
             {
-                score=i.first->loop_count;
+                score=i.first->loop_count*100+i.second.size();
+                if(use_poses.find(i.first)!=use_poses.end())
+                {
+                    score+=use_poses.at(i.first).size();
+                }
             }
         }
     }
@@ -138,7 +154,7 @@ void live_intervals::new_empty_virtual_code_segment(virtual_target_code_pos pos,
 
 //===================================== struct coherent_diagram_node =====================================//
 
-coherent_diagram_node::coherent_diagram_node(reg_index reg,struct virutal_reg_s_live_interval live_interval):reg(reg),degree(0),live_interval(live_interval)
+coherent_diagram_node::coherent_diagram_node(reg_index reg,enum coherent_diagram_node_s_data_type data_type,struct virutal_reg_s_live_interval live_interval):reg(reg),degree(0),live_interval(live_interval),data_type(data_type)
 {
 
 }
@@ -182,12 +198,12 @@ void coherent_diagram::clear()
     nodes.clear();
 }
 
-struct coherent_diagram_node * coherent_diagram::new_node(reg_index reg)
+struct coherent_diagram_node * coherent_diagram::new_node(reg_index reg,enum coherent_diagram_node_s_data_type data_type)
 {
     struct coherent_diagram_node * res=nullptr;
     if(nodes.find(reg)==nodes.end())
     {
-        res=new coherent_diagram_node(reg,current_func_s_live_intervals.virtual_regs_s_live_intervals.at(reg));
+        res=new coherent_diagram_node(reg,data_type,current_func_s_live_intervals.virtual_regs_s_live_intervals.at(reg));
         nodes.insert(make_pair(reg,res));
     }
     return res;
@@ -450,7 +466,8 @@ set<reg_index> Graph_coloring_register_manager::get_virtual_traget_instruction_s
     }
     return res;
 }
-
+#include<iostream>
+using namespace std;
 set<reg_index> Graph_coloring_register_manager::get_virtual_traget_instruction_s_all_regs(Arm_asm_file_line * line)
 {
     set<reg_index> source_regs,destination_regs,res;
@@ -459,8 +476,7 @@ set<reg_index> Graph_coloring_register_manager::get_virtual_traget_instruction_s
     set_union(source_regs.begin(),source_regs.end(),destination_regs.begin(),destination_regs.end(),inserter(res,res.begin()));
     return res;
 }
-#include<iostream>
-using namespace std;
+
 void Graph_coloring_register_manager::live_analyze()
 {
     set<reg_index> registers,old_out;
@@ -712,10 +728,35 @@ void Graph_coloring_register_manager::build_coherent_diagram()
     //已经检查过的寄存器
     map<reg_index,set<reg_index> > regs_checked_1,regs_checked_2;
     virtual_target_code_pos min_start,max_end;
+    enum coherent_diagram_node_s_data_type data_type;
     //先建立相干图中的所有点
     for(auto live_interval_info:current_func_s_live_intervals.virtual_regs_s_live_intervals)
     {
-        current_func_s_coherent_diagram.new_node(live_interval_info.first);
+        if(!virtual_regs_info_.is_physical_reg(live_interval_info.first))
+        {
+            switch(virtual_regs_info_.reg_indexs.at(live_interval_info.first).data_type)
+            {
+                case virtual_related_data_type::CONST:
+                    data_type=coherent_diagram_node_s_data_type::CONST;
+                    break;
+                case virtual_related_data_type::VAR_ADDR:
+                    data_type=coherent_diagram_node_s_data_type::ADDR;
+                    break;
+                case virtual_related_data_type::VAR_VALUE:
+                    if(virtual_regs_info_.reg_indexs.at(live_interval_info.first).related_var->is_array_member())
+                    {
+                        data_type=coherent_diagram_node_s_data_type::ARRAY_MEMBER_VALUE;
+                    }
+                    else
+                    {
+                        data_type=coherent_diagram_node_s_data_type::VALUE;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        current_func_s_coherent_diagram.new_node(live_interval_info.first,data_type);
     }
     //再开始建立相干图中的点之间的关系
     //目前只构建了冲突，还没有构建移动关联
@@ -810,11 +851,37 @@ bool sort_func(struct coherent_diagram_node * node_1,struct coherent_diagram_nod
 {
     //return node_1->get_score()>node_2->get_score();
     //return node_1->live_interval.get_score()<node_2->live_interval.get_score();
-    if(node_1->live_interval.get_score()==node_2->live_interval.get_score())
+    if(node_1==node_2)
     {
-        return node_1->get_score()>node_2->get_score();
+        return false;
     }
-    return node_1->live_interval.get_score()<node_2->live_interval.get_score();
+    if(node_1->live_interval.get_score()!=node_2->live_interval.get_score())
+    {
+        return node_1->live_interval.get_score()<node_2->live_interval.get_score();
+    }
+    //return  node_1->get_score()>node_2->get_score();
+    if(node_1->get_score()!=node_2->get_score())
+    {
+       return  node_1->get_score()>node_2->get_score();
+    }
+    // if(node_1->data_type==coherent_diagram_node_s_data_type::CONST || node_1->data_type==coherent_diagram_node_s_data_type::ADDR)
+    // {
+    //     return false;
+    // }
+    // if(node_2->data_type==coherent_diagram_node_s_data_type::CONST || node_2->data_type==coherent_diagram_node_s_data_type::ADDR)
+    // {
+    //     return true;
+    // }
+    // if(node_1->data_type==coherent_diagram_node_s_data_type::ARRAY_MEMBER_VALUE)
+    // {
+    //     return true;
+    // }
+    // if(node_2->data_type==coherent_diagram_node_s_data_type::ARRAY_MEMBER_VALUE)
+    // {
+    //     return false;
+    // }
+    // return false;
+    return node_2->data_type==coherent_diagram_node_s_data_type::CONST || node_2->data_type==coherent_diagram_node_s_data_type::ADDR || node_1->data_type==coherent_diagram_node_s_data_type::ARRAY_MEMBER_VALUE;
 }
 
 void Graph_coloring_register_manager::simplify()
@@ -1146,11 +1213,11 @@ void Graph_coloring_register_manager::rewrite_program()
     virtual_target_code_pos current_pos;
     list<Arm_asm_file_line * >::iterator new_ins_pos;
     struct runtime_stack_space * stack_space;
+    map<reg_index,reg_index> old_new_regs;
     map<struct ic_data *,bool> f_param_in_regs_array_has_been_spilled;
     set<struct ic_data * > * f_params_in_regs=(set<struct ic_data * > *)notify(event(event_type::GET_FUNC_S_F_PARAMS_IN_REGS,(void *)(virtual_target_code->function->func))).pointer_data;
     map<reg_index,set<reg_index> > map_for_debug;
     //找出要溢出的虚拟寄存器，并对这些要溢出的虚拟寄存器决定溢出的处理顺序
-    // cout<<"VAR_SPILLED:"<<endl;
     for(auto node:spilled_nodes)
     {
         switch(virtual_regs_info_.reg_indexs.at(node->reg).data_type)
@@ -1195,7 +1262,9 @@ void Graph_coloring_register_manager::rewrite_program()
     {
         for(list<Arm_asm_file_line * >::iterator ins_pos=bb->arm_sequence.begin();ins_pos!=bb->arm_sequence.end();ins_pos++)
         {
+            old_new_regs.clear();
             source_regs=get_virtual_traget_instruction_s_all_source_regs(*ins_pos);
+            destination_regs=get_virtual_traget_instruction_s_all_destination_regs(*ins_pos);
             regs.clear();
             set_intersection(source_regs.begin(),source_regs.end(),spilled_regs.array_member_regs.begin(),spilled_regs.array_member_regs.end(),inserter(regs,regs.begin()));
             if(!regs.empty())
@@ -1206,6 +1275,7 @@ void Graph_coloring_register_manager::rewrite_program()
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
+                    old_new_regs.insert(make_pair(reg,new_reg));
                     map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_loading_var_value(var,new_reg);
@@ -1216,7 +1286,6 @@ void Graph_coloring_register_manager::rewrite_program()
                 (*ins_pos)->replace_regs(replace_regs_map);
             }
             notify(event(event_type::SET_STACK_SPACE,(void *)(&ins_pos)));
-            destination_regs=get_virtual_traget_instruction_s_all_destination_regs(*ins_pos);
             regs.clear();
             set_intersection(destination_regs.begin(),destination_regs.end(),spilled_regs.array_member_regs.begin(),spilled_regs.array_member_regs.end(),inserter(regs,regs.begin()));
             if(!regs.empty())
@@ -1226,8 +1295,16 @@ void Graph_coloring_register_manager::rewrite_program()
                 {
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
-                    new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-                    map_set_insert(map_for_debug,reg,new_reg);
+                    //new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
+                    if(old_new_regs.find(reg)!=old_new_regs.end())
+                    {
+                        new_reg=old_new_regs.at(reg);
+                    }
+                    else
+                    {
+                        new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
+                        map_set_insert(map_for_debug,reg,new_reg);
+                    }
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_storing_var_value(var,new_reg);
                     new_ins_pos=ins_pos;
@@ -1247,7 +1324,9 @@ void Graph_coloring_register_manager::rewrite_program()
     {
         for(list<Arm_asm_file_line * >::iterator ins_pos=bb->arm_sequence.begin();ins_pos!=bb->arm_sequence.end();ins_pos++)
         {
+            old_new_regs.clear();
             source_regs=get_virtual_traget_instruction_s_all_source_regs(*ins_pos);
+            destination_regs=get_virtual_traget_instruction_s_all_destination_regs(*ins_pos);
             regs.clear();
             set_intersection(source_regs.begin(),source_regs.end(),spilled_regs.var_regs.begin(),spilled_regs.var_regs.end(),inserter(regs,regs.begin()));
             if(!regs.empty())
@@ -1258,6 +1337,7 @@ void Graph_coloring_register_manager::rewrite_program()
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
+                    old_new_regs.insert(make_pair(reg,new_reg));
                     map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_loading_var_value(var,new_reg);
@@ -1268,7 +1348,6 @@ void Graph_coloring_register_manager::rewrite_program()
                 (*ins_pos)->replace_regs(replace_regs_map);
             }
             notify(event(event_type::SET_STACK_SPACE,(void *)(&ins_pos)));
-            destination_regs=get_virtual_traget_instruction_s_all_destination_regs(*ins_pos);
             regs.clear();
             set_intersection(destination_regs.begin(),destination_regs.end(),spilled_regs.var_regs.begin(),spilled_regs.var_regs.end(),inserter(regs,regs.begin()));
             if(!regs.empty())
@@ -1278,8 +1357,15 @@ void Graph_coloring_register_manager::rewrite_program()
                 {
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
-                    new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-                    map_set_insert(map_for_debug,reg,new_reg);
+                    if(old_new_regs.find(reg)!=old_new_regs.end())
+                    {
+                        new_reg=old_new_regs.at(reg);
+                    }
+                    else
+                    {
+                        new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
+                        map_set_insert(map_for_debug,reg,new_reg);
+                    }
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_storing_var_value(var,new_reg);
                     new_ins_pos=ins_pos;
@@ -1299,7 +1385,9 @@ void Graph_coloring_register_manager::rewrite_program()
     {
         for(list<Arm_asm_file_line * >::iterator ins_pos=bb->arm_sequence.begin();ins_pos!=bb->arm_sequence.end();ins_pos++)
         {
+            old_new_regs.clear();
             source_regs=get_virtual_traget_instruction_s_all_source_regs(*ins_pos);
+            destination_regs=get_virtual_traget_instruction_s_all_destination_regs(*ins_pos);
             regs.clear();
             set_intersection(source_regs.begin(),source_regs.end(),spilled_regs.f_param_in_regs_array_regs.begin(),spilled_regs.f_param_in_regs_array_regs.end(),inserter(regs,regs.begin()));
             if(!regs.empty())
@@ -1310,6 +1398,7 @@ void Graph_coloring_register_manager::rewrite_program()
                     var=virtual_regs_info_.reg_indexs.at(reg).related_var;
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
                     new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
+                    old_new_regs.insert(make_pair(reg,new_reg));
                     map_set_insert(map_for_debug,reg,new_reg);
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_loading_var_value(var,new_reg);
@@ -1320,7 +1409,6 @@ void Graph_coloring_register_manager::rewrite_program()
                 (*ins_pos)->replace_regs(replace_regs_map);
             }
             notify(event(event_type::SET_STACK_SPACE,(void *)(&ins_pos)));
-            destination_regs=get_virtual_traget_instruction_s_all_destination_regs(*ins_pos);
             regs.clear();
             set_intersection(destination_regs.begin(),destination_regs.end(),spilled_regs.f_param_in_regs_array_regs.begin(),spilled_regs.f_param_in_regs_array_regs.end(),inserter(regs,regs.begin()));
             if(!regs.empty())
@@ -1335,8 +1423,16 @@ void Graph_coloring_register_manager::rewrite_program()
                     }
                     f_param_in_regs_array_has_been_spilled.insert(make_pair(var,true));
                     set_registers_when_spilling_var_value_s_reg(bb,ins_pos,var);
-                    new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
-                    map_set_insert(map_for_debug,reg,new_reg);
+                    //new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
+                    if(old_new_regs.find(reg)!=old_new_regs.end())
+                    {
+                        new_reg=old_new_regs.at(reg);
+                    }
+                    else
+                    {
+                        new_reg=virtual_regs_info_.new_temp_for_var_value(var,virtual_regs_info_.get_reg_s_processor(reg));
+                        map_set_insert(map_for_debug,reg,new_reg);
+                    }
                     replace_regs_map.insert(make_pair(reg,new_reg));
                     instructions=generate_instructions_for_storing_var_value(var,new_reg);
                     new_ins_pos=ins_pos;
@@ -1441,6 +1537,13 @@ void Graph_coloring_register_manager::rewrite_program()
             current_pos++;
         }
     }
+    // cout<<"array_member_regs :"<<spilled_regs.array_member_regs.size()<<endl;
+    // cout<<"var_regs :"<<spilled_regs.var_regs.size()<<endl;
+    // cout<<"not_f_param_in_regs_array_regs :"<<spilled_regs.not_f_param_in_regs_array_regs.size()<<endl;
+    // cout<<"f_param_in_regs_array_regs :"<<spilled_regs.f_param_in_regs_array_regs.size()<<endl;
+    // cout<<"addr_regs :"<<spilled_regs.addr_regs.size()<<endl;
+    // cout<<"const_regs :"<<spilled_regs.const_regs.size()<<endl;
+    // cout<<endl<<endl;
     // cout<<"SPILL "<<map_for_debug.size()<<":"<<endl;
     // for(auto i:map_for_debug)
     // {
@@ -1614,7 +1717,7 @@ void Graph_coloring_register_manager::handle_END_FUNC()
     virtual_target_code=(struct arm_func_flow_graph *)notify(event(event_type::GET_VIRTUAL_TRAGET_CODE_OF_CURRENT_FUNC,nullptr)).pointer_data;
     virtual_target_code->build_nexts_between_basic_blocks();
     virtual_target_code->build_loop_info();
-    // cout<<endl<<endl<<endl<<endl<<endl<<endl<<endl<<virtual_target_code->function->func->name<<endl<<endl;
+    //cout<<endl<<endl<<endl<<endl<<endl<<endl<<endl<<virtual_target_code->function->func->name<<endl<<endl;
     //把物理寄存器堆清空
     regs_info_.clear();
     //对其进行图着色寄存器分配

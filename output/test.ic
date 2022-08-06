@@ -156,38 +156,26 @@ int convn ( int convn::kernelid , int convn::input[0] , int convn::output[0] , i
 	int convn::y
 	int convn::curr
 	const int convn::true = 1
-	DIV		convn::c , 2 --> (int)@52
-	int convn::t0
-	ASSIGN		@52 --> convn::t0
 .26 : 
 	ASSIGN		0 --> convn::j
-	SUB		convn::i , convn::t0 --> (int)@53
-	ADD		convn::i , convn::t0 --> (int)@54
-	MUL		convn::i , convn::m --> (int)@55
-	int convn::while_0::t1
-	ASSIGN		@53 --> convn::while_0::t1
-	int convn::while_0::t4
-	ASSIGN		@54 --> convn::while_0::t4
-	int convn::while_0::t5
-	ASSIGN		@55 --> convn::while_0::t5
 .27 : 
 	ASSIGN		0 --> convn::curr
-	ASSIGN		convn::while_0::t1 --> convn::x
-	SUB		convn::j , convn::t0 --> (int)@56
-	ADD		convn::j , convn::t0 --> (int)@57
-	int convn::while_0::while_0::t2
-	ASSIGN		@56 --> convn::while_0::while_0::t2
-	int convn::while_0::while_0::t3
-	ASSIGN		@57 --> convn::while_0::while_0::t3
+	DIV		convn::c , 2 --> (int)@52
+	SUB		convn::i , @52 --> (int)@53
+	ASSIGN		@53 --> convn::x
 .28 : 
-	ASSIGN		convn::while_0::while_0::t2 --> convn::y
+	DIV		convn::c , 2 --> (int)@54
+	SUB		convn::j , @54 --> (int)@55
+	ASSIGN		@55 --> convn::y
 .29 : 
-	CALL		getvalue ( convn::input , convn::n , convn::m , convn::x , convn::y )  --> (int)@58
-	CALL		reduce ( convn::kernelid , convn::curr , @58 )  --> (int)@59
-	ASSIGN		@59 --> convn::curr
-	ADD		convn::y , 1 --> (int)@60
-	ASSIGN		@60 --> convn::y
-	GE		convn::y , convn::while_0::while_0::t3 --> (int)@61
+	CALL		getvalue ( convn::input , convn::n , convn::m , convn::x , convn::y )  --> (int)@56
+	CALL		reduce ( convn::kernelid , convn::curr , @56 )  --> (int)@57
+	ASSIGN		@57 --> convn::curr
+	ADD		convn::y , 1 --> (int)@58
+	ASSIGN		@58 --> convn::y
+	DIV		convn::c , 2 --> (int)@59
+	ADD		convn::j , @59 --> (int)@60
+	GE		convn::y , @60 --> (int)@61
 	IF_NOT_JMP		@61 --> .30
 	JMP		.31
 .30 : 
@@ -195,28 +183,31 @@ int convn ( int convn::kernelid , int convn::input[0] , int convn::output[0] , i
 .31 : 
 	ADD		convn::x , 1 --> (int)@62
 	ASSIGN		@62 --> convn::x
-	GE		convn::x , convn::while_0::t4 --> (int)@63
-	IF_NOT_JMP		@63 --> .32
+	DIV		convn::c , 2 --> (int)@63
+	ADD		convn::i , @63 --> (int)@64
+	GE		convn::x , @64 --> (int)@65
+	IF_NOT_JMP		@65 --> .32
 	JMP		.33
 .32 : 
 	JMP		.28
 .33 : 
-	ADD		convn::while_0::t5 , convn::j --> (int)@64
-	MUL		@64 , 1 --> (int)@65
-	ADD		@65 , 0 --> (int)@66
-	ASSIGN		convn::curr --> convn::output[@66]
-	ADD		convn::j , 1 --> (int)@67
-	ASSIGN		@67 --> convn::j
-	GE		convn::j , convn::m --> (int)@68
-	IF_NOT_JMP		@68 --> .34
+	MUL		convn::i , convn::m --> (int)@66
+	ADD		@66 , convn::j --> (int)@67
+	MUL		@67 , 1 --> (int)@68
+	ADD		@68 , 0 --> (int)@69
+	ASSIGN		convn::curr --> convn::output[@69]
+	ADD		convn::j , 1 --> (int)@70
+	ASSIGN		@70 --> convn::j
+	GE		convn::j , convn::m --> (int)@71
+	IF_NOT_JMP		@71 --> .34
 	JMP		.35
 .34 : 
 	JMP		.27
 .35 : 
-	ADD		convn::i , 1 --> (int)@69
-	ASSIGN		@69 --> convn::i
-	GE		convn::i , convn::n --> (int)@70
-	IF_NOT_JMP		@70 --> .36
+	ADD		convn::i , 1 --> (int)@72
+	ASSIGN		@72 --> convn::i
+	GE		convn::i , convn::n --> (int)@73
+	IF_NOT_JMP		@73 --> .36
 	JMP		.37
 .36 : 
 	JMP		.26
@@ -230,50 +221,50 @@ void memmove ( int memmove::dst[0] , int memmove::src[0] , int memmove::n )  :
 	int memmove::i
 	ASSIGN		0 --> memmove::i
 .38 : 
-	LT		memmove::i , memmove::n --> (int)@71
-	IF_NOT_JMP		@71 --> .39
-	MUL		memmove::i , 1 --> (int)@72
-	ADD		@72 , 0 --> (int)@73
-	MUL		memmove::i , 1 --> (int)@74
-	ADD		@74 , 0 --> (int)@75
-	ASSIGN		memmove::src[@75] --> memmove::dst[@73]
-	ADD		memmove::i , 1 --> (int)@76
-	ASSIGN		@76 --> memmove::i
+	LT		memmove::i , memmove::n --> (int)@74
+	IF_NOT_JMP		@74 --> .39
+	MUL		memmove::i , 1 --> (int)@75
+	ADD		@75 , 0 --> (int)@76
+	MUL		memmove::i , 1 --> (int)@77
+	ADD		@77 , 0 --> (int)@78
+	ASSIGN		memmove::src[@78] --> memmove::dst[@76]
+	ADD		memmove::i , 1 --> (int)@79
+	ASSIGN		@79 --> memmove::i
 	JMP		.38
 .39 : 
 	RET
 
 int main (  )  : 
-	CALL		getint (  )  --> (int)@77
-	CALL		getint (  )  --> (int)@78
-	CALL		getint (  )  --> (int)@79
+	CALL		getint (  )  --> (int)@80
+	CALL		getint (  )  --> (int)@81
+	CALL		getint (  )  --> (int)@82
 	int main::c
-	ASSIGN		@77 --> main::c
+	ASSIGN		@80 --> main::c
 	int main::n
-	ASSIGN		@78 --> main::n
+	ASSIGN		@81 --> main::n
 	int main::m
-	ASSIGN		@79 --> main::m
-	CALL		getarray ( a )  --> (int)@80
-	CALL		getarray ( kernelid )  --> (int)@81
+	ASSIGN		@82 --> main::m
+	CALL		getarray ( a )  --> (int)@83
+	CALL		getarray ( kernelid )  --> (int)@84
 	int main::task
-	ASSIGN		@81 --> main::task
-	CALL		_sysy_starttime ( 112 ) 
+	ASSIGN		@84 --> main::task
+	CALL		_sysy_starttime ( 109 ) 
 	int main::i
 	ASSIGN		0 --> main::i
 .40 : 
-	LT		main::i , main::task --> (int)@82
-	IF_NOT_JMP		@82 --> .41
-	MUL		main::i , 1 --> (int)@83
-	ADD		@83 , 0 --> (int)@84
-	CALL		convn ( kernelid[@84] , a , b , main::n , main::m , main::c )  --> (int)@85
-	MUL		main::n , main::m --> (int)@86
-	CALL		memmove ( a , b , @86 ) 
-	ADD		main::i , 1 --> (int)@87
-	ASSIGN		@87 --> main::i
+	LT		main::i , main::task --> (int)@85
+	IF_NOT_JMP		@85 --> .41
+	MUL		main::i , 1 --> (int)@86
+	ADD		@86 , 0 --> (int)@87
+	CALL		convn ( kernelid[@87] , a , b , main::n , main::m , main::c )  --> (int)@88
+	MUL		main::n , main::m --> (int)@89
+	CALL		memmove ( a , b , @89 ) 
+	ADD		main::i , 1 --> (int)@90
+	ASSIGN		@90 --> main::i
 	JMP		.40
 .41 : 
-	CALL		_sysy_stoptime ( 119 ) 
-	MUL		main::n , main::m --> (int)@88
-	CALL		putarray ( @88 , a ) 
+	CALL		_sysy_stoptime ( 116 ) 
+	MUL		main::n , main::m --> (int)@91
+	CALL		putarray ( @91 , a ) 
 	RET		0
 

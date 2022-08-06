@@ -135,6 +135,25 @@ struct event Memory_manager::handle_READY_TO_PUSH_TEMP_VARS(set<struct ic_data *
         if(temp_var->is_tmp_var())
         {
             temp_vars_total_byte_size+=(temp_var->get_4_bytes_size());
+        }
+    }
+    temp_vars_total_byte_size*=4;
+    //栈8bytes对齐
+    if(temp_vars_total_byte_size%8!=0)
+    {
+        temp_vars_total_byte_size+=4;
+    }
+    return event(event_type::RESPONSE_INT,(int)temp_vars_total_byte_size);
+}
+
+void Memory_manager::handle_PUSH_TEMP_VARS(set<struct ic_data * > * temp_vars)
+{
+    size_t temp_vars_total_byte_size=0;
+    for(auto temp_var:(*temp_vars))
+    {
+        if(temp_var->is_tmp_var())
+        {
+            temp_vars_total_byte_size+=(temp_var->get_4_bytes_size());
             current_func_stack_space_.push_to_temp_vars(temp_var);
         }
     }
@@ -144,8 +163,6 @@ struct event Memory_manager::handle_READY_TO_PUSH_TEMP_VARS(set<struct ic_data *
     {
         current_func_stack_space_.set_padding_bytes_after_temp_vars(8-(temp_vars_total_byte_size%8));
     }
-    temp_vars_total_byte_size+=current_func_stack_space_.padding_bytes_after_temp_vars;
-    return event(event_type::RESPONSE_INT,(int)temp_vars_total_byte_size);
 }
 
 struct event Memory_manager::handle_READY_TO_PUSH_CONTEXT_SAVED_CPU_REGS(struct ic_func * func)
@@ -483,6 +500,9 @@ struct event Memory_manager::handler(struct event event)
             break;
         case event_type::READY_TO_PUSH_TEMP_VARS:
             response=handle_READY_TO_PUSH_TEMP_VARS((set<struct ic_data * > *)event.pointer_data);
+            break;
+        case event_type::PUSH_TEMP_VARS:
+            handle_PUSH_TEMP_VARS((set<struct ic_data * > *)event.pointer_data);
             break;
         case event_type::READY_TO_POP_CONTEXT_RECOVERED_CPU_REGS:
             response=handle_READY_TO_POP_CONTEXT_RECOVERED_CPU_REGS();

@@ -618,10 +618,14 @@ bool quaternion_with_info::check_if_def_global_or_f_param_array()
 }
 
 //将该条中间代码中使用的某一个数据替换成另一个数据
-void quaternion_with_info::replace_datas(struct ic_data * source,struct ic_data * destination,bool only_use_datas)
+void quaternion_with_info::replace_datas(struct ic_data * source,struct ic_data * destination,bool only_use_datas,bool update_info)
 {
     intermediate_code.replace_datas(source,destination,only_use_datas);
     simplify();
+    if(update_info)
+    {
+        build_info();
+    }
 }
 
 //将中间代码中涉及的所有数据都进行替换
@@ -1475,6 +1479,42 @@ next:
 }
 
 /*
+窥孔优化
+
+Parameters
+----------
+basic_block:要优化的基本块
+*/
+void Ic_optimizer::peephole_optimization(struct ic_basic_block * basic_block)
+{
+    set<struct ic_data * > used_vars;
+    struct ic_data * use_var,* def_var;
+    vector<struct quaternion_with_info>::reverse_iterator temp;
+    map<struct ic_data *,vector<struct quaternion_with_info>::reverse_iterator> assigns_optimize_inses;
+    for(vector<struct quaternion_with_info>::reverse_iterator ic_with_info=basic_block->ic_sequence.rbegin();ic_with_info!=basic_block->ic_sequence.rend();ic_with_info++)
+    {
+        //在还没有做任何优化之前，临时变量的作用域不会出基本块，而且仅会被赋值一次
+        if((*ic_with_info).intermediate_code.op==ic_op::ASSIGN)
+        {
+            use_var=(struct ic_data *)((*ic_with_info).intermediate_code.arg1.second);
+            def_var=(*ic_with_info).explicit_def;
+            if(use_var->is_tmp_var() && use_var->get_data_type()==def_var->get_data_type() && used_vars.find(use_var)==used_vars.end() && (!def_var->is_array_member() || def_var->get_offset()!=use_var))
+            {
+                temp=ic_with_info;
+                advance(temp,1);
+                if((*temp).explicit_def && (*temp).explicit_def==use_var)
+                {
+                    (*temp).replace_datas(use_var,def_var,false,true);
+                    (*ic_with_info)=quaternion_with_info();
+                }
+                advance(temp,-1);
+            }
+        }
+        set_union((*ic_with_info).uses.begin(),(*ic_with_info).uses.end(),used_vars.begin(),used_vars.end(),inserter(used_vars,used_vars.begin()));
+    }
+}
+
+/*
 DAG相关优化
 
 Parameters
@@ -1514,7 +1554,18 @@ void Ic_optimizer::DAG_optimize(struct ic_basic_block * basic_block)
 */
 void Ic_optimizer::local_optimize()
 {
-    //先进行DAG相关优化
+    //窥孔优化最先进行
+    //if(need_optimize_)
+    //{
+        for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
+        {
+            for(auto basic_block:func->basic_blocks)
+            {
+                peephole_optimization(basic_block);
+            }
+        }
+    //}
+    //DAG优化
     for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
     {
         for(auto basic_block:func->basic_blocks)
@@ -1604,7 +1655,7 @@ void Ic_optimizer::globale_constant_folding(struct ic_func_flow_graph * func)
                             tmp.type_conversion(arg1->get_data_type(),use->get_data_type());
                             arg1=symbol_table->const_entry(use->get_data_type(),tmp);
                         }
-                        (*ic_with_info).replace_datas(use,arg1,true);
+                        (*ic_with_info).replace_datas(use,arg1,true,false);
                         tag=true;
                     }
                 }
@@ -1831,9 +1882,9 @@ next_2:
             target_basic_block->add_ic(ic_with_info.intermediate_code,true);
             ic_with_info=quaternion_with_info();
             //外提的时候更改ud链和du链的信息
-            // current_pos=ic_pos(target_basic_block,target_basic_block->ic_sequence.size()-1);
-            // Data_flow_analyzer::change_ud_chain(func,unchange_pos,current_pos);
-            // Data_flow_analyzer::change_du_chain(func,unchange_pos,current_pos);
+            current_pos=ic_pos(target_basic_block,target_basic_block->ic_sequence.size()-1);
+            Data_flow_analyzer::change_ud_chain(func,unchange_pos,current_pos);
+            Data_flow_analyzer::change_du_chain(func,unchange_pos,current_pos);
 next_3:
             ;
         }

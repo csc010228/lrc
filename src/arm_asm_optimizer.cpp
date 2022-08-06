@@ -89,8 +89,11 @@ void Arm_asm_optimizer::data_process_instructions_change_flags(struct arm_basic_
                                 reg=destination_regs.get_only_member();
                                 if(compare_zero_regs.find(reg)!=compare_zero_regs.end())
                                 {
-                                    cpu_data_process_instruction->set_update_flags(true);
-                                    (*compare_zero_regs.at(reg))=new Arm_pseudo_instruction();
+                                    if(cpu_data_process_instruction->get_cond()==arm_condition::NONE)
+                                    {
+                                        cpu_data_process_instruction->set_update_flags(true);
+                                        (*compare_zero_regs.at(reg))=new Arm_pseudo_instruction();
+                                    }
                                     compare_zero_regs.erase(reg);
                                 }
                             }

@@ -1357,16 +1357,17 @@ void Arm_instruction_generator::ret_ic_to_arm_asm(struct ic_data * result)
     notify(event(event_type::END_INSTRUCTION,nullptr));
     //把使用到的临时变量，局部变量，前16*32bits的浮点型参数，前4*4bytes的整型参数以及padding退栈
     //先把该基本块开辟的存放临时变量的空间释放
+    regs_unaccessible=new set<reg_index>;
+    regs_unaccessible->insert(r0);
+    notify(event(event_type::START_INSTRUCTION,(void *)regs_unaccessible));
     notify(event(event_type::CLEAR_CURRENT_BASIC_BLOCK_STACK,nullptr));
+    notify(event(event_type::END_INSTRUCTION,nullptr));
     //再把函数开辟的栈空间释放
     stack_offset=notify(event(event_type::READY_TO_POP_WHEN_RET,nullptr)).int_data;
     // if(stack_offset>0)
     {
         //此时需要将存放返回值的寄存器设置为不可获取的，这里默认是r0
-        regs_unaccessible=new set<reg_index>;
-        regs_unaccessible->insert(r0);
         notify(event(event_type::START_INSTRUCTION,(void *)regs_unaccessible));
-        delete regs_unaccessible;
         //这里不能使用如下的方法：
         //op2=get_operand2((int)stack_offset);
         //push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,sp,sp,op2));
@@ -1415,8 +1416,6 @@ void Arm_instruction_generator::ret_ic_to_arm_asm(struct ic_data * result)
     }
     //最后计算padding
     stack_offset=notify(event(event_type::GET_PADDING_BYTES_BEFORE_LOCAL_VARS_IN_CURRENT_FUNC,nullptr)).int_data;
-    regs_unaccessible=new set<reg_index>;
-    regs_unaccessible->insert(r0);
     notify(event(event_type::START_INSTRUCTION,(void *)regs_unaccessible));
     delete regs_unaccessible;
     push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,sp,sp,get_operand2((int)stack_offset)));
@@ -1457,6 +1456,7 @@ void Arm_instruction_generator::start_basic_block_to_arm_asm()
     // if(temp_vars_total_byte_size>0)
     {
         push_instruction(new Arm_cpu_data_process_instruction(arm_op::SUB,arm_condition::NONE,false,sp,sp,get_operand2((int)temp_vars_total_byte_size)));
+        notify(event(event_type::PUSH_TEMP_VARS,(void *)(&temp_vars_not_over_basic_block)));
         record_stack_space_changed_here();
     }
 }

@@ -64,25 +64,22 @@ int convn(int kernelid, int input[], int output[], int n, int m, int c){
     int j = 0;
     int x, y, curr;
     const int true = 1;
-    int t0=c / 2;
     while (true == true){
         j = 0;
-        int t1=i - t0,t4=i + t0,t5=i * m;
         while (true == true){
             curr = 0;
-            x = t1;
-            int t2=j - t0,t3=j + t0;
+            x = i - c / 2;
             while (true == true){
-                y = t2;
+                y = j - c / 2;
                 while (true == true){
                     curr = reduce(kernelid, curr, getvalue(input, n, m, x, y));
                     y = y + 1;
-                    if (y >= t3) break;
+                    if (y >= j + c / 2) break;
                 }
                 x = x + 1;
-                if (x >= t4) break;
+                if (x >= i + c / 2) break;
             }
-            output[t5 + j] = curr;
+            output[i * m + j] = curr;
             j = j + 1;
             if (j >= m) break;
         }
