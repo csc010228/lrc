@@ -260,6 +260,8 @@ protected:
     //目前正在处理的中间代码流图
     struct ic_flow_graph * intermediate_codes_flow_graph_;
 
+    //删除无用的函数返回值
+    void remove_useless_return();
     //窥孔优化
     void peephole_optimization(struct ic_basic_block * basic_block);
     //函数内联

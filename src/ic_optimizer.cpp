@@ -609,13 +609,13 @@ void quaternion_with_info::add_to_du_chain(struct ic_data * data,ic_pos pos)
 //查看当前的中间代码是否定义了全局变量或者数组函数形参
 bool quaternion_with_info::check_if_def_global_or_f_param_array()
 {
-    if(explicit_def && explicit_def->is_global() || (explicit_def->is_array_member() && (explicit_def->get_belong_array()->is_f_param() || explicit_def->get_belong_array()->is_global())) || (explicit_def->is_array_var() && explicit_def->is_f_param()))
+    if(explicit_def && (explicit_def->is_global() || (explicit_def->is_array_member() && (explicit_def->get_belong_array()->is_f_param() || explicit_def->get_belong_array()->is_global())) || (explicit_def->is_array_var() && explicit_def->is_f_param())))
     {
         return true;
     }
     for(auto vauge_def:vague_defs)
     {
-        if(vauge_def && vauge_def->is_global() || (vauge_def->is_array_member() && (vauge_def->get_belong_array()->is_f_param() || vauge_def->get_belong_array()->is_global())) || (vauge_def->is_array_var() && vauge_def->is_f_param()))
+        if(vauge_def && (vauge_def->is_global() || (vauge_def->is_array_member() && (vauge_def->get_belong_array()->is_f_param() || vauge_def->get_belong_array()->is_global())) || (vauge_def->is_array_var() && vauge_def->is_f_param())))
         {
             return true;
         }
@@ -1190,6 +1190,33 @@ void Ic_optimizer::init(bool optimize)
 }
 
 /*
+删除无用的函数返回值
+*/
+void Ic_optimizer::remove_useless_return()
+{
+    // static Symbol_table * symbol_table=Symbol_table::get_instance();
+    // set<struct ic_func * > funcs;
+    // struct ic_func * func;
+    // for(auto func_flow_graph:intermediate_codes_flow_graph_->func_flow_graphs)
+    // {
+    //     for(auto basic_block:func_flow_graph->basic_blocks)
+    //     {
+    //         for(auto ic_with_info:basic_block->ic_sequence)
+    //         {
+    //             if(ic_with_info.intermediate_code.op==ic_op::CALL && ic_with_info.intermediate_code.result.first==ic_operand::NONE)
+    //             {
+    //                 func=(struct ic_func *)ic_with_info.intermediate_code.arg1.second;
+    //                 if(!func->is_external && func->return_type!=language_data_type::VOID)
+    //                 {
+    //                     funcs.insert(func);
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+}
+
+/*
 函数内联
 
 Parameters
@@ -1581,7 +1608,9 @@ void Ic_optimizer::DAG_optimize(struct ic_basic_block * basic_block)
 */
 void Ic_optimizer::local_optimize()
 {
-    //窥孔优化最先进行
+    //先进行无用的函数返回值删除
+    remove_useless_return();
+    //窥孔优化
     if(need_optimize_)
     {
         for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
@@ -1719,25 +1748,69 @@ func:要优化的函数流图
 */
 void Ic_optimizer::global_dead_code_elimination(struct ic_func_flow_graph * func)
 {
+    struct quaternion qua;
     for(auto basic_block:func->basic_blocks)
     {
         for(vector<struct quaternion_with_info>::iterator ic_with_info=basic_block->ic_sequence.begin();ic_with_info!=basic_block->ic_sequence.end();ic_with_info++)
         {
-            if((*ic_with_info).intermediate_code.op!=ic_op::NOP && 
-            (*ic_with_info).intermediate_code.op!=ic_op::JMP && 
-            (*ic_with_info).intermediate_code.op!=ic_op::IF_JMP && 
-            (*ic_with_info).intermediate_code.op!=ic_op::IF_NOT_JMP && 
-            (*ic_with_info).intermediate_code.op!=ic_op::VAR_DEFINE && 
-            (*ic_with_info).intermediate_code.op!=ic_op::LABEL_DEFINE && 
-            (*ic_with_info).intermediate_code.op!=ic_op::FUNC_DEFINE && 
-            (*ic_with_info).intermediate_code.op!=ic_op::END_FUNC_DEFINE && 
-            (*ic_with_info).intermediate_code.op!=ic_op::CALL && 
-            (*ic_with_info).intermediate_code.op!=ic_op::RET && 
-            !(*ic_with_info).check_if_def_global_or_f_param_array() && 
-            (*ic_with_info).du_chain.empty())
+            switch((*ic_with_info).intermediate_code.op)
             {
-                (*ic_with_info)=quaternion_with_info();
+                case ic_op::ASSIGN:
+                case ic_op::NOT:
+                case ic_op::ADD:
+                case ic_op::SUB:
+                case ic_op::MUL:
+                case ic_op::DIV:
+                case ic_op::MOD:
+                case ic_op::EQ:
+                case ic_op::UEQ:
+                case ic_op::GT:
+                case ic_op::LT:
+                case ic_op::GE:
+                case ic_op::LE:
+                    if(!(*ic_with_info).check_if_def_global_or_f_param_array() && 
+                    (*ic_with_info).du_chain.empty())
+                    {
+                        (*ic_with_info)=quaternion_with_info();
+                    }
+                    break;
+                case ic_op::CALL:
+                    // if((*ic_with_info).explicit_def && 
+                    // (*ic_with_info).explicit_def->is_tmp_var() && 
+                    // (*ic_with_info).du_chain.find((*ic_with_info).explicit_def)==(*ic_with_info).du_chain.end())
+                    // {
+                    //     qua=(*ic_with_info).intermediate_code;
+                    //     (*ic_with_info)=quaternion_with_info(quaternion(qua.op,qua.arg1.first,qua.arg1.second,qua.arg2.first,qua.arg2.second,ic_operand::NONE,nullptr));
+                    // }
+                    // break;
+                case ic_op::NOP:
+                case ic_op::JMP:
+                case ic_op::IF_JMP:
+                case ic_op::IF_NOT_JMP:
+                case ic_op::VAR_DEFINE:
+                case ic_op::LABEL_DEFINE:
+                case ic_op::FUNC_DEFINE:
+                case ic_op::END_FUNC_DEFINE:
+                case ic_op::RET:
+                    break;
+                default:
+                    break;
             }
+            // if((*ic_with_info).intermediate_code.op!=ic_op::NOP && 
+            // (*ic_with_info).intermediate_code.op!=ic_op::JMP && 
+            // (*ic_with_info).intermediate_code.op!=ic_op::IF_JMP && 
+            // (*ic_with_info).intermediate_code.op!=ic_op::IF_NOT_JMP && 
+            // (*ic_with_info).intermediate_code.op!=ic_op::VAR_DEFINE && 
+            // (*ic_with_info).intermediate_code.op!=ic_op::LABEL_DEFINE && 
+            // (*ic_with_info).intermediate_code.op!=ic_op::FUNC_DEFINE && 
+            // (*ic_with_info).intermediate_code.op!=ic_op::END_FUNC_DEFINE && 
+            // (*ic_with_info).intermediate_code.op!=ic_op::CALL && 
+            // (*ic_with_info).intermediate_code.op!=ic_op::RET && 
+            // !(*ic_with_info).check_if_def_global_or_f_param_array() && 
+            // (*ic_with_info).du_chain.empty())
+            // {
+            //     (*ic_with_info)=quaternion_with_info();
+            // }
         }
     }
 }
