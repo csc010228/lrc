@@ -517,7 +517,7 @@ void Arm_instruction_generator::div_ic_to_arm_asm(struct ic_data * arg1,struct i
     list<struct ic_data * > * r_params;
     pair<pair<pair<string,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >,list<reg_index> * > * event_data;
     reg_index Rd,Rm,Rs;
-    struct operand2 operand2_1,operand2_2;
+    struct operand2 operand2_1,operand2_2,operand2_3,operand2_4;
     notify(event(event_type::START_INSTRUCTION,nullptr));
     switch(result->get_data_type())
     {
@@ -531,6 +531,20 @@ void Arm_instruction_generator::div_ic_to_arm_asm(struct ic_data * arg1,struct i
                 push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,Rd,Rm,operand2_1));
                 push_instruction(new Arm_cpu_data_process_instruction(arm_op::ASR,arm_condition::NONE,false,Rd,Rm,operand2_2));
             }
+            // else if(arg2->is_const() && is_two_s_power(arg2->get_value().int_data))
+            // {
+            //     Rm=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_READING_VAR,(void *)arg1)).int_data;
+            //     operand2_1=get_operand2(arg2->get_value().int_data-1);
+            //     operand2_2=operand2(Rm,operand2_shift_op::ASR_N,32);
+            //     operand2_3=operand2(Rm);
+            //     operand2_4=get_operand2(get_two_s_power_exponent(arg2->get_value().int_data));
+            //     Rd=(reg_index)notify(event(event_type::GET_CPU_REG_FOR_WRITING_VAR,(void *)result)).int_data;
+            //     push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,Rd,Rm,operand2_1));
+            //     push_instruction(new Arm_cpu_data_process_instruction(arm_op::AND,arm_condition::NONE,true,Rd,Rd,operand2_2));
+            //     push_pseudo_instruction(new Arm_pseudo_instruction("cc"));
+            //     push_instruction(new Arm_cpu_data_process_instruction(arm_op::MOV,arm_condition::CC,false,Rd,operand2_3));
+            //     push_instruction(new Arm_cpu_data_process_instruction(arm_op::ASR,arm_condition::NONE,false,Rd,Rd,operand2_4));
+            // }
             else
             {
                 r_params=new list<struct ic_data * >;

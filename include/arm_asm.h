@@ -149,19 +149,19 @@ enum class operand2_shift_op
 };
 
 //寄存器shitf类型的Operand2
-struct opernad2_Rm_shift
+struct operand2_Rm_shift
 {
-    opernad2_Rm_shift(reg_index Rm):Rm(Rm),shift_op(operand2_shift_op::NONE)
+    operand2_Rm_shift(reg_index Rm):Rm(Rm),shift_op(operand2_shift_op::NONE)
     {
 
     };
 
-    opernad2_Rm_shift(reg_index Rm,enum operand2_shift_op shift_op,int n):Rm(Rm),shift_op(shift_op),n(n)
+    operand2_Rm_shift(reg_index Rm,enum operand2_shift_op shift_op,int n):Rm(Rm),shift_op(shift_op),n(n)
     {
 
     };
 
-    opernad2_Rm_shift(reg_index Rm,enum operand2_shift_op shift_op,reg_index Rs):Rm(Rm),shift_op(shift_op),Rs(Rs)
+    operand2_Rm_shift(reg_index Rm,enum operand2_shift_op shift_op,reg_index Rs):Rm(Rm),shift_op(shift_op),Rs(Rs)
     {
 
     };
@@ -188,17 +188,17 @@ struct operand2
 
     };
 
-    operand2(reg_index Rm):type(operand2_type::RM_SHIFT),Rm_shift(opernad2_Rm_shift(Rm))
+    operand2(reg_index Rm):type(operand2_type::RM_SHIFT),Rm_shift(operand2_Rm_shift(Rm))
     {
 
     };
 
-    operand2(reg_index Rm,enum operand2_shift_op shift_op,int n):type(operand2_type::RM_SHIFT),Rm_shift(opernad2_Rm_shift(Rm,shift_op,n))
+    operand2(reg_index Rm,enum operand2_shift_op shift_op,int n):type(operand2_type::RM_SHIFT),Rm_shift(operand2_Rm_shift(Rm,shift_op,n))
     {
 
     };
 
-    operand2(reg_index Rm,enum operand2_shift_op shift_op,reg_index Rs):type(operand2_type::RM_SHIFT),Rm_shift(opernad2_Rm_shift(Rm,shift_op,Rs))
+    operand2(reg_index Rm,enum operand2_shift_op shift_op,reg_index Rs):type(operand2_type::RM_SHIFT),Rm_shift(operand2_Rm_shift(Rm,shift_op,Rs))
     {
 
     };
@@ -251,7 +251,7 @@ struct operand2
     union
     {
         int immed_8r;
-        struct opernad2_Rm_shift Rm_shift;
+        struct operand2_Rm_shift Rm_shift;
     };
 };
 
@@ -508,7 +508,21 @@ public:
         return type_==arm_asm_file_line_type::PSEUDO_INSTRUCTION;
     };
 
+    inline bool is_label() const
+    {
+        return type_==arm_asm_file_line_type::LABEL;
+    };
+    
+    inline bool is_directive() const
+    {
+        return type_==arm_asm_file_line_type::DIRECTIVE;
+    };
+
     virtual void replace_regs(const map<reg_index,reg_index> & regs_map);
+
+    virtual void replace_source_regs(const map<reg_index,reg_index> & regs_map);
+
+    virtual void replace_destination_regs(const map<reg_index,reg_index> & regs_map);
 
     virtual set<reg_index> get_all_regs() const;
 
@@ -582,6 +596,11 @@ public:
         return cond_;
     };
 
+    inline void set_cond(enum arm_condition cond)
+    {
+        cond_=cond;
+    };
+
     inline struct arm_registers get_destination_registers() const
     {
         return destination_registers_;
@@ -593,6 +612,10 @@ public:
     };
 
     void replace_regs(const map<reg_index,reg_index> & regs_map);
+
+    void replace_source_regs(const map<reg_index,reg_index> & regs_map);
+
+    void replace_destination_regs(const map<reg_index,reg_index> & regs_map);
 
     virtual set<reg_index> get_all_destination_regs() const;
 
@@ -683,6 +706,10 @@ public:
 
     void replace_regs(const map<reg_index,reg_index> & regs_map);
 
+    void replace_source_regs(const map<reg_index,reg_index> & regs_map);
+
+    void replace_destination_regs(const map<reg_index,reg_index> & regs_map);
+
     set<reg_index> get_all_destination_regs() const;
 
     //转换成字符串
@@ -745,6 +772,10 @@ public:
     bool is_single_register_load_and_store_instruction() const;
 
     void replace_regs(const map<reg_index,reg_index> & regs_map);
+
+    void replace_source_regs(const map<reg_index,reg_index> & regs_map);
+
+    void replace_destination_regs(const map<reg_index,reg_index> & regs_map);
 };
 
 //arm的vfp指令
@@ -889,10 +920,12 @@ public:
     //更改operand2
     inline void change_operand2_to_immed_8r(int new_immed_8r)
     {
-        if(operand2_.type==operand2_type::IMMED_8R)
-        {
-            operand2_.immed_8r=new_immed_8r;
-        }
+        // if(operand2_.type==operand2_type::IMMED_8R)
+        // {
+        //     operand2_.immed_8r=new_immed_8r;
+        // }
+        operand2_.type=operand2_type::IMMED_8R;
+        operand2_.immed_8r=new_immed_8r;
     };
 
     //更改影响标志位
@@ -911,6 +944,10 @@ public:
     };
 
     void replace_regs(const map<reg_index,reg_index> & regs_map);
+
+    void replace_source_regs(const map<reg_index,reg_index> & regs_map);
+
+    void replace_destination_regs(const map<reg_index,reg_index> & regs_map);
 
     set<reg_index> get_all_source_regs() const;
 
@@ -1041,6 +1078,10 @@ public:
     };
 
     void replace_regs(const map<reg_index,reg_index> & regs_map);
+
+    void replace_source_regs(const map<reg_index,reg_index> & regs_map);
+
+    void replace_destination_regs(const map<reg_index,reg_index> & regs_map);
 
     set<reg_index> get_all_source_regs() const;
 

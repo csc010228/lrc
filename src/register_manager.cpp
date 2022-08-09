@@ -1406,6 +1406,33 @@ struct event Register_manager::handle_GET_FUNC_S_F_PARAMS_IN_REGS(struct ic_func
     return event(event_type::RESPONSE_POINTER,(void *)f_params_in_regs);
 }
 
+struct event Register_manager::handle_IS_FUNC_S_ANY_F_PARAMS_IN_MEMORY(struct ic_func * func)
+{
+    static size_t cpu_argument_reg_num=regs_info_.get_CPU_ARGUMENT_reg_num();
+    static size_t vfp_argument_reg_num=regs_info_.get_VFP_ARGUMENT_reg_num();
+    size_t param_num_passed_by_cpu_reg=0,param_num_passed_by_vfp_reg=0;
+    for(auto f_param:(*func->f_params))
+    {
+        if(f_param->is_array_var() || f_param->get_data_type()==language_data_type::INT)
+        {
+            param_num_passed_by_cpu_reg++;
+            if(param_num_passed_by_cpu_reg>cpu_argument_reg_num)
+            {
+                return event(event_type::RESPONSE_BOOL,true);
+            }
+        }
+        else if(f_param->get_data_type()==language_data_type::FLOAT)
+        {
+            param_num_passed_by_vfp_reg++;
+            if(param_num_passed_by_vfp_reg>vfp_argument_reg_num)
+            {
+                return event(event_type::RESPONSE_BOOL,true);
+            }
+        }
+    }
+    return event(event_type::RESPONSE_BOOL,false);
+}
+
 struct event Register_manager::handle_GET_CPU_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC(struct ic_func * func)
 {
     static size_t cpu_argument_reg_num=regs_info_.get_CPU_ARGUMENT_reg_num();
@@ -1797,6 +1824,9 @@ struct event Register_manager::handler(struct event event)
         //     break;
         case event_type::GET_FUNC_S_F_PARAMS_IN_REGS:
             response=handle_GET_FUNC_S_F_PARAMS_IN_REGS((struct ic_func * )event.pointer_data);
+            break;
+        case event_type::IS_FUNC_S_ANY_F_PARAMS_IN_MEMORY:
+            response=handle_IS_FUNC_S_ANY_F_PARAMS_IN_MEMORY((struct ic_func * )event.pointer_data);
             break;
         case event_type::GET_CPU_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC:
             response=handle_GET_CPU_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC((struct ic_func * )event.pointer_data);

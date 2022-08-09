@@ -61,6 +61,30 @@ void virutal_reg_s_live_interval::add_def_pos(struct arm_basic_block * bb,virtua
     map_set_insert(def_poses,bb,pos);
 }
 
+bool virutal_reg_s_live_interval::is_def_pos(virtual_target_code_pos pos) const
+{
+    for(auto def_bb_and_poses:def_poses)
+    {
+        if(def_bb_and_poses.second.find(pos)!=def_bb_and_poses.second.end())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool virutal_reg_s_live_interval::is_use_pos(virtual_target_code_pos pos) const
+{
+    for(auto use_bb_and_poses:use_poses)
+    {
+        if(use_bb_and_poses.second.find(pos)!=use_bb_and_poses.second.end())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 size_t virutal_reg_s_live_interval::get_score()
 {
     if(score==0)
@@ -76,7 +100,7 @@ size_t virutal_reg_s_live_interval::get_score()
                 score=i.first->loop_count*100+i.second.size();
                 if(def_poses.find(i.first)!=def_poses.end())
                 {
-                    score+=def_poses.at(i.first).size();
+                    score+=def_poses.at(i.first).size()*4;
                 }
             }
         }
@@ -239,15 +263,14 @@ map<OAA,reg_index> try_it_map_const;
 set<reg_index> try_it_set;
 Graph_coloring_register_manager::Graph_coloring_register_manager(set<struct reg> regs,struct flag_reg flag_reg):Global_register_manager(regs,flag_reg),current_processor(reg_processor::CPU)
 {
-    //TO-DO
     for(auto reg:regs_info_.reg_indexs)
     {
-        if(reg.second.processor==reg_processor::CPU && (reg.second.attr==reg_attr::ARGUMENT || reg.second.attr==reg_attr::TEMP) /*|| reg.second.attr==reg_attr::FRAME_POINTER || reg.second.attr==reg_attr::INTRA_PROCEDURE*/)
+        if(reg.second.processor==reg_processor::CPU && (reg.second.attr==reg_attr::ARGUMENT || reg.second.attr==reg_attr::TEMP))
         {
             available_physical_cpu_regs.insert(reg.first);
         }
     }
-    available_physical_cpu_reg_num=available_physical_cpu_regs.size();
+    //available_physical_cpu_reg_num=available_physical_cpu_regs.size();
     for(auto reg:regs_info_.reg_indexs)
     {
         if(reg.second.processor==reg_processor::VFP && (reg.second.attr==reg_attr::ARGUMENT || reg.second.attr==reg_attr::TEMP))
@@ -255,12 +278,58 @@ Graph_coloring_register_manager::Graph_coloring_register_manager(set<struct reg>
             available_physical_vfp_regs.insert(reg.first);
         }
     }
-    available_physical_vfp_reg_num=available_physical_vfp_regs.size();
+    //available_physical_vfp_reg_num=available_physical_vfp_regs.size();
 }
 
 Graph_coloring_register_manager::~Graph_coloring_register_manager()
 {
 
+}
+
+list<Arm_asm_file_line *>::iterator Graph_coloring_register_manager::get_virtual_target_code(virtual_target_code_pos pos) const
+{
+    virtual_target_code_pos count;
+    list<Arm_asm_file_line *>::iterator res;
+    for(auto bb_start_end:basic_block_s_interval)
+    {
+        if(pos>=bb_start_end.second.first && pos<=bb_start_end.second.second)
+        {
+            count=bb_start_end.second.first;
+            for(list<Arm_asm_file_line *>::iterator line=bb_start_end.first->arm_sequence.begin();line!=bb_start_end.first->arm_sequence.end();line++)
+            {
+                if(count==pos)
+                {
+                    res=line;
+                    goto out;
+                }
+                count++;
+            }
+        }
+    }
+out:
+    return res;
+}
+
+struct arm_basic_block * Graph_coloring_register_manager::get_pos_s_basic_block(virtual_target_code_pos pos) const
+{
+    for(auto bb_start_end:basic_block_s_interval)
+    {
+        if(pos>=bb_start_end.second.first && pos<=bb_start_end.second.second)
+        {
+            return bb_start_end.first;
+        }
+    }
+    return nullptr;
+}
+
+virtual_target_code_pos Graph_coloring_register_manager::get_basic_block_s_start_pos(struct arm_basic_block * bb) const
+{
+    return basic_block_s_interval.at(bb).first;
+}
+
+virtual_target_code_pos Graph_coloring_register_manager::get_basic_block_s_end_pos(struct arm_basic_block * bb) const
+{
+    return basic_block_s_interval.at(bb).second;
 }
 
 set<reg_index> Graph_coloring_register_manager::get_virtual_traget_instruction_s_all_source_regs(Arm_asm_file_line * line)
@@ -378,7 +447,7 @@ set<reg_index> Graph_coloring_register_manager::get_virtual_traget_instruction_s
     }
     return res;
 }
-
+#include<iostream>
 set<reg_index> Graph_coloring_register_manager::get_virtual_traget_instruction_s_all_destination_regs(Arm_asm_file_line * line)
 {
     static Symbol_table * symbol_table=Symbol_table::get_instance();
@@ -517,7 +586,7 @@ void Graph_coloring_register_manager::live_analyze()
             }
             pos++;
         }
-        basic_block_s_interval.at(bb).second=pos;
+        basic_block_s_interval.at(bb).second=pos-1;
     }
     //再迭代计算每一个基本块的live_in和live_out
     for(auto bb:virtual_target_code->basic_blocks)
@@ -814,6 +883,225 @@ next:
     // cout<<endl;
 }
 
+//减少常量寄存器
+void Graph_coloring_register_manager::reduce_const_regs()
+{
+    reg_index reg;
+    virtual_target_code_pos pos;
+    list<Arm_asm_file_line *>::iterator line_it;
+    Arm_asm_file_line * line;
+    Arm_instruction * ins;
+    Arm_cpu_instruction * cpu_ins;
+    Arm_cpu_data_process_instruction * cpu_data_process_ins;
+    int const_int_data;
+    bool tag;
+    struct operand2 op2;
+    for(auto virtual_regs_s_live_interval:current_func_s_live_intervals.virtual_regs_s_live_intervals)
+    {
+        reg=virtual_regs_s_live_interval.first;
+        if(virtual_regs_info_.is_physical_reg(reg) || 
+        virtual_regs_info_.reg_indexs.at(reg).data_type!=virtual_related_data_type::CONST || 
+        virtual_regs_info_.reg_indexs.at(reg).processor!=reg_processor::CPU || 
+        !operand2::is_legal_immed_8r(virtual_regs_info_.reg_indexs.at(reg).related_const.int_data))
+        {
+            continue;
+        }
+        const_int_data=virtual_regs_info_.reg_indexs.at(reg).related_const.int_data;
+        for(auto live_interval_segment:virtual_regs_s_live_interval.second.live_interval)
+        {
+            pos=live_interval_segment.second;
+            tag=true;
+            while(pos>live_interval_segment.first)
+            {
+                if(virtual_regs_s_live_interval.second.is_use_pos(pos))
+                {
+                    line=*get_virtual_target_code(pos);
+                    if(line->is_instruction())
+                    {
+                        ins=dynamic_cast<Arm_instruction * >(line);
+                        if(ins->is_cpu_instruction())
+                        {
+                            cpu_ins=dynamic_cast<Arm_cpu_instruction * >(ins);
+                            if(cpu_ins->is_data_process_instruction())
+                            {
+                                cpu_data_process_ins=dynamic_cast<Arm_cpu_data_process_instruction * >(cpu_ins);
+                                if(cpu_data_process_ins->get_op()==arm_op::MOV && 
+                                cpu_data_process_ins->get_all_source_regs().size()==1 && 
+                                (*cpu_data_process_ins->get_all_source_regs().begin())==reg)
+                                {
+                                    cpu_data_process_ins->change_operand2_to_immed_8r(const_int_data);
+                                }
+                                else
+                                {
+                                    tag=false;
+                                }
+                            }
+                            else
+                            {
+                                tag=false;
+                            }
+                        }
+                        else
+                        {
+                            tag=false;
+                        }
+                    }
+                    else
+                    {
+                        tag=false;
+                    }
+                }
+                else if(virtual_regs_s_live_interval.second.is_def_pos(pos))
+                {
+                    tag=false;
+                }
+                pos--;
+            }
+            if(tag && virtual_regs_s_live_interval.second.is_def_pos(pos))
+            {
+                line_it=get_virtual_target_code(pos);
+                delete (*line_it);
+                (*line_it)=new Arm_pseudo_instruction();
+            }
+        }
+    }
+}
+
+//分裂寄存器，把有些寄存器进行分裂
+void Graph_coloring_register_manager::fission_regs()
+{
+    reg_index new_reg,old_reg;
+    map<reg_index,reg_index> old_new_regs;
+    struct arm_basic_block * bb;
+    virtual_target_code_pos live_pos,farest_pos;
+    Arm_asm_file_line * line;
+    map<reg_index,set<reg_index> > debug_info;
+    list<pair<virtual_target_code_pos,virtual_target_code_pos> > fission_reg_s_live_interval;
+    bool tag;
+    for(auto virtual_regs_s_live_interval:current_func_s_live_intervals.virtual_regs_s_live_intervals)
+    {
+        old_reg=virtual_regs_s_live_interval.first;
+        if(virtual_regs_info_.is_physical_reg(old_reg) || virtual_regs_s_live_interval.second.live_interval.size()==1)
+        {
+            continue;
+        }
+        fission_reg_s_live_interval.clear();
+        farest_pos=0;
+        for(auto live_interval_segment:virtual_regs_s_live_interval.second.live_interval)
+        {
+            if(fission_reg_s_live_interval.empty())
+            {
+                fission_reg_s_live_interval.push_back(live_interval_segment);
+            }
+            else
+            {
+                // if(fission_reg_s_live_interval.back().second==live_interval_segment.first || 
+                // !virtual_regs_s_live_interval.second.is_def_pos(live_interval_segment.first) || 
+                // (get_pos_s_basic_block(live_interval_segment.first)==get_pos_s_basic_block(fission_reg_s_live_interval.back().second)))
+                // {
+                //     fission_reg_s_live_interval.back().second=live_interval_segment.second;
+                // }
+                // else
+                // {
+                //     fission_reg_s_live_interval.push_back(live_interval_segment);
+                // }
+                if(live_interval_segment.first>=farest_pos && virtual_regs_s_live_interval.second.is_def_pos(live_interval_segment.first) && fission_reg_s_live_interval.back().second!=live_interval_segment.first)
+                {
+                    fission_reg_s_live_interval.push_back(live_interval_segment);
+                }
+                else
+                {
+                    fission_reg_s_live_interval.back().second=live_interval_segment.second;
+                }
+            }
+            bb=get_pos_s_basic_block(live_interval_segment.first);
+            tag=false;
+            for(auto basic_block:virtual_target_code->basic_blocks)
+            {
+                if(bb!=basic_block && !tag)
+                {
+                    continue;
+                }
+                tag=true;
+                if(get_basic_block_s_end_pos(bb)>=live_interval_segment.second)
+                {
+                    break;
+                }
+                for(auto successor:basic_block->get_successors())
+                {
+                    if(farest_pos<get_basic_block_s_start_pos(successor))
+                    {
+                        farest_pos=get_basic_block_s_start_pos(successor);
+                    }
+                }
+            }
+        }
+        fission_reg_s_live_interval.pop_front();
+        for(auto new_reg_s_live_interval:fission_reg_s_live_interval)
+        {
+            switch(virtual_regs_info_.reg_indexs.at(old_reg).data_type)
+            {
+                case virtual_related_data_type::CONST:
+                    new_reg=virtual_regs_info_.new_temp_for_const(virtual_regs_info_.reg_indexs.at(old_reg).related_const,virtual_regs_info_.get_reg_s_processor(old_reg));
+                    break;
+                case virtual_related_data_type::VAR_ADDR:
+                    new_reg=virtual_regs_info_.new_temp_for_var_addr(virtual_regs_info_.reg_indexs.at(old_reg).related_var,virtual_regs_info_.get_reg_s_processor(old_reg));
+                    break;
+                case virtual_related_data_type::VAR_VALUE:
+                    new_reg=virtual_regs_info_.new_temp_for_var_value(virtual_regs_info_.reg_indexs.at(old_reg).related_var,virtual_regs_info_.get_reg_s_processor(old_reg));
+                    break;
+                default:
+                    break;
+            }
+
+
+            map_set_insert(debug_info,old_reg,new_reg);
+
+
+            old_new_regs.clear();
+            old_new_regs.insert(make_pair(old_reg,new_reg));
+            for(auto def_basic_block_and_poses:virtual_regs_s_live_interval.second.def_poses)
+            {
+                for(auto def_pos:def_basic_block_and_poses.second)
+                {
+                    if(def_pos>=new_reg_s_live_interval.first && def_pos<=new_reg_s_live_interval.second)
+                    {
+                        line=*get_virtual_target_code(def_pos);
+                        line->replace_regs(old_new_regs);
+                    }
+                }
+            }
+            for(auto use_basic_block_and_poses:virtual_regs_s_live_interval.second.use_poses)
+            {
+                for(auto use_pos:use_basic_block_and_poses.second)
+                {
+                    if(use_pos>=new_reg_s_live_interval.first && use_pos<=new_reg_s_live_interval.second)
+                    {
+                        line=*get_virtual_target_code(use_pos);
+                        line->replace_regs(old_new_regs);
+                    }
+                }
+            }
+        }
+    }
+    // cout<<endl<<"FISSION REGS:"<<endl;
+    // for(auto i:debug_info)
+    // {
+    //     cout<<"VR"<<i.first<<"->{";
+    //     for(auto j:i.second)
+    //     {
+    //         cout<<"VR"<<j<<",";
+    //     }
+    //     cout<<"}"<<endl;
+    // }
+}
+
+void Graph_coloring_register_manager::optimize_virtual_for_less_spill_regs()
+{
+    reduce_const_regs();
+    fission_regs();
+}
+
 void Graph_coloring_register_manager::mk_worklists()
 {
     for(auto reg_s_node:current_func_s_coherent_diagram.nodes)
@@ -829,7 +1117,7 @@ void Graph_coloring_register_manager::mk_worklists()
     }
     for(auto node:initial)
     {
-        if(node->degree>=available_physical_cpu_reg_num)
+        if(node->degree>=available_physical_cpu_regs.size())
         {
             spill_worklist.insert(node);
         }
@@ -843,7 +1131,7 @@ void Graph_coloring_register_manager::mk_worklists()
 void Graph_coloring_register_manager::decrement_degree(struct coherent_diagram_node * node)
 {
     node->degree--;
-    if(node->degree==available_physical_cpu_reg_num && spill_worklist.find(node)!=spill_worklist.end())
+    if(node->degree==available_physical_cpu_regs.size() && spill_worklist.find(node)!=spill_worklist.end())
     {
         spill_worklist.erase(node);
         simplify_worklist.insert(node);
@@ -852,38 +1140,35 @@ void Graph_coloring_register_manager::decrement_degree(struct coherent_diagram_n
 
 bool sort_func(struct coherent_diagram_node * node_1,struct coherent_diagram_node * node_2)
 {
-    //return node_1->get_score()>node_2->get_score();
-    //return node_1->live_interval.get_score()<node_2->live_interval.get_score();
+    size_t score_1,score_2;
     if(node_1==node_2)
     {
         return false;
     }
-    if(node_1->live_interval.get_score()!=node_2->live_interval.get_score())
+    score_1=node_1->live_interval.get_score();
+    score_2=node_2->live_interval.get_score();
+    if(score_1!=score_2)
     {
-        return node_1->live_interval.get_score()<node_2->live_interval.get_score();
+        return score_1<score_2;
     }
-    //return  node_1->get_score()>node_2->get_score();
-    if(node_1->get_score()!=node_2->get_score())
+    score_1=node_1->get_score();
+    score_2=node_2->get_score();
+    if(score_1!=score_2)
     {
-       return  node_1->get_score()>node_2->get_score();
+       return  score_1>score_2;
     }
-    // if(node_1->data_type==coherent_diagram_node_s_data_type::CONST || node_1->data_type==coherent_diagram_node_s_data_type::ADDR)
+    // score_1=node_1->get_score();
+    // score_2=node_2->get_score();
+    // if(score_1!=score_2)
     // {
-    //     return false;
+    //    return  score_1>score_2;
     // }
-    // if(node_2->data_type==coherent_diagram_node_s_data_type::CONST || node_2->data_type==coherent_diagram_node_s_data_type::ADDR)
+    // score_1=node_1->live_interval.get_score();
+    // score_2=node_2->live_interval.get_score();
+    // if(!((score_1<=score_2+5 && score_1+5>=score_2) || (score_2<=score_1+5 && score_1+5>=score_2)))
     // {
-    //     return true;
+    //     return score_1<score_2;
     // }
-    // if(node_1->data_type==coherent_diagram_node_s_data_type::ARRAY_MEMBER_VALUE)
-    // {
-    //     return true;
-    // }
-    // if(node_2->data_type==coherent_diagram_node_s_data_type::ARRAY_MEMBER_VALUE)
-    // {
-    //     return false;
-    // }
-    // return false;
     return node_2->data_type==coherent_diagram_node_s_data_type::CONST || node_2->data_type==coherent_diagram_node_s_data_type::ADDR || node_1->data_type==coherent_diagram_node_s_data_type::ARRAY_MEMBER_VALUE;
 }
 
@@ -960,6 +1245,9 @@ void Graph_coloring_register_manager::assign_colors()
         }
         else
         {
+            // set<reg_index>::const_iterator it(available_colors.begin());
+            // advance(it, rand() % available_colors.size());
+            // colored_nodes.insert(make_pair(node,*it));
             colored_nodes.insert(make_pair(node,*(available_colors.begin())));
         }
     }
@@ -1815,14 +2103,14 @@ void Graph_coloring_register_manager::rewrite_program()
             current_pos++;
         }
     }
+    // cout<<"SPILL "<<map_for_debug.size()<<" REGS :"<<endl;
     // cout<<"array_member_regs :"<<spilled_regs.array_member_regs.size()<<endl;
     // cout<<"var_regs :"<<spilled_regs.var_regs.size()<<endl;
     // cout<<"not_f_param_in_regs_array_regs :"<<spilled_regs.not_f_param_in_regs_array_regs.size()<<endl;
     // cout<<"f_param_in_regs_array_regs :"<<spilled_regs.f_param_in_regs_array_regs.size()<<endl;
     // cout<<"addr_regs :"<<spilled_regs.addr_regs.size()<<endl;
     // cout<<"const_regs :"<<spilled_regs.const_regs.size()<<endl;
-    // cout<<endl<<endl;
-    // cout<<"SPILL "<<map_for_debug.size()<<":"<<endl;
+    // cout<<endl;
     // for(auto i:map_for_debug)
     // {
     //     cout<<(virtual_regs_info_.is_physical_reg(i.first)?"r":"VR")<<i.first<<"->{";
@@ -1835,7 +2123,7 @@ void Graph_coloring_register_manager::rewrite_program()
     // cout<<endl;
 }
 
-void Graph_coloring_register_manager::graph_coloring_register_distribute()
+void Graph_coloring_register_manager::graph_coloring_register_distribute(bool first_time)
 {
     // cout<<"=========================================================="<<endl;
     // //debug输出虚拟寄存器信息
@@ -1947,9 +2235,17 @@ void Graph_coloring_register_manager::graph_coloring_register_distribute()
     //如果还有节点溢出，那么重写虚拟目标代码，并且再次进行本算法
     if(!spilled_nodes.empty())
     {
-        rewrite_program();
+        if(first_time)
+        {
+            //先对虚拟目标代码进行优化，减少spill的寄存器
+            optimize_virtual_for_less_spill_regs();
+        }
+        else
+        {
+            rewrite_program();
+        }
         clear_info();
-        graph_coloring_register_distribute();
+        graph_coloring_register_distribute(false);
     }
 }
 
@@ -1992,6 +2288,9 @@ void Graph_coloring_register_manager::clear_info()
 void Graph_coloring_register_manager::handle_END_FUNC()
 {
     //获取当前函数的虚拟目标代码
+    static reg_index fp=regs_info_.reg_names.at("fp");
+    static reg_index lr=regs_info_.reg_names.at("lr");
+    static reg_index ip=regs_info_.reg_names.at("ip");
     virtual_target_code=(struct arm_func_flow_graph *)notify(event(event_type::GET_VIRTUAL_TRAGET_CODE_OF_CURRENT_FUNC,nullptr)).pointer_data;
     virtual_target_code->build_nexts_between_basic_blocks();
     virtual_target_code->build_loop_info();
@@ -2011,7 +2310,15 @@ void Graph_coloring_register_manager::handle_END_FUNC()
     regs_info_.clear();
     //对其进行图着色寄存器分配
     current_processor=reg_processor::CPU;
-    graph_coloring_register_distribute();
+    if(!notify(event(event_type::IS_FUNC_S_ANY_F_PARAMS_IN_MEMORY,(void *)virtual_target_code->function->func)).bool_data)
+    {
+        available_physical_cpu_regs.insert(fp);
+    }
+    else if(available_physical_cpu_regs.find(fp)!=available_physical_cpu_regs.end())
+    {
+        available_physical_cpu_regs.erase(fp);
+    }
+    graph_coloring_register_distribute(true);
     // cout<<endl<<endl<<endl<<"COLORED NODES:"<<endl;
     // for(auto i:colored_nodes)
     // {

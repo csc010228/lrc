@@ -65,6 +65,9 @@ struct quaternion_with_info
     //中间代码化简
     void simplify();
 
+    //删除中间代码的数据流分析信息
+    void clear_all_data_flow_analyse_info();
+
     //尝试将一个数据放入该中间代码的明确定义数据
     void set_explicit_def(struct ic_data * data);
 
@@ -176,6 +179,7 @@ struct loop_info
 {
     //set<list<struct ic_basic_block * > > loop_routes;               //循环路径，这这些路径里面不会包括小的循环
     set<struct ic_basic_block * > all_basic_blocks;                 //循环中的所有基本块，包括小的循环中的基本块
+    set<struct ic_basic_block * > exit_basic_blocks;                //循环中的所有出口基本块
 };
 
 //一个中间代码的函数的流图
@@ -187,6 +191,9 @@ struct ic_func_flow_graph
 
     //往当前的函数流图中加入一条中间代码
     void add_ic(struct quaternion ic);
+
+    //清空函数中所有的数据流分析信息
+    void clear_all_data_flow_analyse_info();
 
     //构建函数流图中各个基本块之间的跳转关系
     void build_nexts_between_basic_blocks();
@@ -263,6 +270,8 @@ protected:
     //局部优化
     void local_optimize();
     
+    //为一个函数进行数据流分析
+    void data_flow_analysis_for_a_func(struct ic_func_flow_graph * func);
     //数据流分析
     void data_flow_analysis();
 

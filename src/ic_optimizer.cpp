@@ -480,6 +480,12 @@ void quaternion_with_info::simplify()
     }
 }
 
+void quaternion_with_info::clear_all_data_flow_analyse_info()
+{
+    ud_chain.clear();
+    du_chain.clear();
+}
+
 void quaternion_with_info::set_explicit_def(struct ic_data * data)
 {
     if(!data->is_const())
@@ -918,11 +924,27 @@ void ic_func_flow_graph::build_nexts_between_basic_blocks()
     }
 }
 
-//构建函数流图中的数组变量和数组元素之间的映射，以及偏移量和数组元素之间的映射
-void ic_func_flow_graph::build_array_and_offset_to_array_member_map()
+//清空函数中所有的数据流分析信息
+void ic_func_flow_graph::clear_all_data_flow_analyse_info()
 {
     array_to_array_member_map.clear();
     offset_to_array_member_map.clear();
+    vars_def_positions.clear();
+    arrays_def_positions.clear();
+    vars_use_positions.clear();
+    loops_info.clear();
+    for(auto basic_block:basic_blocks)
+    {
+        for(auto & ic_with_info:basic_block->ic_sequence)
+        {
+            ic_with_info.clear_all_data_flow_analyse_info();
+        }
+    }
+}
+
+//构建函数流图中的数组变量和数组元素之间的映射，以及偏移量和数组元素之间的映射
+void ic_func_flow_graph::build_array_and_offset_to_array_member_map()
+{
     for(auto basic_block:basic_blocks)
     {
         map_set_union_and_assign_to_arg1(array_to_array_member_map,basic_block->array_to_array_member_map);
@@ -1387,10 +1409,15 @@ again:
                         copyed_basic_blocks.push_back(new_basic_block);
                         new_label=symbol_table->new_label();
                         new_basic_block->add_ic(quaternion(ic_op::LABEL_DEFINE,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::LABEL,(void *)new_label));
+                        func->label_basic_block_map.insert(make_pair(new_label,new_basic_block));
                     }
                     else
                     {
                         new_basic_block=copyed_basic_blocks.back();
+                    }
+                    for(auto old_and_new_label:old_and_new_labels_map)
+                    {
+                        func->label_basic_block_map.insert(make_pair(old_and_new_label.second,old_and_new_ic_basic_block_map.at(called_func_flow_graph->label_basic_block_map.at(old_and_new_label.first))));
                     }
                     for(list<struct ic_basic_block * >::iterator copyed_basic_block=copyed_basic_blocks.begin();copyed_basic_block!=copyed_basic_blocks.end();copyed_basic_block++)
                     {
@@ -1579,15 +1606,34 @@ void Ic_optimizer::local_optimize()
         for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
         {
             function_inline(func);
-        }
-        //最后还要再进行一次DAG相关优化
-        for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
-        {
             for(auto basic_block:func->basic_blocks)
             {
                 DAG_optimize(basic_block);
             }
         }
+    }
+}
+
+void Ic_optimizer::data_flow_analysis_for_a_func(struct ic_func_flow_graph * func)
+{
+    //准备进行数据流分析
+    Data_flow_analyzer::prepare_before_data_flow_analyse(func);
+    //重新构建循环的基本块跳转信息，因为在优化的时候可能会被改变
+    func->build_nexts_between_basic_blocks();
+    //到达-定义分析
+    Data_flow_analyzer::use_define_analysis(func);
+    //构建ud-链
+    Data_flow_analyzer::build_ud_chain(func);
+    //活跃变量分析
+    Data_flow_analyzer::live_variable_analysis(func);
+    //构建du-链
+    Data_flow_analyzer::build_du_chain(func);
+    if(need_optimize_)
+    {
+        //可用表达式分析
+        Data_flow_analyzer::available_expression_analysis(func);
+        //循环分析
+        Data_flow_analyzer::build_loops_info(func);
     }
 }
 
@@ -1598,23 +1644,7 @@ void Ic_optimizer::data_flow_analysis()
 {
     for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
     {
-        //准备进行数据流分析
-        Data_flow_analyzer::prepare_before_data_flow_analyse(func);
-        //到达-定义分析
-        Data_flow_analyzer::use_define_analysis(func);
-        //构建ud-链
-        Data_flow_analyzer::build_ud_chain(func);
-        //活跃变量分析
-        Data_flow_analyzer::live_variable_analysis(func);
-        //构建du-链
-        Data_flow_analyzer::build_du_chain(func);
-        if(need_optimize_)
-        {
-            //可用表达式分析
-            Data_flow_analyzer::available_expression_analysis(func);
-            //循环分析
-            Data_flow_analyzer::build_loops_info(func);
-        }
+        data_flow_analysis_for_a_func(func);
     }
 }
 
@@ -1917,15 +1947,21 @@ void Ic_optimizer::global_optimize()
             //全局公共子表达式删除
             global_elimination_of_common_subexpression(func);
         }
+        //需要重新进行数据流分析
+        data_flow_analysis_for_a_func(func);
         //全局死代码消除
         global_dead_code_elimination(func);
         if(need_optimize_)
         {
+            //需要重新进行数据流分析
+            data_flow_analysis_for_a_func(func);
             //循环不变量外提
             loop_invariant_computation_motion(func);
             //归纳变量删除
             induction_variable_elimination(func);
         }
+        //重新构建循环的基本块跳转信息，因为在优化的时候可能会被改变
+        func->build_nexts_between_basic_blocks();
     }
 }
 

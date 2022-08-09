@@ -17,6 +17,8 @@ func:要分析的函数流图
 */
 void Data_flow_analyzer::prepare_before_data_flow_analyse(struct ic_func_flow_graph * func)
 {
+    //清空原有的数据流信息
+    func->clear_all_data_flow_analyse_info();
     //获取要分析的函数流图的数组元素的所属数组和偏移量信息
     func->build_array_and_offset_to_array_member_map();
     //获取要分析的函数流图的变量定义点和使用点信息
@@ -482,6 +484,20 @@ void Data_flow_analyzer::build_loops_info(struct ic_func_flow_graph * func)
         if(loop_end_start_map.find(bb)!=loop_end_start_map.end())
         {
             loop_end_start_map.erase(bb);
+        }
+    }
+    //寻找循环的出口基本块
+    for(auto & loop:func->loops_info)
+    {
+        for(auto bb:loop.second.all_basic_blocks)
+        {
+            for(auto successor:bb->get_successors())
+            {
+                if(loop.second.all_basic_blocks.find(successor)==loop.second.all_basic_blocks.end())
+                {
+                    loop.second.exit_basic_blocks.insert(bb);
+                }
+            }
         }
     }
 }

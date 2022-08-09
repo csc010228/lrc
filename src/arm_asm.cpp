@@ -154,6 +154,28 @@ map<enum arm_condition,string> condition_output_map=
     {arm_condition::AL,"al"},
 };
 
+map<enum arm_condition,enum arm_condition> condition_antonym_map=
+{
+    {arm_condition::NONE,arm_condition::NONE},
+    {arm_condition::EQ,arm_condition::NE},
+    {arm_condition::NE,arm_condition::EQ},
+    {arm_condition::CS,arm_condition::HS},
+    {arm_condition::HS,arm_condition::CS},
+    {arm_condition::CC,arm_condition::LO},
+    {arm_condition::LO,arm_condition::CC},
+    {arm_condition::MI,arm_condition::PL},
+    {arm_condition::PL,arm_condition::MI},
+    {arm_condition::VS,arm_condition::VC},
+    {arm_condition::VC,arm_condition::VS},
+    {arm_condition::HI,arm_condition::LS},
+    {arm_condition::LS,arm_condition::HI},
+    {arm_condition::GE,arm_condition::LT},
+    {arm_condition::LT,arm_condition::GE},
+    {arm_condition::GT,arm_condition::LE},
+    {arm_condition::LE,arm_condition::GT},
+    {arm_condition::AL,arm_condition::AL},
+};
+
 map<enum address_mode,string> address_mode_output_map=
 {
     {address_mode::NONE,""},
@@ -510,6 +532,48 @@ string flexoffset::to_string() const
 
 void Arm_asm_file_line::replace_regs(const map<reg_index,reg_index> & regs_map)
 {
+    replace_source_regs(regs_map);
+    replace_destination_regs(regs_map);
+    // Arm_instruction * ins;
+    // Arm_cpu_instruction * cpu_ins;
+    // Arm_cpu_data_process_instruction * cpu_data_process_ins;
+    // Arm_cpu_single_register_load_and_store_instruction * cpu_single_register_load_and_store_ins;
+    // Arm_pseudo_instruction * pseudo_ins;
+    // if(is_instruction())
+    // {
+    //     ins=dynamic_cast<Arm_instruction *>((Arm_asm_file_line *)this);
+    //     if(ins->is_cpu_instruction())
+    //     {
+    //         cpu_ins=dynamic_cast<Arm_cpu_instruction *>(ins);
+    //         if(cpu_ins->is_data_process_instruction())
+    //         {
+    //             cpu_data_process_ins=dynamic_cast<Arm_cpu_data_process_instruction *>(cpu_ins);
+    //             cpu_data_process_ins->replace_regs(regs_map);
+    //         }
+    //         else if(cpu_ins->is_single_register_load_and_store_instruction())
+    //         {
+    //             cpu_single_register_load_and_store_ins=dynamic_cast<Arm_cpu_single_register_load_and_store_instruction *>(cpu_ins);
+    //             cpu_single_register_load_and_store_ins->replace_regs(regs_map);
+    //         }
+    //         else
+    //         {
+    //             cpu_ins->replace_regs(regs_map);
+    //         }
+    //     }
+    //     else
+    //     {
+    //         ins->replace_regs(regs_map);
+    //     }
+    // }
+    // else if(is_pseudo_instruction())
+    // {
+    //     pseudo_ins=dynamic_cast<Arm_pseudo_instruction *>((Arm_asm_file_line *)this);
+    //     pseudo_ins->replace_regs(regs_map);
+    // }
+}
+
+void Arm_asm_file_line::replace_source_regs(const map<reg_index,reg_index> & regs_map)
+{
     Arm_instruction * ins;
     Arm_cpu_instruction * cpu_ins;
     Arm_cpu_data_process_instruction * cpu_data_process_ins;
@@ -524,27 +588,67 @@ void Arm_asm_file_line::replace_regs(const map<reg_index,reg_index> & regs_map)
             if(cpu_ins->is_data_process_instruction())
             {
                 cpu_data_process_ins=dynamic_cast<Arm_cpu_data_process_instruction *>(cpu_ins);
-                cpu_data_process_ins->replace_regs(regs_map);
+                cpu_data_process_ins->replace_source_regs(regs_map);
             }
             else if(cpu_ins->is_single_register_load_and_store_instruction())
             {
                 cpu_single_register_load_and_store_ins=dynamic_cast<Arm_cpu_single_register_load_and_store_instruction *>(cpu_ins);
-                cpu_single_register_load_and_store_ins->replace_regs(regs_map);
+                cpu_single_register_load_and_store_ins->replace_source_regs(regs_map);
             }
             else
             {
-                cpu_ins->replace_regs(regs_map);
+                cpu_ins->replace_source_regs(regs_map);
             }
         }
         else
         {
-            ins->replace_regs(regs_map);
+            ins->replace_source_regs(regs_map);
         }
     }
     else if(is_pseudo_instruction())
     {
         pseudo_ins=dynamic_cast<Arm_pseudo_instruction *>((Arm_asm_file_line *)this);
-        pseudo_ins->replace_regs(regs_map);
+        pseudo_ins->replace_source_regs(regs_map);
+    }
+}
+
+void Arm_asm_file_line::replace_destination_regs(const map<reg_index,reg_index> & regs_map)
+{
+    Arm_instruction * ins;
+    Arm_cpu_instruction * cpu_ins;
+    Arm_cpu_data_process_instruction * cpu_data_process_ins;
+    Arm_cpu_single_register_load_and_store_instruction * cpu_single_register_load_and_store_ins;
+    Arm_pseudo_instruction * pseudo_ins;
+    if(is_instruction())
+    {
+        ins=dynamic_cast<Arm_instruction *>((Arm_asm_file_line *)this);
+        if(ins->is_cpu_instruction())
+        {
+            cpu_ins=dynamic_cast<Arm_cpu_instruction *>(ins);
+            if(cpu_ins->is_data_process_instruction())
+            {
+                cpu_data_process_ins=dynamic_cast<Arm_cpu_data_process_instruction *>(cpu_ins);
+                cpu_data_process_ins->replace_destination_regs(regs_map);
+            }
+            else if(cpu_ins->is_single_register_load_and_store_instruction())
+            {
+                cpu_single_register_load_and_store_ins=dynamic_cast<Arm_cpu_single_register_load_and_store_instruction *>(cpu_ins);
+                cpu_single_register_load_and_store_ins->replace_destination_regs(regs_map);
+            }
+            else
+            {
+                cpu_ins->replace_destination_regs(regs_map);
+            }
+        }
+        else
+        {
+            ins->replace_destination_regs(regs_map);
+        }
+    }
+    else if(is_pseudo_instruction())
+    {
+        pseudo_ins=dynamic_cast<Arm_pseudo_instruction *>((Arm_asm_file_line *)this);
+        pseudo_ins->replace_destination_regs(regs_map);
     }
 }
 
@@ -593,14 +697,38 @@ string Arm_directive::to_string() const
 
 void Arm_instruction::replace_regs(const map<reg_index,reg_index> & regs_map)
 {
-    for(auto & reg:destination_registers_.registers_)
+    replace_source_regs(regs_map);
+    replace_destination_regs(regs_map);
+    // for(auto & reg:destination_registers_.registers_)
+    // {
+    //     if(regs_map.find(reg)!=regs_map.end())
+    //     {
+    //         reg=regs_map.at(reg);
+    //     }
+    // }
+    // for(auto & reg:source_registers_.registers_)
+    // {
+    //     if(regs_map.find(reg)!=regs_map.end())
+    //     {
+    //         reg=regs_map.at(reg);
+    //     }
+    // }
+}
+
+void Arm_instruction::replace_source_regs(const map<reg_index,reg_index> & regs_map)
+{
+    for(auto & reg:source_registers_.registers_)
     {
         if(regs_map.find(reg)!=regs_map.end())
         {
             reg=regs_map.at(reg);
         }
     }
-    for(auto & reg:source_registers_.registers_)
+}
+
+void Arm_instruction::replace_destination_regs(const map<reg_index,reg_index> & regs_map)
+{
+    for(auto & reg:destination_registers_.registers_)
     {
         if(regs_map.find(reg)!=regs_map.end())
         {
@@ -646,6 +774,27 @@ bool Arm_instruction::is_vfp_instruction() const
 //===================================== class Arm_pseudo_instruction =====================================//
 
 void Arm_pseudo_instruction::replace_regs(const map<reg_index,reg_index> & regs_map)
+{
+    replace_source_regs(regs_map);
+    replace_destination_regs(regs_map);
+    // if(op_==arm_pseudo_op::ADR || 
+    // op_==arm_pseudo_op::ADRL ||
+    // op_==arm_pseudo_op::LDR || 
+    // op_==arm_pseudo_op::VLDR)
+    // {
+    //     if(regs_map.find(reg_)!=regs_map.end())
+    //     {
+    //         reg_=regs_map.at(reg_);
+    //     }
+    // }
+}
+
+void Arm_pseudo_instruction::replace_source_regs(const map<reg_index,reg_index> & regs_map)
+{
+    ;
+}
+
+void Arm_pseudo_instruction::replace_destination_regs(const map<reg_index,reg_index> & regs_map)
 {
     if(op_==arm_pseudo_op::ADR || 
     op_==arm_pseudo_op::ADRL ||
@@ -762,7 +911,34 @@ string Arm_cpu_branch_instruction::to_string() const
 
 void Arm_cpu_data_process_instruction::replace_regs(const map<reg_index,reg_index> & regs_map)
 {
-    Arm_cpu_instruction::replace_regs(regs_map);
+    replace_source_regs(regs_map);
+    replace_destination_regs(regs_map);
+    // Arm_cpu_instruction::replace_regs(regs_map);
+    // if(data_type_==arm_data_process_instruction_data_type::OPERNAD2)
+    // {
+    //     if(operand2_.type==operand2_type::RM_SHIFT)
+    //     {
+    //         if(regs_map.find(operand2_.Rm_shift.Rm)!=regs_map.end())
+    //         {
+    //             operand2_.Rm_shift.Rm=regs_map.at(operand2_.Rm_shift.Rm);
+    //         }
+    //         if(operand2_.Rm_shift.shift_op==operand2_shift_op::ASR_RS || 
+    //         operand2_.Rm_shift.shift_op==operand2_shift_op::LSL_RS ||
+    //         operand2_.Rm_shift.shift_op==operand2_shift_op::LSR_RS ||
+    //         operand2_.Rm_shift.shift_op==operand2_shift_op::ROR_RS)
+    //         {
+    //             if(regs_map.find(operand2_.Rm_shift.Rs)!=regs_map.end())
+    //             {
+    //                 operand2_.Rm_shift.Rs=regs_map.at(operand2_.Rm_shift.Rs);
+    //             }
+    //         }
+    //     }
+    // }
+}
+
+void Arm_cpu_data_process_instruction::replace_source_regs(const map<reg_index,reg_index> & regs_map)
+{
+    Arm_cpu_instruction::replace_source_regs(regs_map);
     if(data_type_==arm_data_process_instruction_data_type::OPERNAD2)
     {
         if(operand2_.type==operand2_type::RM_SHIFT)
@@ -783,6 +959,11 @@ void Arm_cpu_data_process_instruction::replace_regs(const map<reg_index,reg_inde
             }
         }
     }
+}
+
+void Arm_cpu_data_process_instruction::replace_destination_regs(const map<reg_index,reg_index> & regs_map)
+{
+    Arm_cpu_instruction::replace_destination_regs(regs_map);
 }
 
 set<reg_index> Arm_cpu_data_process_instruction::get_all_source_regs() const
@@ -851,7 +1032,21 @@ string Arm_cpu_multiple_registers_load_and_store_instruction::to_string() const
 
 void Arm_cpu_single_register_load_and_store_instruction::replace_regs(const map<reg_index,reg_index> & regs_map)
 {
-    Arm_cpu_instruction::replace_regs(regs_map);
+    replace_source_regs(regs_map);
+    replace_destination_regs(regs_map);
+    // Arm_cpu_instruction::replace_regs(regs_map);
+    // if(flexoffset_.type==flexoffset_type::RM_SHIFT)
+    // {
+    //     if(regs_map.find(flexoffset_.Rm_shift.Rm)!=regs_map.end())
+    //     {
+    //         flexoffset_.Rm_shift.Rm=regs_map.at(flexoffset_.Rm_shift.Rm);
+    //     }
+    // }
+}
+
+void Arm_cpu_single_register_load_and_store_instruction::replace_source_regs(const map<reg_index,reg_index> & regs_map)
+{
+    Arm_cpu_instruction::replace_source_regs(regs_map);
     if(flexoffset_.type==flexoffset_type::RM_SHIFT)
     {
         if(regs_map.find(flexoffset_.Rm_shift.Rm)!=regs_map.end())
@@ -859,6 +1054,11 @@ void Arm_cpu_single_register_load_and_store_instruction::replace_regs(const map<
             flexoffset_.Rm_shift.Rm=regs_map.at(flexoffset_.Rm_shift.Rm);
         }
     }
+}
+
+void Arm_cpu_single_register_load_and_store_instruction::replace_destination_regs(const map<reg_index,reg_index> & regs_map)
+{
+    Arm_cpu_instruction::replace_destination_regs(regs_map);
 }
 
 set<reg_index> Arm_cpu_single_register_load_and_store_instruction::get_all_source_regs() const
@@ -1054,7 +1254,19 @@ bool Arm_cpu_instruction::is_single_register_load_and_store_instruction() const
 
 void Arm_cpu_instruction::replace_regs(const map<reg_index,reg_index> & regs_map)
 {
-    Arm_instruction::replace_regs(regs_map);
+    replace_source_regs(regs_map);
+    replace_destination_regs(regs_map);
+    //Arm_instruction::replace_regs(regs_map);
+}
+
+void Arm_cpu_instruction::replace_source_regs(const map<reg_index,reg_index> & regs_map)
+{
+    Arm_instruction::replace_source_regs(regs_map);
+}
+
+void Arm_cpu_instruction::replace_destination_regs(const map<reg_index,reg_index> & regs_map)
+{
+    Arm_instruction::replace_destination_regs(regs_map);
 }
 
 //==========================================================================//

@@ -14,7 +14,7 @@
 
 DAG_node::DAG_node(struct ic_data * data):related_op(ic_op::NOP)
 {
-    add_data(data);
+    related_data=data;
 }
 
 DAG_node::DAG_node(enum ic_op op,struct ic_data * data,list<struct DAG_node * > children,void * special_data):related_op(op),children(children),special_data(special_data)
@@ -23,64 +23,14 @@ DAG_node::DAG_node(enum ic_op op,struct ic_data * data,list<struct DAG_node * > 
     {
         child->add_a_father(this);
     }
-    if(data)
-    {
-        add_data(data);
-    }
-}
-
-void DAG_node::delete_all_relateion_with_all_children()
-{
-    for(auto child:children)
-    {
-        child->delete_a_father(this);
-    }
-    children.clear();
-}
-
-void DAG_node::add_data(struct ic_data * data)
-{
-    for(auto related_data:related_datas)
-    {
-        if(data==related_data)
-        {
-            return;
-        }
-    }
-    related_datas.push_back(data);
-}
-
-bool DAG_node::is_leaf()
-{
-    return (related_op==ic_op::NOP && related_datas.size()==1 && children.empty());
-}
-
-struct ic_data * DAG_node::get_leaf_node_s_only_data()
-{
-    if(is_leaf() && !related_datas.empty())
-    {
-        return related_datas.front();
-    }
-    return nullptr;
-}
-
-struct ic_data * DAG_node::get_first_data()
-{
-    if(related_datas.empty())
-    {
-        return nullptr;
-    }
-    return related_datas.front();
+    related_data=data;
 }
 
 struct DAG_node * DAG_node::get_only_child()
 {
     if(children.size()==1)
     {
-        for(auto child:children)
-        {
-            return child;
-        }
+        return children.front();
     }
     return nullptr;
 }
@@ -89,7 +39,7 @@ struct DAG_node * DAG_node::get_left_child()
 {
     if(children.size()==2)
     {
-        return (*children.begin());
+        return children.front();
     }
     return nullptr;
 }
@@ -98,7 +48,7 @@ struct DAG_node * DAG_node::get_right_child()
 {
     if(children.size()==2)
     {
-        return (*(++children.begin()));
+        return children.back();
     }
     return nullptr;
 }
@@ -143,7 +93,10 @@ void DAG_node::change_left_child(struct DAG_node * node)
     {
         (*children.begin())->delete_a_father(this);
         (*children.begin())=node;
-        (*children.begin())->add_a_father(this);
+        if(node)
+        {
+            node->add_a_father(this);
+        }
     }
 }
 
@@ -153,28 +106,21 @@ void DAG_node::change_right_child(struct DAG_node * node)
     {
         (*(++children.begin()))->delete_a_father(this);
         (*(++children.begin()))=node;
-        (*(++children.begin()))->add_a_father(this);
+        if(node)
+        {
+            node->add_a_father(this);
+        }
     }
-}
-
-enum language_data_type DAG_node::get_related_data_type()
-{
-    struct ic_data * data=get_first_data();
-    if(data)
-    {
-        return data->get_data_type();
-    }
-    return language_data_type::VOID;
 }
 
 bool DAG_node::is_related_to_a_const(enum language_data_type data_type)
 {
-    return (related_datas.size()==1 && related_datas.front()->is_const() && (data_type==language_data_type::VOID || related_datas.front()->get_data_type()==data_type));
+    return (related_data && related_data->is_const() && (data_type==language_data_type::VOID || related_data->get_data_type()==data_type));
 }
 
 bool DAG_node::is_related_to_a_temp_var()
 {
-    return (related_datas.size()==1 && related_datas.front()->is_tmp_var());
+    return (related_data && related_data->is_tmp_var());
 }
 
 //==========================================================================//
@@ -328,8 +274,6 @@ void DAG::attach_data_to_node(struct ic_data * data,struct DAG_node * node)
             }
         }
     }
-    //如果DAG节点中没有这个变量，就将其添加进去
-    node->add_data(data);
     //在映射表data_to_node_建立变量和节点之间的关联
     if(data_to_node_.find(data)==data_to_node_.end())
     {
@@ -348,6 +292,11 @@ void DAG::unattach_data_s_current_node(struct ic_data * data)
     {
         data_to_node_.erase(data);
     }
+}
+
+void DAG::move_node_to_trash(struct DAG_node * node)
+{
+    trash_.insert(node);
 }
 
 struct DAG_node * DAG::new_DAG_node(struct ic_data * data)
@@ -428,17 +377,12 @@ bool DAG::check_data_s_node_available(struct ic_data * data,struct DAG_node * no
     return (data_to_node_.find(data)!=data_to_node_.end() && data_to_node_.at(data)==node);
 }
 
-bool DAG::check_leaf_node_available(struct DAG_node * node)
-{
-    return node->is_leaf() && check_data_s_node_available(node->get_leaf_node_s_only_data(),node);
-}
-
 struct ic_data * DAG::copy_progagation(struct ic_data * data,bool stop_when_array_member)
 {
     //这里我们规定：在DAG中，ASSIGN节点如果不涉及数据类型的转换，那么它有且仅有一个子节点，而且这个子节点只能是叶子节点，不能再是ASSIGN节点或者其他的节点
     //如果ASSIGN涉及了数据类型的转换，那么它的子节点可以是叶子节点或者ASSIGN节点
     struct DAG_node * node,* child;
-    struct ic_data * res,* offset;
+    struct ic_data * offset;
     if(data->is_array_member())
     {
         if(data->is_array_var())
@@ -450,21 +394,18 @@ struct ic_data * DAG::copy_progagation(struct ic_data * data,bool stop_when_arra
         data=Symbol_table::get_instance()->array_member_not_array_var_entry(data->get_belong_array(),offset);
     }
     node=get_DAG_node(data);
-    if(node->related_op==ic_op::ASSIGN)
+    while(node->related_op==ic_op::ASSIGN)
     {
         child=node->get_only_child();
-        if(child && child->get_first_data()->get_data_type()==data->get_data_type())
+        if(!(child->related_data->get_data_type()==data->get_data_type() && 
+        check_data_s_node_available(child->related_data,child) && 
+        (!(stop_when_array_member && child->related_data->is_array_member()))))
         {
-            for(auto related_data:child->related_datas)
-            {
-                if(check_data_s_node_available(related_data,child) && (!(stop_when_array_member && related_data->is_array_member())))
-                {
-                    return related_data;
-                }
-            }
+            break;
         }
+        node=child;
     }
-    return data;
+    return node->related_data;
 }
 
 void DAG::generate_ASSIGN_in_DAG(struct ic_data * to,struct ic_data * from)
@@ -689,7 +630,7 @@ bool DAG::algebraic_simplify(enum ic_op op,struct ic_data * result,struct ic_dat
 bool DAG::common_expression_delete(enum ic_op op,struct ic_data * result,struct ic_data * arg1,struct ic_data * arg2)
 {
     set<struct DAG_node * > common_fathers;
-    struct DAG_node * arg1_node,* arg2_node;
+    struct DAG_node * arg1_node,* arg2_node,* result_node;
     arg1=copy_progagation(arg1);
     arg1_node=get_DAG_node(arg1);
     if(arg2)
@@ -700,10 +641,12 @@ bool DAG::common_expression_delete(enum ic_op op,struct ic_data * result,struct 
         common_fathers=map_key_intersection(arg1_node->fathers,arg2_node->fathers);
         for(auto father:common_fathers)
         {
-            if(op==father->related_op && (father->get_left_child()==arg1_node && father->get_right_child()==arg2_node) || (father->get_left_child()==arg2_node && father->get_right_child()==arg1_node))
+            if(op==father->related_op && 
+            ((father->get_left_child()==arg1_node && father->get_right_child()==arg2_node) || 
+            (father->get_left_child()==arg2_node && father->get_right_child()==arg1_node)) && 
+            check_data_s_node_available(father->related_data,father))
             {
-                //new_DAG_node(ic_op::ASSIGN,result,1,father->related_datas.front());
-                attach_data_to_node(result,father);
+                generate_ASSIGN_in_DAG(result,father->related_data);
                 return true;
             }
         }
@@ -712,10 +655,10 @@ bool DAG::common_expression_delete(enum ic_op op,struct ic_data * result,struct 
     {
         for(auto father:arg1_node->fathers)
         {
-            if(op==father.first->related_op)
+            if(op==father.first->related_op && 
+            check_data_s_node_available(father.first->related_data,father.first))
             {
-                //new_DAG_node(ic_op::ASSIGN,result,1,father.first->related_datas.front());
-                attach_data_to_node(result,father.first);
+                generate_ASSIGN_in_DAG(result,father.first->related_data);
                 return true;
             }
         }
@@ -732,7 +675,10 @@ bool DAG::function_call_common_expression_delete(struct ic_data * result,struct 
     //（1）外部函数
     //（2）调用的函数对全局变量或者函数的数组形参进行了更改或者使用
     //（3）直接或者间接调用了外部函数的函数
-    if(func->is_external || !symbol_table->get_func_def_globals_and_array_f_params(func).empty() || !symbol_table->get_func_use_globals_and_array_f_params(func).empty() || symbol_table->is_func_call_external_func(func))
+    if(func->is_external || 
+    !symbol_table->get_func_def_globals_and_array_f_params(func).empty() || 
+    !symbol_table->get_func_use_globals_and_array_f_params(func).empty() || 
+    symbol_table->is_func_call_external_func(func))
     {
         return false;
     }
@@ -749,7 +695,7 @@ bool DAG::function_call_common_expression_delete(struct ic_data * result,struct 
     }
     for(auto node:all_nodes_)
     {
-        if(node->related_op==ic_op::CALL && node->special_data==func)
+        if(node->related_op==ic_op::CALL && node->special_data==func && node->related_data)
         {
             common_fathers.insert(node);
         }
@@ -760,9 +706,11 @@ bool DAG::function_call_common_expression_delete(struct ic_data * result,struct 
     }
     for(auto father:common_fathers)
     {
-        if(father->related_op==ic_op::CALL && father->special_data==func)
+        if(father->related_op==ic_op::CALL && 
+        father->special_data==func && 
+        check_data_s_node_available(father->related_data,father))
         {
-            attach_data_to_node(result,father);
+            generate_ASSIGN_in_DAG(result,father->related_data);
             return true;
         }
     }
@@ -809,10 +757,13 @@ void DAG::a_lot_of_adds_to_multi_in_a_DAG_tree(struct DAG_node * father_node)
                 {
                     data_exchange(left_child_s_left_child,left_child_s_right_child);
                 }
-                if(left_child_s_right_child->is_related_to_a_const(language_data_type::INT) && left_child_s_left_child==right_child && left_child->is_related_to_a_temp_var() && left_child->get_fathers_num()==1)
+                if(left_child_s_right_child->is_related_to_a_const(language_data_type::INT) && 
+                left_child_s_left_child==right_child && 
+                left_child->is_related_to_a_temp_var() && 
+                left_child->get_fathers_num()==1)
                 {
                     father_node->change_left_child(left_child_s_left_child);
-                    father_node->change_right_child(get_DAG_node(symbol_table->const_entry(language_data_type::INT,OAA((int)(left_child_s_right_child->related_datas.front()->get_value().int_data+1)))));
+                    father_node->change_right_child(get_DAG_node(symbol_table->const_entry(language_data_type::INT,OAA((int)(left_child_s_right_child->related_data)->get_value().int_data+1))));
                     father_node->related_op=ic_op::MUL;
                 }
                 break;
@@ -831,10 +782,59 @@ void DAG::a_lot_of_adds_to_multi()
     }
 }
 
+void DAG::n_selfadd_one_to_one_selfadd_n_in_a_DAG_tree(struct DAG_node * father_node)
+{
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
+    struct DAG_node * left_child,* right_child,* left_child_s_left_child,* left_child_s_right_child;
+    if(father_node->related_op==ic_op::ADD)
+    {
+        left_child=father_node->get_left_child();
+        right_child=father_node->get_right_child();
+        a_lot_of_adds_to_multi_in_a_DAG_tree(left_child);
+        a_lot_of_adds_to_multi_in_a_DAG_tree(right_child);
+        if(left_child->is_related_to_a_const(language_data_type::INT))
+        {
+            data_exchange(left_child,right_child);
+        }
+        if(!right_child->is_related_to_a_const(language_data_type::INT) || 
+        left_child->fathers.size()!=1 || 
+        left_child->related_data!=father_node->related_data || 
+        left_child->related_op!=ic_op::ADD)
+        {
+            return;
+        }
+        left_child_s_left_child=left_child->get_left_child();
+        left_child_s_right_child=left_child->get_right_child();
+        if(left_child_s_left_child->is_related_to_a_const(language_data_type::INT))
+        {
+            data_exchange(left_child_s_left_child,left_child_s_right_child);
+        }
+        if(!left_child_s_right_child->is_related_to_a_const(language_data_type::INT))
+        {
+            return;
+        }
+        father_node->change_left_child(left_child_s_left_child);
+        father_node->change_right_child(get_DAG_node(symbol_table->const_entry(language_data_type::INT,OAA((int)(left_child_s_right_child->related_data)->get_value().int_data+right_child->related_data->get_value().int_data))));
+        left_child->change_left_child(nullptr);
+        left_child->change_right_child(nullptr);
+        move_node_to_trash(left_child);
+    }
+}
+
+void DAG::n_selfadd_one_to_one_selfadd_n()
+{
+    for(auto father_node:nodes_order_)
+    {
+        n_selfadd_one_to_one_selfadd_n_in_a_DAG_tree(father_node);
+    }
+}
+
 void DAG::optimize()
 {
     //将多个加法转换成乘法
     a_lot_of_adds_to_multi();
+    //n个+1转换成1个+n
+    n_selfadd_one_to_one_selfadd_n();
 }
 
 list<struct quaternion> DAG::to_basic_block()
@@ -857,48 +857,23 @@ list<struct quaternion> DAG::to_basic_block()
     }
     for(auto node:nodes_order_)
     {
+        if(trash_.find(node)!=trash_.end())
+        {
+            continue;
+        }
         op=node->related_op;
         //按照最初的顺序将这些DAG节点还原成中间代码
         switch(op)
         {
             case ic_op::ASSIGN:
-                result=nullptr;
-                for(auto data:node->related_datas)
-                {
-                    if(!result)
-                    {
-                        arg1=node->get_only_child()->get_first_data();
-                        if(arg1->get_data_type()==data->get_data_type())
-                        {
-                            result=arg1;
-                        }
-                        else
-                        {
-                            result=data;
-                        }
-                        res.push_back(quaternion(op,ic_operand::DATA,(void *)(arg1),ic_operand::NONE,nullptr,ic_operand::DATA,(void *)(data)));
-                    }
-                    else
-                    {
-                        res.push_back(quaternion(ic_op::ASSIGN,ic_operand::DATA,(void *)(result),ic_operand::NONE,nullptr,ic_operand::DATA,(void *)(data)));
-                    }
-                }
+                arg1=node->get_only_child()->related_data;
+                result=node->related_data;
+                res.push_back(quaternion(op,ic_operand::DATA,(void *)(arg1),ic_operand::NONE,nullptr,ic_operand::DATA,(void *)(result)));
                 break;
             case ic_op::NOT:
-                result=nullptr;
-                for(auto data:node->related_datas)
-                {
-                    if(!result)
-                    {
-                        arg1=node->get_only_child()->get_first_data();
-                        result=data;
-                        res.push_back(quaternion(op,ic_operand::DATA,(void *)(arg1),ic_operand::NONE,nullptr,ic_operand::DATA,(void *)(result)));
-                    }
-                    else
-                    {
-                        res.push_back(quaternion(ic_op::ASSIGN,ic_operand::DATA,(void *)(result),ic_operand::NONE,nullptr,ic_operand::DATA,(void *)(data)));
-                    }
-                }
+                arg1=node->get_only_child()->related_data;
+                result=node->related_data;
+                res.push_back(quaternion(op,ic_operand::DATA,(void *)(arg1),ic_operand::NONE,nullptr,ic_operand::DATA,(void *)(result)));
                 break;
             case ic_op::ADD:
             case ic_op::SUB:
@@ -911,67 +886,30 @@ list<struct quaternion> DAG::to_basic_block()
             case ic_op::GT:
             case ic_op::LE:
             case ic_op::LT:
-                result=nullptr;
-                for(auto data:node->related_datas)
-                {
-                    if(!result)
-                    {
-                        arg1=node->get_left_child()->get_first_data();
-                        arg2=node->get_right_child()->get_first_data();
-                        result=data;
-                        res.push_back(quaternion(op,ic_operand::DATA,(void *)(arg1),ic_operand::DATA,(void *)(arg2),ic_operand::DATA,(void *)(result)));
-                    }
-                    else
-                    {
-                        res.push_back(quaternion(ic_op::ASSIGN,ic_operand::DATA,(void *)(result),ic_operand::NONE,nullptr,ic_operand::DATA,(void *)(data)));
-                    }
-                }
+                arg1=node->get_left_child()->related_data;
+                arg2=node->get_right_child()->related_data;
+                result=node->related_data;
+                res.push_back(quaternion(op,ic_operand::DATA,(void *)(arg1),ic_operand::DATA,(void *)(arg2),ic_operand::DATA,(void *)(result)));
                 break;
             case ic_op::CALL:
-                result=node->get_first_data();
+                result=node->related_data;
                 r_params=new list<struct ic_data * >;
                 for(auto child:node->children)
                 {
-                    r_params->push_back(child->get_first_data());
+                    r_params->push_back(child->related_data);
                 }
                 if(result)
                 {
-                    result=nullptr;
-                    for(auto data:node->related_datas)
-                    {
-                        if(!result)
-                        {
-                            result=data;
-                            res.push_back(quaternion(op,ic_operand::FUNC,(void *)(node->special_data),ic_operand::DATAS,(void *)(r_params),ic_operand::DATA,(void *)(result)));
-                        }
-                        else
-                        {
-                            res.push_back(quaternion(ic_op::ASSIGN,ic_operand::DATA,(void *)(result),ic_operand::NONE,nullptr,ic_operand::DATA,(void *)(data)));
-                        }
-                    }
+                    res.push_back(quaternion(op,ic_operand::FUNC,(void *)(node->special_data),ic_operand::DATAS,(void *)(r_params),ic_operand::DATA,(void *)(result)));
                 }
                 else
                 {
                     res.push_back(quaternion(op,ic_operand::FUNC,(void *)(node->special_data),ic_operand::DATAS,(void *)(r_params),ic_operand::NONE,nullptr));
                 }
-                // result=node->get_first_data();
-                // r_params=new list<struct ic_data * >;
-                // for(auto child:node->children)
-                // {
-                //     r_params->push_back(child->get_first_data());
-                // }
-                // if(result)
-                // {
-                //     res.push_back(quaternion(op,ic_operand::FUNC,(void *)(node->special_data),ic_operand::DATAS,(void *)(r_params),ic_operand::DATA,(void *)(result)));
-                // }
-                // else
-                // {
-                //     res.push_back(quaternion(op,ic_operand::FUNC,(void *)(node->special_data),ic_operand::DATAS,(void *)(r_params),ic_operand::NONE,nullptr));
-                // }
                 break;
             case ic_op::IF_JMP:
             case ic_op::IF_NOT_JMP:
-                arg1=node->get_only_child()->get_first_data();
+                arg1=node->get_only_child()->related_data;
                 if(arg1->is_const())
                 {
                     switch(arg1->get_data_type())
@@ -1000,7 +938,7 @@ list<struct quaternion> DAG::to_basic_block()
             case ic_op::RET:
                 if(node->children.size()==1)
                 {
-                    result=node->get_only_child()->get_first_data();
+                    result=node->get_only_child()->related_data;
                     res.push_back(quaternion(op,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::DATA,(void *)(result)));
                 }
                 else

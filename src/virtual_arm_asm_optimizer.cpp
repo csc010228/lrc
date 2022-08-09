@@ -24,6 +24,9 @@ void Virtual_arm_asm_optimizer::optimize_func_and_basic_block_s_enter_and_exit()
     /*
     这个优化做了之后有很多情况下性能不升反降???
     */
+    static reg_index sp=(reg_index)notify(event(event_type::GET_SP_REG,nullptr)).int_data,
+    fp=(reg_index)notify(event(event_type::GET_FP_REG,nullptr)).int_data,
+    lr=(reg_index)notify(event(event_type::GET_LR_REG,nullptr)).int_data;
     bool optimize_func_enter_exit=true;
     Arm_instruction * instruction;
     Arm_pseudo_instruction * pseudo_instruction;
@@ -34,9 +37,6 @@ void Virtual_arm_asm_optimizer::optimize_func_and_basic_block_s_enter_and_exit()
     set<reg_index> destination_regs,source_regs,all_regs;
     set<struct arm_basic_block * > bbs,ret_func_bbs;
     struct arm_basic_block * enter_func_bbs;
-    reg_index sp=(reg_index)notify(event(event_type::GET_SP_REG,nullptr)).int_data,
-    fp=(reg_index)notify(event(event_type::GET_FP_REG,nullptr)).int_data,
-    lr=(reg_index)notify(event(event_type::GET_LR_REG,nullptr)).int_data;
     for(auto basic_block:virtual_target_code_->basic_blocks)
     {
         //当基本块满足下列条件的时候，我们认为该基本块出入口的移动sp为临时变量开辟和释放内存空间是可以省略的

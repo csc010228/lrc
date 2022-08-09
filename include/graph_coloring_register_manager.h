@@ -52,6 +52,12 @@ struct virutal_reg_s_live_interval
     //增加该虚拟寄存器的定义点
     void add_def_pos(struct arm_basic_block * bb,virtual_target_code_pos pos);
 
+    //某一个点是否是该虚拟寄存器的定义点
+    bool is_def_pos(virtual_target_code_pos pos) const;
+
+    //某一个点是否是该虚拟寄存器的使用点
+    bool is_use_pos(virtual_target_code_pos pos) const;
+
     //获取寄存器溢出时的分数，分数越高，越不能溢出
     size_t get_score();
 
@@ -184,13 +190,13 @@ private:
     enum reg_processor current_processor;
 
     //本函数中可以用于着色的CPU物理寄存器个数
-    size_t available_physical_cpu_reg_num;
+    //size_t available_physical_cpu_reg_num;
 
     //本函数中可以用于着色的CPU物理寄存器
     set<reg_index> available_physical_cpu_regs;
 
     //本函数中可以用于着色的VFP物理寄存器个数
-    size_t available_physical_vfp_reg_num;
+    //size_t available_physical_vfp_reg_num;
 
     //本函数中可以用于着色的VFP物理寄存器
     set<reg_index> available_physical_vfp_regs;
@@ -224,6 +230,18 @@ private:
 
     set<struct coherent_diagram_node * > worklist_moves;
 
+    //获取某一个位置的虚拟目标代码
+    list<Arm_asm_file_line *>::iterator get_virtual_target_code(virtual_target_code_pos pos) const;
+
+    //获取某一个位置所在的基本块
+    struct arm_basic_block * get_pos_s_basic_block(virtual_target_code_pos pos) const;
+
+    //获取某一个基本块的起始位置
+    virtual_target_code_pos get_basic_block_s_start_pos(struct arm_basic_block * bb) const;
+
+    //获取某一个基本块的终止位置
+    virtual_target_code_pos get_basic_block_s_end_pos(struct arm_basic_block * bb) const;
+
     //获取一条虚拟目标代码中的所有源寄存器
     set<reg_index> get_virtual_traget_instruction_s_all_source_regs(Arm_asm_file_line * line);
 
@@ -241,6 +259,13 @@ private:
 
     //构建相干图
     void build_coherent_diagram();
+
+    //减少虚拟寄存器使用的一些优化
+    void reduce_const_regs();
+    void fission_regs();
+
+    //在寄存器分配之前进行虚拟目标代码的优化，以减少寄存器的spill
+    void optimize_virtual_for_less_spill_regs();
 
     //根据相干图初始化各个worklist
     void mk_worklists();
@@ -282,7 +307,7 @@ private:
     void rewrite_program();
 
     //对虚拟目标代码进行图着色寄存器分配
-    void graph_coloring_register_distribute();
+    void graph_coloring_register_distribute(bool first_time);
 
     //根据着色的结果从虚拟目标代码生成实际目标代码
     void virtual_target_code_to_physical_target_code();

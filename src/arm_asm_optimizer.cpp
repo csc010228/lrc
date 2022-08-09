@@ -133,7 +133,7 @@ void Arm_asm_optimizer::remove_useless_mov(struct arm_basic_block * basic_block)
         if((*line)->is_instruction())
         {
             ins=dynamic_cast<Arm_instruction * >(*line);
-            if(ins->get_op()==arm_op::MOV)
+            if(ins->get_op()==arm_op::MOV && ins->get_cond()==arm_condition::NONE)
             {
                 cpu_data_process_ins=dynamic_cast<Arm_cpu_data_process_instruction * >(ins);
                 if(!cpu_data_process_ins->is_update_flags() && cpu_data_process_ins->get_destination_registers().registers_.size()==1)
@@ -433,14 +433,143 @@ next:
     }
 }
 
+extern map<enum arm_condition,string> condition_output_map;
+extern map<enum arm_condition,enum arm_condition> condition_antonym_map;
+
 /*
 利用arm的条件执行进行优化
 */
 void Arm_asm_optimizer::conditional_execute(struct arm_func_flow_graph * func)
 {
-    for(list<struct arm_basic_block * >::iterator bb=func->basic_blocks.begin();bb!=func->basic_blocks.end();bb++)
+    list<struct arm_basic_block * >::iterator pre,next;
+    Arm_instruction * ins;
+    Arm_pseudo_instruction * pse_ins;
+    Arm_cpu_instruction * cpu_ins;
+    Arm_cpu_branch_instruction * cpu_branch_ins;
+    size_t ins_num;
+    string cond_string;
+    enum arm_condition cond;
+    for(list<struct arm_basic_block * >::iterator current=func->basic_blocks.begin();current!=func->basic_blocks.end();current++)
     {
-        
+        if(current!=func->basic_blocks.begin())
+        {
+            next=current;
+            advance(next,1);
+            if(next!=func->basic_blocks.end())
+            {
+                pre=current;
+                advance(pre,-1);
+                if((*pre)->sequential_next!=(*current) || (*pre)->jump_next!=(*next) || (*current)->get_successors().size()==2)
+                {
+                    continue;
+                }
+                ins_num=0;
+                cpu_branch_ins=nullptr;
+                for(auto line:(*current)->arm_sequence)
+                {
+                    if(line->is_pseudo_instruction())
+                    {
+                        pse_ins=dynamic_cast<Arm_pseudo_instruction * >(line);
+                        if(pse_ins->get_op()==arm_pseudo_op::NOP)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            goto next_bb;
+                        }
+                    }
+                    else if(line->is_directive())
+                    {
+                        goto next_bb;
+                    }
+                    else if(line->is_instruction())
+                    {
+                        if(cpu_branch_ins)
+                        {
+                            goto next_bb;
+                        }
+                        ins=dynamic_cast<Arm_instruction * >(line);
+                        if(ins->is_cpu_instruction())
+                        {
+                            cpu_ins=dynamic_cast<Arm_cpu_instruction * >(line);
+                            if(cpu_ins->is_branch_instruction())
+                            {
+                                cpu_branch_ins=dynamic_cast<Arm_cpu_branch_instruction * >(cpu_ins);
+                            }
+                        }
+                        if(ins->get_cond()==arm_condition::NONE)
+                        {
+                            ins_num++;
+                        }
+                        else
+                        {
+                            goto next_bb;
+                        }
+                    }
+                }
+                if(ins_num>2)
+                {
+                    break;
+                }
+                cond=arm_condition::NONE;
+                for(list<Arm_asm_file_line * >::reverse_iterator line=(*pre)->arm_sequence.rbegin();line!=(*pre)->arm_sequence.rend();line++)
+                {
+                    if((*line)->is_instruction())
+                    {
+                        ins=dynamic_cast<Arm_instruction * >(*line);
+                        if(ins->is_cpu_instruction())
+                        {
+                            cpu_ins=dynamic_cast<Arm_cpu_instruction * >(ins);
+                            if(cpu_ins->is_branch_instruction())
+                            {
+                                cpu_branch_ins=dynamic_cast<Arm_cpu_branch_instruction * >(cpu_ins);
+                                cond=condition_antonym_map.at(cpu_branch_ins->get_cond());
+                                // if(cond==arm_condition::NONE)
+                                // {
+                                //     goto next_bb;
+                                // }
+                                delete (*line);
+                                (*line)=new Arm_pseudo_instruction();
+                                break;
+                            }
+                        }
+                    }
+                }
+                // if(cond==arm_condition::NONE)
+                // {
+                //     goto next_bb;
+                // }
+                for(auto line:(*current)->arm_sequence)
+                {
+                    if(line->is_instruction())
+                    {
+                        ins=dynamic_cast<Arm_instruction * >(line);
+                        ins->set_cond(cond);
+                    }
+                }
+                cond_string=condition_output_map.at(cond);
+                switch(ins_num)
+                {
+                    case 1:
+                        (*current)->arm_sequence.push_front(new Arm_pseudo_instruction(cond_string));
+                        break;
+                    case 2:
+                        (*current)->arm_sequence.push_front(new Arm_pseudo_instruction(cond_string,"t"));
+                        break;
+                    case 3:
+                        (*current)->arm_sequence.push_front(new Arm_pseudo_instruction(cond_string,"t","t"));
+                        break;
+                    case 4:
+                        (*current)->arm_sequence.push_front(new Arm_pseudo_instruction(cond_string,"t","t","t"));
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+next_bb:
+        ;
     }
 }
 

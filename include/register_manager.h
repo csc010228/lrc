@@ -404,6 +404,7 @@ protected:
     virtual struct event handle_GET_REG_BY_NAME(string name);
     virtual struct event handle_IS_REG_EFFECTIVE(reg_index reg);
     virtual struct event handle_GET_FUNC_S_F_PARAMS_IN_REGS(struct ic_func * func);
+    virtual struct event handle_IS_FUNC_S_ANY_F_PARAMS_IN_MEMORY(struct ic_func * func);
     virtual struct event handle_GET_CPU_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC(struct ic_func * func);
     virtual struct event handle_GET_VFP_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC(struct ic_func * func);
     virtual struct event handle_IS_CPU_REG(reg_index reg);
