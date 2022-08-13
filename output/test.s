@@ -13,1133 +13,6 @@
 	.align 1
 	.global	__aeabi_idiv
 	.global	__aeabi_idivmod
-	.global idct
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	idct, %function
-idct:
-	push	{r4,fp,lr}
-	add	fp,sp,#12
-	sub	sp,sp,#4
-	sub	sp,sp,#32
-	sub	sp,sp,#0
-	add	r4,sp,#28
-	str	r3,[r4]
-	add	r3,sp,#24
-	str	r2,[r3]
-	add	r2,sp,#20
-	str	r1,[r2]
-	add	r1,sp,#16
-	str	r0,[r1]
-	movw	r0,#0
-	add	r1,sp,#12
-	str	r0,[r1]
-	add	sp,sp,#0
-.18:
-	sub	sp,sp,#8
-	add	r1,sp,#20
-	ldr	r0,[r1]
-	add	r2,sp,#32
-	ldr	r1,[r2]
-	cmp	r0,r1
-	add	sp,sp,#8
-	bge	.29
-	sub	sp,sp,#0
-	movw	r0,#0
-	add	r1,sp,#8
-	str	r0,[r1]
-	add	sp,sp,#0
-.19:
-	sub	sp,sp,#8
-	add	r1,sp,#16
-	ldr	r0,[r1]
-	add	r2,sp,#36
-	ldr	r1,[r2]
-	cmp	r0,r1
-	add	sp,sp,#8
-	bge	.28
-	sub	sp,sp,#8
-	add	r1,sp,#20
-	ldr	r0,[r1]
-	lsl	r1,r0,#3
-	add	r2,sp,#16
-	ldr	r0,[r2]
-	add	r2,r1,r0
-	movw	r0,#0
-	movt	r0,#16000
-	vmov	s0,r0
-	add	r3,sp,#0
-	str	r2,[r3]
-	add	r2,sp,#4
-	str	r1,[r2]
-	add	r1,sp,#28
-	ldr	r0,[r1]
-	vldr.f32	s1,[r0,#0]
-	vmul.f32	s2,s0,s1
-	movw	r0,#1
-	add	r1,sp,#12
-	str	r0,[r1]
-	add	r1,sp,#24
-	ldr	r0,[r1]
-	vmov	r1,s2
-	ldr	r2,[r3]
-	str	r1,[r0,r2,lsl 2]
-	add	sp,sp,#8
-.20:
-	sub	sp,sp,#8
-	add	r1,sp,#12
-	ldr	r0,[r1]
-	add	r2,sp,#32
-	ldr	r1,[r2]
-	cmp	r0,r1
-	add	sp,sp,#8
-	bge	.21
-	sub	sp,sp,#16
-	add	r1,sp,#28
-	ldr	r0,[r1]
-	lsl	r1,r0,#3
-	add	r2,sp,#24
-	ldr	r0,[r2]
-	add	r2,r1,r0
-	add	r3,sp,#8
-	str	r2,[r3]
-	add	r2,sp,#12
-	str	r1,[r2]
-	add	r1,sp,#20
-	ldr	r0,[r1]
-	lsl	r1,r0,#3
-	movw	r0,#0
-	movt	r0,#16128
-	vmov	s0,r0
-	add	r2,sp,#4
-	str	r1,[r2]
-	add	r1,sp,#36
-	ldr	r0,[r1]
-	ldr	r1,[r2]
-	ldr	r2,[r0,r1,lsl 2]
-	vmov	s1,r2
-	vmul.f32	s2,s0,s1
-	add	r1,sp,#32
-	ldr	r0,[r1]
-	ldr	r1,[r3]
-	ldr	r2,[r0,r1,lsl 2]
-	vmov	s0,r2
-	vadd.f32	s0,s0,s2
-	add	r1,sp,#20
-	ldr	r0,[r1]
-	add	r0,r0,#1
-	str	r0,[r1]
-	add	r1,sp,#32
-	ldr	r0,[r1]
-	vmov	r1,s0
-	ldr	r2,[r3]
-	str	r1,[r0,r2,lsl 2]
-	add	sp,sp,#16
-	b	.20
-.21:
-	sub	sp,sp,#0
-	movw	r0,#1
-	add	r1,sp,#0
-	str	r0,[r1]
-	add	sp,sp,#0
-.22:
-	sub	sp,sp,#8
-	add	r1,sp,#8
-	ldr	r0,[r1]
-	add	r2,sp,#36
-	ldr	r1,[r2]
-	cmp	r0,r1
-	add	sp,sp,#8
-	bge	.23
-	sub	sp,sp,#16
-	add	r1,sp,#28
-	ldr	r0,[r1]
-	lsl	r1,r0,#3
-	add	r2,sp,#24
-	ldr	r0,[r2]
-	add	r2,r1,r0
-	movw	r0,#0
-	movt	r0,#16128
-	vmov	s0,r0
-	add	r3,sp,#8
-	str	r2,[r3]
-	add	r2,sp,#12
-	str	r1,[r2]
-	add	r1,sp,#36
-	ldr	r0,[r1]
-	add	r2,sp,#16
-	ldr	r1,[r2]
-	ldr	r2,[r0,r1,lsl 2]
-	vmov	s1,r2
-	vmul.f32	s2,s0,s1
-	add	r1,sp,#32
-	ldr	r0,[r1]
-	ldr	r1,[r3]
-	ldr	r2,[r0,r1,lsl 2]
-	vmov	s0,r2
-	vadd.f32	s0,s0,s2
-	add	r1,sp,#16
-	ldr	r0,[r1]
-	add	r0,r0,#1
-	str	r0,[r1]
-	add	r1,sp,#32
-	ldr	r0,[r1]
-	vmov	r1,s0
-	ldr	r2,[r3]
-	str	r1,[r0,r2,lsl 2]
-	add	sp,sp,#16
-	b	.22
-.23:
-	sub	sp,sp,#0
-	movw	r0,#1
-	add	r1,sp,#4
-	str	r0,[r1]
-	add	sp,sp,#0
-.24:
-	sub	sp,sp,#8
-	add	r1,sp,#12
-	ldr	r0,[r1]
-	add	r2,sp,#32
-	ldr	r1,[r2]
-	cmp	r0,r1
-	add	sp,sp,#8
-	bge	.27
-	sub	sp,sp,#0
-	movw	r0,#1
-	add	r1,sp,#0
-	str	r0,[r1]
-	add	sp,sp,#0
-.25:
-	sub	sp,sp,#8
-	add	r1,sp,#8
-	ldr	r0,[r1]
-	add	r2,sp,#36
-	ldr	r1,[r2]
-	cmp	r0,r1
-	add	sp,sp,#8
-	bge	.26
-	sub	sp,sp,#88
-	add	r1,sp,#100
-	ldr	r0,[r1]
-	lsl	r1,r0,#3
-	add	r2,sp,#96
-	ldr	r0,[r2]
-	add	r2,r1,r0
-	add	r3,sp,#80
-	str	r2,[r3]
-	add	r2,sp,#84
-	str	r1,[r2]
-	add	r1,sp,#92
-	ldr	r0,[r1]
-	lsl	r1,r0,#3
-	add	r2,sp,#88
-	ldr	r0,[r2]
-	add	r2,r1,r0
-	add	r0,sp,#76
-	str	r1,[r0]
-	add	r0,sp,#72
-	str	r2,[r0]
-	add	r3,sp,#72
-	str	r2,[r3]
-	add	r2,sp,#76
-	str	r1,[r2]
-	add	r1,sp,#112
-	ldr	r0,[r1]
-	bl	__aeabi_i2f
-	add	r1,sp,#68
-	str	r0,[r1]
-	movw	r0,#4059
-	movt	r0,#16457
-	vmov	s0,r0
-	vldr.f32	s1,[r1]
-	vdiv.f32	s2,s0,s1
-	add	r0,sp,#64
-	vstr.f32	s2,[r0]
-	add	r1,sp,#100
-	ldr	r0,[r1]
-	bl	__aeabi_i2f
-	vmov	s0,r0
-	add	r1,sp,#60
-	str	r0,[r1]
-	movw	r0,#0
-	movt	r0,#16128
-	vmov	s1,r0
-	vadd.f32	s2,s0,s1
-	add	r0,sp,#64
-	vldr.f32	s0,[r0]
-	vmul.f32	s1,s0,s2
-	add	r0,sp,#52
-	vstr.f32	s1,[r0]
-	add	r0,sp,#56
-	vstr.f32	s2,[r0]
-	add	r1,sp,#92
-	ldr	r0,[r1]
-	bl	__aeabi_i2f
-	add	r1,sp,#48
-	str	r0,[r1]
-	add	r0,sp,#52
-	vldr.f32	s0,[r0]
-	vldr.f32	s1,[r1]
-	vmul.f32	s2,s0,s1
-	add	r0,sp,#44
-	vstr.f32	s2,[r0]
-	vmov	s0,s2
-	bl	my_cos
-	add	r0,sp,#40
-	vstr.f32	s0,[r0]
-	add	r1,sp,#108
-	ldr	r0,[r1]
-	add	r2,sp,#72
-	ldr	r1,[r2]
-	ldr	r2,[r0,r1,lsl 2]
-	vmov	s0,r2
-	add	r0,sp,#40
-	vldr.f32	s1,[r0]
-	vmul.f32	s2,s0,s1
-	add	r0,sp,#36
-	vstr.f32	s2,[r0]
-	add	r1,sp,#116
-	ldr	r0,[r1]
-	bl	__aeabi_i2f
-	add	r1,sp,#32
-	str	r0,[r1]
-	movw	r0,#4059
-	movt	r0,#16457
-	vmov	s0,r0
-	vldr.f32	s1,[r1]
-	vdiv.f32	s2,s0,s1
-	add	r0,sp,#28
-	vstr.f32	s2,[r0]
-	add	r1,sp,#96
-	ldr	r0,[r1]
-	bl	__aeabi_i2f
-	vmov	s0,r0
-	add	r1,sp,#24
-	str	r0,[r1]
-	movw	r0,#0
-	movt	r0,#16128
-	vmov	s1,r0
-	vadd.f32	s2,s0,s1
-	add	r0,sp,#28
-	vldr.f32	s0,[r0]
-	vmul.f32	s1,s0,s2
-	add	r0,sp,#16
-	vstr.f32	s1,[r0]
-	add	r0,sp,#20
-	vstr.f32	s2,[r0]
-	add	r1,sp,#88
-	ldr	r0,[r1]
-	bl	__aeabi_i2f
-	add	r1,sp,#12
-	str	r0,[r1]
-	add	r0,sp,#16
-	vldr.f32	s0,[r0]
-	vldr.f32	s1,[r1]
-	vmul.f32	s2,s0,s1
-	add	r0,sp,#8
-	vstr.f32	s2,[r0]
-	vmov	s0,s2
-	bl	my_cos
-	add	r0,sp,#4
-	vstr.f32	s0,[r0]
-	add	r0,sp,#36
-	vldr.f32	s0,[r0]
-	add	r0,sp,#4
-	vldr.f32	s1,[r0]
-	vmul.f32	s2,s0,s1
-	add	r1,sp,#104
-	ldr	r0,[r1]
-	add	r2,sp,#80
-	ldr	r1,[r2]
-	ldr	r2,[r0,r1,lsl 2]
-	vmov	s0,r2
-	vadd.f32	s0,s0,s2
-	add	r1,sp,#88
-	ldr	r0,[r1]
-	add	r0,r0,#1
-	str	r0,[r1]
-	add	r1,sp,#104
-	ldr	r0,[r1]
-	vmov	r1,s0
-	add	r3,sp,#80
-	ldr	r2,[r3]
-	str	r1,[r0,r2,lsl 2]
-	add	sp,sp,#88
-	b	.25
-.26:
-	sub	sp,sp,#0
-	add	r1,sp,#4
-	ldr	r0,[r1]
-	add	r0,r0,#1
-	str	r0,[r1]
-	add	sp,sp,#0
-	b	.24
-.27:
-	sub	sp,sp,#32
-	add	r1,sp,#44
-	ldr	r0,[r1]
-	lsl	r1,r0,#3
-	add	r2,sp,#40
-	ldr	r0,[r2]
-	add	r2,r1,r0
-	add	r3,sp,#24
-	str	r2,[r3]
-	add	r2,sp,#28
-	str	r1,[r2]
-	add	r1,sp,#48
-	ldr	r0,[r1]
-	ldr	r1,[r3]
-	ldr	r2,[r0,r1,lsl 2]
-	vmov	s0,r2
-	movw	r0,#0
-	movt	r0,#16384
-	vmov	s1,r0
-	vmul.f32	s2,s0,s1
-	add	r0,sp,#20
-	vstr.f32	s2,[r0]
-	add	r1,sp,#56
-	ldr	r0,[r1]
-	bl	__aeabi_i2f
-	add	r1,sp,#16
-	str	r0,[r1]
-	add	r0,sp,#20
-	vldr.f32	s0,[r0]
-	vldr.f32	s1,[r1]
-	vdiv.f32	s2,s0,s1
-	movw	r0,#0
-	movt	r0,#16384
-	vmov	s0,r0
-	vmul.f32	s1,s2,s0
-	add	r0,sp,#8
-	vstr.f32	s1,[r0]
-	add	r0,sp,#12
-	vstr.f32	s2,[r0]
-	add	r1,sp,#60
-	ldr	r0,[r1]
-	bl	__aeabi_i2f
-	add	r1,sp,#4
-	str	r0,[r1]
-	add	r0,sp,#8
-	vldr.f32	s0,[r0]
-	vldr.f32	s1,[r1]
-	vdiv.f32	s2,s0,s1
-	add	r1,sp,#40
-	ldr	r0,[r1]
-	add	r0,r0,#1
-	str	r0,[r1]
-	add	r1,sp,#48
-	ldr	r0,[r1]
-	vmov	r1,s2
-	add	r3,sp,#24
-	ldr	r2,[r3]
-	str	r1,[r0,r2,lsl 2]
-	add	sp,sp,#32
-	b	.19
-.28:
-	sub	sp,sp,#0
-	add	r1,sp,#12
-	ldr	r0,[r1]
-	add	r0,r0,#1
-	str	r0,[r1]
-	add	sp,sp,#0
-	b	.18
-.29:
-	sub	sp,sp,#0
-	add	sp,sp,#0
-	add	sp,sp,#32
-	add	sp,sp,#4
-	pop	{r4,fp,pc}
-	add	sp,sp,#0
-	.size	idct, .-idct
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
-	.global dct
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	dct, %function
-dct:
-	push	{r4,fp,lr}
-	add	fp,sp,#12
-	sub	sp,sp,#4
-	sub	sp,sp,#32
-	sub	sp,sp,#0
-	add	r4,sp,#28
-	str	r3,[r4]
-	add	r3,sp,#24
-	str	r2,[r3]
-	add	r2,sp,#20
-	str	r1,[r2]
-	add	r1,sp,#16
-	str	r0,[r1]
-	movw	r0,#0
-	add	r1,sp,#12
-	str	r0,[r1]
-	add	sp,sp,#0
-.10:
-	sub	sp,sp,#8
-	add	r1,sp,#20
-	ldr	r0,[r1]
-	add	r2,sp,#32
-	ldr	r1,[r2]
-	cmp	r0,r1
-	add	sp,sp,#8
-	bge	.17
-	sub	sp,sp,#0
-	movw	r0,#0
-	add	r1,sp,#8
-	str	r0,[r1]
-	add	sp,sp,#0
-.11:
-	sub	sp,sp,#8
-	add	r1,sp,#16
-	ldr	r0,[r1]
-	add	r2,sp,#36
-	ldr	r1,[r2]
-	cmp	r0,r1
-	add	sp,sp,#8
-	bge	.16
-	sub	sp,sp,#8
-	add	r1,sp,#20
-	ldr	r0,[r1]
-	lsl	r1,r0,#3
-	add	r2,sp,#16
-	ldr	r0,[r2]
-	add	r2,r1,r0
-	movw	r0,#0
-	vmov	s0,r0
-	add	r3,sp,#0
-	str	r2,[r3]
-	add	r2,sp,#4
-	str	r1,[r2]
-	add	r1,sp,#12
-	str	r0,[r1]
-	add	r1,sp,#24
-	ldr	r0,[r1]
-	vmov	r1,s0
-	ldr	r2,[r3]
-	str	r1,[r0,r2,lsl 2]
-	add	sp,sp,#8
-.12:
-	sub	sp,sp,#8
-	add	r1,sp,#12
-	ldr	r0,[r1]
-	add	r2,sp,#32
-	ldr	r1,[r2]
-	cmp	r0,r1
-	add	sp,sp,#8
-	bge	.15
-	sub	sp,sp,#0
-	movw	r0,#0
-	add	r1,sp,#0
-	str	r0,[r1]
-	add	sp,sp,#0
-.13:
-	sub	sp,sp,#8
-	add	r1,sp,#8
-	ldr	r0,[r1]
-	add	r2,sp,#36
-	ldr	r1,[r2]
-	cmp	r0,r1
-	add	sp,sp,#8
-	bge	.14
-	sub	sp,sp,#88
-	add	r1,sp,#100
-	ldr	r0,[r1]
-	lsl	r1,r0,#3
-	add	r2,sp,#96
-	ldr	r0,[r2]
-	add	r2,r1,r0
-	add	r3,sp,#80
-	str	r2,[r3]
-	add	r2,sp,#84
-	str	r1,[r2]
-	add	r1,sp,#92
-	ldr	r0,[r1]
-	lsl	r1,r0,#3
-	add	r2,sp,#88
-	ldr	r0,[r2]
-	add	r2,r1,r0
-	add	r0,sp,#76
-	str	r1,[r0]
-	add	r0,sp,#72
-	str	r2,[r0]
-	add	r3,sp,#72
-	str	r2,[r3]
-	add	r2,sp,#76
-	str	r1,[r2]
-	add	r1,sp,#112
-	ldr	r0,[r1]
-	bl	__aeabi_i2f
-	add	r1,sp,#68
-	str	r0,[r1]
-	movw	r0,#4059
-	movt	r0,#16457
-	vmov	s0,r0
-	vldr.f32	s1,[r1]
-	vdiv.f32	s2,s0,s1
-	add	r0,sp,#64
-	vstr.f32	s2,[r0]
-	add	r1,sp,#92
-	ldr	r0,[r1]
-	bl	__aeabi_i2f
-	vmov	s0,r0
-	add	r1,sp,#60
-	str	r0,[r1]
-	movw	r0,#0
-	movt	r0,#16128
-	vmov	s1,r0
-	vadd.f32	s2,s0,s1
-	add	r0,sp,#64
-	vldr.f32	s0,[r0]
-	vmul.f32	s1,s0,s2
-	add	r0,sp,#52
-	vstr.f32	s1,[r0]
-	add	r0,sp,#56
-	vstr.f32	s2,[r0]
-	add	r1,sp,#100
-	ldr	r0,[r1]
-	bl	__aeabi_i2f
-	add	r1,sp,#48
-	str	r0,[r1]
-	add	r0,sp,#52
-	vldr.f32	s0,[r0]
-	vldr.f32	s1,[r1]
-	vmul.f32	s2,s0,s1
-	add	r0,sp,#44
-	vstr.f32	s2,[r0]
-	vmov	s0,s2
-	bl	my_cos
-	add	r0,sp,#40
-	vstr.f32	s0,[r0]
-	add	r1,sp,#108
-	ldr	r0,[r1]
-	add	r2,sp,#72
-	ldr	r1,[r2]
-	ldr	r2,[r0,r1,lsl 2]
-	vmov	s0,r2
-	add	r0,sp,#40
-	vldr.f32	s1,[r0]
-	vmul.f32	s2,s0,s1
-	add	r0,sp,#36
-	vstr.f32	s2,[r0]
-	add	r1,sp,#116
-	ldr	r0,[r1]
-	bl	__aeabi_i2f
-	add	r1,sp,#32
-	str	r0,[r1]
-	movw	r0,#4059
-	movt	r0,#16457
-	vmov	s0,r0
-	vldr.f32	s1,[r1]
-	vdiv.f32	s2,s0,s1
-	add	r0,sp,#28
-	vstr.f32	s2,[r0]
-	add	r1,sp,#88
-	ldr	r0,[r1]
-	bl	__aeabi_i2f
-	vmov	s0,r0
-	add	r1,sp,#24
-	str	r0,[r1]
-	movw	r0,#0
-	movt	r0,#16128
-	vmov	s1,r0
-	vadd.f32	s2,s0,s1
-	add	r0,sp,#28
-	vldr.f32	s0,[r0]
-	vmul.f32	s1,s0,s2
-	add	r0,sp,#16
-	vstr.f32	s1,[r0]
-	add	r0,sp,#20
-	vstr.f32	s2,[r0]
-	add	r1,sp,#96
-	ldr	r0,[r1]
-	bl	__aeabi_i2f
-	add	r1,sp,#12
-	str	r0,[r1]
-	add	r0,sp,#16
-	vldr.f32	s0,[r0]
-	vldr.f32	s1,[r1]
-	vmul.f32	s2,s0,s1
-	add	r0,sp,#8
-	vstr.f32	s2,[r0]
-	vmov	s0,s2
-	bl	my_cos
-	add	r0,sp,#4
-	vstr.f32	s0,[r0]
-	add	r0,sp,#36
-	vldr.f32	s0,[r0]
-	add	r0,sp,#4
-	vldr.f32	s1,[r0]
-	vmul.f32	s2,s0,s1
-	add	r1,sp,#104
-	ldr	r0,[r1]
-	add	r2,sp,#80
-	ldr	r1,[r2]
-	ldr	r2,[r0,r1,lsl 2]
-	vmov	s0,r2
-	vadd.f32	s0,s0,s2
-	add	r1,sp,#88
-	ldr	r0,[r1]
-	add	r0,r0,#1
-	str	r0,[r1]
-	add	r1,sp,#104
-	ldr	r0,[r1]
-	vmov	r1,s0
-	add	r3,sp,#80
-	ldr	r2,[r3]
-	str	r1,[r0,r2,lsl 2]
-	add	sp,sp,#88
-	b	.13
-.14:
-	sub	sp,sp,#0
-	add	r1,sp,#4
-	ldr	r0,[r1]
-	add	r0,r0,#1
-	str	r0,[r1]
-	add	sp,sp,#0
-	b	.12
-.15:
-	sub	sp,sp,#0
-	add	r1,sp,#8
-	ldr	r0,[r1]
-	add	r0,r0,#1
-	str	r0,[r1]
-	add	sp,sp,#0
-	b	.11
-.16:
-	sub	sp,sp,#0
-	add	r1,sp,#12
-	ldr	r0,[r1]
-	add	r0,r0,#1
-	str	r0,[r1]
-	add	sp,sp,#0
-	b	.10
-.17:
-	sub	sp,sp,#0
-	add	sp,sp,#0
-	add	sp,sp,#32
-	add	sp,sp,#4
-	pop	{r4,fp,pc}
-	add	sp,sp,#0
-	.size	dct, .-dct
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
-	.global my_cos
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	my_cos, %function
-my_cos:
-	push	{fp,lr}
-	add	fp,sp,#8
-	sub	sp,sp,#0
-	sub	sp,sp,#8
-	sub	sp,sp,#8
-	movw	r0,#4059
-	movt	r0,#16329
-	vmov	s1,r0
-	vadd.f32	s2,s0,s1
-	add	r0,sp,#12
-	vstr.f32	s0,[r0]
-	add	r0,sp,#4
-	vstr.f32	s2,[r0]
-	add	r0,sp,#12
-	vstr.f32	s0,[r0]
-	vmov	s0,s2
-	bl	my_sin
-	add	sp,sp,#8
-	add	sp,sp,#8
-	add	sp,sp,#0
-	pop	{fp,pc}
-	add	sp,sp,#0
-	.size	my_cos, .-my_cos
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
-	.global write_mat
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	write_mat, %function
-write_mat:
-	push	{fp,lr}
-	add	fp,sp,#8
-	sub	sp,sp,#0
-	sub	sp,sp,#24
-	sub	sp,sp,#0
-	add	r3,sp,#20
-	str	r2,[r3]
-	add	r2,sp,#16
-	str	r1,[r2]
-	add	r1,sp,#12
-	str	r0,[r1]
-	movw	r0,#0
-	add	r1,sp,#8
-	str	r0,[r1]
-	add	sp,sp,#0
-.6:
-	sub	sp,sp,#8
-	add	r1,sp,#16
-	ldr	r0,[r1]
-	add	r2,sp,#24
-	ldr	r1,[r2]
-	cmp	r0,r1
-	add	sp,sp,#8
-	bge	.9
-	sub	sp,sp,#8
-	add	r1,sp,#16
-	ldr	r0,[r1]
-	lsl	r1,r0,#3
-	add	r0,sp,#4
-	str	r1,[r0]
-	add	r2,sp,#4
-	str	r1,[r2]
-	add	r1,sp,#20
-	ldr	r0,[r1]
-	ldr	r1,[r2]
-	ldr	r2,[r0,r1,lsl 2]
-	vmov	s0,r2
-	bl	putfloat
-	movw	r0,#1
-	add	r1,sp,#12
-	str	r0,[r1]
-	add	sp,sp,#8
-.7:
-	sub	sp,sp,#8
-	add	r1,sp,#12
-	ldr	r0,[r1]
-	add	r2,sp,#28
-	ldr	r1,[r2]
-	cmp	r0,r1
-	add	sp,sp,#8
-	bge	.8
-	sub	sp,sp,#8
-	movw	r0,#32
-	bl	putch
-	add	r1,sp,#16
-	ldr	r0,[r1]
-	lsl	r1,r0,#3
-	add	r2,sp,#12
-	ldr	r0,[r2]
-	add	r2,r1,r0
-	add	r0,sp,#4
-	str	r1,[r0]
-	add	r0,sp,#0
-	str	r2,[r0]
-	add	r3,sp,#0
-	str	r2,[r3]
-	add	r2,sp,#4
-	str	r1,[r2]
-	add	r1,sp,#20
-	ldr	r0,[r1]
-	ldr	r1,[r3]
-	ldr	r2,[r0,r1,lsl 2]
-	vmov	s0,r2
-	bl	putfloat
-	add	r1,sp,#12
-	ldr	r0,[r1]
-	add	r0,r0,#1
-	str	r0,[r1]
-	add	sp,sp,#8
-	b	.7
-.8:
-	sub	sp,sp,#0
-	movw	r0,#10
-	bl	putch
-	add	r1,sp,#8
-	ldr	r0,[r1]
-	add	r0,r0,#1
-	str	r0,[r1]
-	add	sp,sp,#0
-	b	.6
-.9:
-	sub	sp,sp,#0
-	movw	r0,#10
-	bl	putch
-	add	sp,sp,#0
-	add	sp,sp,#24
-	add	sp,sp,#0
-	pop	{fp,pc}
-	add	sp,sp,#0
-	.size	write_mat, .-write_mat
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
-	.global my_sin_impl
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	my_sin_impl, %function
-my_sin_impl:
-	push	{fp,lr}
-	add	fp,sp,#8
-	sub	sp,sp,#0
-	sub	sp,sp,#8
-	sub	sp,sp,#8
-	add	r0,sp,#12
-	vstr.f32	s0,[r0]
-	bl	my_fabs
-	movw	r0,#14269
-	movt	r0,#13702
-	vmov	s1,r0
-	vcmp.f32	s0,s1
-	vmrs	APSR_nzcv,FPSCR
-	add	sp,sp,#8
-	bgt	.1
-	sub	sp,sp,#0
-	add	r0,sp,#4
-	vldr.f32	s0,[r0]
-	add	sp,sp,#0
-	add	sp,sp,#8
-	add	sp,sp,#0
-	pop	{fp,pc}
-	add	sp,sp,#0
-.1:
-	sub	sp,sp,#16
-	add	r0,sp,#20
-	vldr.f32	s0,[r0]
-	movw	r0,#0
-	movt	r0,#16448
-	vmov	s1,r0
-	vdiv.f32	s2,s0,s1
-	add	r0,sp,#12
-	vstr.f32	s2,[r0]
-	vmov	s0,s2
-	bl	my_sin_impl
-	add	r0,sp,#8
-	vstr.f32	s0,[r0]
-	bl	p
-	add	sp,sp,#16
-	add	sp,sp,#8
-	add	sp,sp,#0
-	pop	{fp,pc}
-	add	sp,sp,#0
-	.size	my_sin_impl, .-my_sin_impl
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
-	.global my_sin
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	my_sin, %function
-my_sin:
-	push	{fp,lr}
-	add	fp,sp,#8
-	sub	sp,sp,#0
-	sub	sp,sp,#8
-	sub	sp,sp,#8
-	movw	r0,#4059
-	movt	r0,#16585
-	vmov	s1,r0
-	vcmp.f32	s0,s1
-	vmrs	APSR_nzcv,FPSCR
-	add	r0,sp,#12
-	vstr.f32	s0,[r0]
-	add	sp,sp,#8
-	bgt	.2
-	sub	sp,sp,#8
-	add	r0,sp,#12
-	vldr.f32	s0,[r0]
-	movw	r0,#4059
-	movt	r0,#49353
-	vmov	s1,r0
-	vcmp.f32	s0,s1
-	vmrs	APSR_nzcv,FPSCR
-	add	sp,sp,#8
-	blt	.2
-	sub	sp,sp,#0
-	add	sp,sp,#0
-	b	.3
-.2:
-	sub	sp,sp,#16
-	add	r0,sp,#20
-	vldr.f32	s0,[r0]
-	movw	r0,#4059
-	movt	r0,#16585
-	vmov	s1,r0
-	vdiv.f32	s2,s0,s1
-	add	r0,sp,#12
-	vstr.f32	s2,[r0]
-	vmov	r0,s2
-	bl	__aeabi_f2iz
-	add	r1,sp,#8
-	str	r0,[r1]
-	bl	__aeabi_i2f
-	vmov	s0,r0
-	add	r1,sp,#4
-	str	r0,[r1]
-	movw	r0,#4059
-	movt	r0,#16585
-	vmov	s1,r0
-	vmul.f32	s2,s0,s1
-	add	r0,sp,#20
-	vldr.f32	s0,[r0]
-	vsub.f32	s0,s0,s2
-	vstr.f32	s0,[r0]
-	add	sp,sp,#16
-.3:
-	sub	sp,sp,#8
-	add	r0,sp,#12
-	vldr.f32	s0,[r0]
-	movw	r0,#4059
-	movt	r0,#16457
-	vmov	s1,r0
-	vcmp.f32	s0,s1
-	vmrs	APSR_nzcv,FPSCR
-	add	sp,sp,#8
-	ble	.4
-	sub	sp,sp,#0
-	add	r0,sp,#4
-	vldr.f32	s0,[r0]
-	movw	r0,#4059
-	movt	r0,#16585
-	vmov	s1,r0
-	vsub.f32	s0,s0,s1
-	add	r0,sp,#4
-	vstr.f32	s0,[r0]
-	add	sp,sp,#0
-.4:
-	sub	sp,sp,#8
-	add	r0,sp,#12
-	vldr.f32	s0,[r0]
-	movw	r0,#4059
-	movt	r0,#49225
-	vmov	s1,r0
-	vcmp.f32	s0,s1
-	vmrs	APSR_nzcv,FPSCR
-	add	sp,sp,#8
-	bge	.5
-	sub	sp,sp,#0
-	add	r0,sp,#4
-	vldr.f32	s0,[r0]
-	movw	r0,#4059
-	movt	r0,#16585
-	vmov	s1,r0
-	vadd.f32	s0,s0,s1
-	add	r0,sp,#4
-	vstr.f32	s0,[r0]
-	add	sp,sp,#0
-.5:
-	sub	sp,sp,#8
-	add	r0,sp,#12
-	vldr.f32	s0,[r0]
-	bl	my_sin_impl
-	add	sp,sp,#8
-	add	sp,sp,#8
-	add	sp,sp,#0
-	pop	{fp,pc}
-	add	sp,sp,#0
-	.size	my_sin, .-my_sin
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
-	.global p
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	p, %function
-p:
-	push	{fp,lr}
-	add	fp,sp,#8
-	sub	sp,sp,#0
-	sub	sp,sp,#8
-	sub	sp,sp,#24
-	add	r0,sp,#28
-	vstr.f32	s0,[r0]
-	movw	r0,#0
-	movt	r0,#16448
-	vmov	s0,r0
-	add	r0,sp,#28
-	vldr.f32	s1,[r0]
-	vmul.f32	s2,s0,s1
-	movw	r0,#0
-	movt	r0,#16512
-	vmov	s0,r0
-	add	r0,sp,#20
-	vstr.f32	s2,[r0]
-	vmul.f32	s2,s0,s1
-	vmul.f32	s0,s2,s1
-	add	r0,sp,#16
-	vstr.f32	s2,[r0]
-	vmul.f32	s2,s0,s1
-	add	r0,sp,#12
-	vstr.f32	s0,[r0]
-	add	r0,sp,#20
-	vldr.f32	s0,[r0]
-	vsub.f32	s1,s0,s2
-	vmov	s0,s1
-	add	sp,sp,#24
-	add	sp,sp,#8
-	add	sp,sp,#0
-	pop	{fp,pc}
-	add	sp,sp,#0
-	.size	p, .-p
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
-	.global my_fabs
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	my_fabs, %function
-my_fabs:
-	push	{fp,lr}
-	add	fp,sp,#8
-	sub	sp,sp,#0
-	sub	sp,sp,#8
-	sub	sp,sp,#8
-	vcmp.f32	s0,#0
-	vmrs	APSR_nzcv,FPSCR
-	add	r0,sp,#12
-	vstr.f32	s0,[r0]
-	add	sp,sp,#8
-	ble	.0
-	sub	sp,sp,#0
-	add	r0,sp,#4
-	vldr.f32	s0,[r0]
-	add	sp,sp,#0
-	add	sp,sp,#8
-	add	sp,sp,#0
-	pop	{fp,pc}
-	add	sp,sp,#0
-.0:
-	sub	sp,sp,#8
-	movw	r0,#0
-	vmov	s0,r0
-	add	r0,sp,#12
-	vldr.f32	s1,[r0]
-	vsub.f32	s2,s0,s1
-	vmov	s0,s2
-	add	sp,sp,#8
-	add	sp,sp,#8
-	add	sp,sp,#0
-	pop	{fp,pc}
-	add	sp,sp,#0
-	.size	my_fabs, .-my_fabs
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
 	.global main
 	.syntax unified
 	.thumb
@@ -1147,124 +20,263 @@ my_fabs:
 	.fpu vfp
 	.type	main, %function
 main:
-	push	{r4,fp,lr}
-	add	fp,sp,#12
+	push	{r4,r5,r6,r7,r8,r9,r10,fp,lr}
+	add	fp,sp,#36
 	sub	sp,sp,#4
-	sub	sp,sp,#16
+	sub	sp,sp,#32
+	sub	sp,sp,#0
+	bl	getint
+	mov	r1,r0
+	add	r0,sp,#28
+	add	r0,sp,#28
+	str	r1,[r0]
+	bl	getint
+	mov	r10,r0
+	mov	r0,#13
+	bl	_sysy_starttime
+	mov	r1,#0
+	add	r0,sp,#20
+	add	r0,sp,#20
+	str	r1,[r0]
+	mov	r0,#0
+	mov	r0,#0
+	add	sp,sp,#0
+.0:
 	sub	sp,sp,#8
-	bl	getint
-	add	r1,sp,#4
-	str	r0,[r1]
-	bl	getint
-	add	r1,sp,#0
-	str	r0,[r1]
-	add	r1,sp,#4
-	ldr	r0,[r1]
+	add	r0,sp,#36
+	ldr	r1,[r0]
+	add	r0,sp,#28
+	ldr	r0,[r0]
+	cmp	r0,r1
+	add	sp,sp,#8
+	bge	.5
+	sub	sp,sp,#0
+	mov	r0,#0
+	add	fp,sp,#16
+	str	r0,[fp]
+	mov	r0,#0
+	add	sp,sp,#0
+.1:
+	sub	sp,sp,#8
+	add	r0,sp,#36
+	ldr	r0,[r0]
+	ldr	r1,[fp]
+	cmp	r1,r0
+	add	sp,sp,#8
+	bge	.4
+	mov	r9,#0
+.2:
+	sub	sp,sp,#8
+	add	r0,sp,#36
+	ldr	r0,[r0]
+	cmp	r9,r0
+	add	sp,sp,#8
+	bge	.3
+	sub	sp,sp,#16
+	movw	r0,#600
+	ldr	r1,[fp]
+	mul	r0,r1,r0
+	add	r2,r0,r9
+	movw	r0,#32320
+	movt	r0,#5
+	add	r1,sp,#36
+	ldr	r1,[r1]
+	mul	r0,r1,r0
+	add	r1,r0,r2
+	mov	r3,#1
+	mov	r2,#0
+	add	r9,r9,#1
+	movw	r0,#:lower16:y
+	movt	r0,#:upper16:y
+	str	r2,[r0,r1,lsl 2]
+	movw	r0,#:lower16:x
+	movt	r0,#:upper16:x
+	str	r3,[r0,r1,lsl 2]
+	add	sp,sp,#16
+	b	.2
+.3:
+	ldr	r0,[fp]
+	add	r0,r0,#1
+	str	r0,[fp]
+	b	.1
+.4:
+	sub	sp,sp,#0
+	add	r0,sp,#20
+	ldr	r0,[r0]
+	add	r0,r0,#1
 	add	r1,sp,#20
 	str	r0,[r1]
-	add	r1,sp,#0
-	ldr	r0,[r1]
-	add	r1,sp,#16
-	str	r0,[r1]
-	movw	r0,#0
-	add	r1,sp,#12
-	str	r0,[r1]
-	add	sp,sp,#8
-.30:
-	sub	sp,sp,#8
-	add	r1,sp,#12
-	ldr	r0,[r1]
-	add	r2,sp,#20
-	ldr	r1,[r2]
-	cmp	r0,r1
-	add	sp,sp,#8
-	bge	.33
-	sub	sp,sp,#0
-	movw	r0,#0
-	add	r1,sp,#0
-	str	r0,[r1]
 	add	sp,sp,#0
-.31:
-	sub	sp,sp,#8
-	add	r1,sp,#8
-	ldr	r0,[r1]
-	add	r2,sp,#16
-	ldr	r1,[r2]
-	cmp	r0,r1
-	add	sp,sp,#8
-	bge	.32
-	sub	sp,sp,#8
-	add	r1,sp,#12
-	ldr	r0,[r1]
-	lsl	r1,r0,#3
-	add	r2,sp,#8
-	ldr	r0,[r2]
-	add	r2,r1,r0
+	b	.0
+.5:
+	sub	sp,sp,#0
+	mov	r1,#1
+	add	r0,sp,#20
+	str	r1,[r0]
+	mov	r0,#1
+	add	fp,sp,#16
+	str	r0,[fp]
+	mov	r9,#1
+	add	r0,sp,#28
+	ldr	r0,[r0]
+	sub	r1,r0,#1
+	add	r0,sp,#4
 	add	r0,sp,#4
 	str	r1,[r0]
-	add	r0,sp,#0
-	str	r2,[r0]
-	bl	getfloat
-	add	r1,sp,#8
-	ldr	r0,[r1]
-	add	r0,r0,#1
-	str	r0,[r1]
-	movw	r0,#:lower16:test_block
-	movt	r0,#:upper16:test_block
-	vmov	r1,s0
-	add	r3,sp,#0
-	ldr	r2,[r3]
-	str	r1,[r0,r2,lsl 2]
+	add	sp,sp,#0
+.6:
+	sub	sp,sp,#8
+	add	r0,sp,#12
+	ldr	r1,[r0]
+	add	r0,sp,#28
+	ldr	r0,[r0]
+	cmp	r0,r1
 	add	sp,sp,#8
-	b	.31
-.32:
+	bge	.11
 	sub	sp,sp,#0
-	add	r1,sp,#4
-	ldr	r0,[r1]
+	mov	r0,#1
+	str	r0,[fp]
+	mov	r9,#1
+	add	r0,sp,#28
+	ldr	r0,[r0]
+	sub	r1,r0,#1
+	add	r0,sp,#8
+	add	r0,sp,#8
+	str	r1,[r0]
+	add	sp,sp,#0
+.7:
+	sub	sp,sp,#8
+	add	r0,sp,#16
+	ldr	r0,[r0]
+	ldr	r1,[fp]
+	cmp	r1,r0
+	add	sp,sp,#8
+	bge	.10
+	sub	sp,sp,#0
+	mov	r9,#1
+	add	r0,sp,#28
+	ldr	r0,[r0]
+	sub	r8,r0,#1
+	add	sp,sp,#0
+.8:
+	cmp	r9,r8
+	bge	.9
+	sub	sp,sp,#120
+	movw	r3,#600
+	ldr	r0,[fp]
+	mul	r5,r0,r3
+	add	r2,r5,r9
+	movw	r0,#32320
+	movt	r0,#5
+	add	r1,sp,#140
+	ldr	r1,[r1]
+	mul	r1,r1,r0
+	add	r7,r1,r2
+	add	r4,sp,#140
+	ldr	r4,[r4]
+	sub	r4,r4,#1
+	mul	r4,r4,r0
+	add	r6,r4,r2
+	add	r4,sp,#140
+	ldr	r4,[r4]
+	add	r4,r4,#1
+	mul	r0,r4,r0
+	add	r0,r0,r2
+	movw	r4,#:lower16:x
+	movt	r4,#:upper16:x
+	ldr	r2,[r4,r6,lsl 2]
+	ldr	r0,[r4,r0,lsl 2]
+	add	r2,r2,r0
+	ldr	r0,[fp]
+	sub	r0,r0,#1
+	mul	r0,r0,r3
+	add	r0,r0,r9
+	add	r0,r1,r0
+	ldr	r0,[r4,r0,lsl 2]
+	add	r2,r2,r0
+	ldr	r0,[fp]
 	add	r0,r0,#1
+	mul	r0,r0,r3
+	add	r0,r0,r9
+	add	r0,r1,r0
+	ldr	r0,[r4,r0,lsl 2]
+	add	r0,r2,r0
+	sub	r2,r9,#1
+	add	r2,r5,r2
+	add	r2,r1,r2
+	ldr	r2,[r4,r2,lsl 2]
+	add	r0,r0,r2
+	add	r6,r9,#1
+	add	r2,r5,r6
+	add	r1,r1,r2
+	ldr	r1,[r4,r1,lsl 2]
+	add	r0,r0,r1
+	mov	r1,r10
+	bl	__aeabi_idiv
+	mov	r9,r6
+	str	r0,[r4,r7,lsl 2]
+	add	sp,sp,#120
+	b	.8
+.9:
+	ldr	r0,[fp]
+	add	r0,r0,#1
+	str	r0,[fp]
+	b	.7
+.10:
+	sub	sp,sp,#0
+	add	r0,sp,#20
+	ldr	r0,[r0]
+	add	r0,r0,#1
+	add	r1,sp,#20
 	str	r0,[r1]
 	add	sp,sp,#0
-	b	.30
-.33:
-	sub	sp,sp,#0
-	movw	r0,#:lower16:test_dct
-	movt	r0,#:upper16:test_dct
-	movw	r1,#:lower16:test_block
-	movt	r1,#:upper16:test_block
-	add	r3,sp,#12
-	ldr	r2,[r3]
-	add	r4,sp,#8
-	ldr	r3,[r4]
-	bl	dct
-	movw	r0,#:lower16:test_dct
-	movt	r0,#:upper16:test_dct
-	add	r2,sp,#12
-	ldr	r1,[r2]
-	ldr	r2,[r4]
-	bl	write_mat
-	movw	r0,#:lower16:test_idct
-	movt	r0,#:upper16:test_idct
-	movw	r1,#:lower16:test_dct
-	movt	r1,#:upper16:test_dct
-	add	r3,sp,#12
-	ldr	r2,[r3]
-	ldr	r3,[r4]
-	bl	idct
-	movw	r0,#:lower16:test_idct
-	movt	r0,#:upper16:test_idct
-	add	r2,sp,#12
-	ldr	r1,[r2]
-	ldr	r2,[r4]
-	bl	write_mat
+	b	.6
+.11:
+	sub	sp,sp,#40
+	mov	r0,#53
+	bl	_sysy_stoptime
+	add	r0,sp,#68
+	ldr	r0,[r0]
+	movw	r6,#:lower16:x
+	movt	r6,#:upper16:x
+	add	r1,r6,#0
+	bl	putarray
+	add	r0,sp,#68
+	ldr	r0,[r0]
+	add	r0,r0,r0,lsr 31
+	add	r0,sp,#68
+	ldr	r0,[r0]
+	asr	r0,r0,#1
+	movw	r4,#600
+	mul	r1,r0,r4
+	movw	r5,#32320
+	movt	r5,#5
+	mul	r0,r0,r5
+	add	r1,r0,r1
+	add	r0,sp,#68
+	ldr	r0,[r0]
+	add	r1,r6,r1,lsl 2
+	bl	putarray
+	add	r0,sp,#60
+	ldr	r0,[r0]
+	sub	r2,r0,#1
+	ldr	r0,[fp]
+	sub	r0,r0,#1
+	mul	r1,r0,r4
+	mul	r0,r2,r5
+	add	r1,r0,r1
+	add	r0,sp,#68
+	ldr	r0,[r0]
+	add	r1,r6,r1,lsl 2
+	bl	putarray
 	movw	r0,#0
-	add	sp,sp,#0
-	add	sp,sp,#16
+	add	sp,sp,#40
+	add	sp,sp,#32
 	add	sp,sp,#4
-	pop	{r4,fp,pc}
+	pop	{r4,r5,r6,r7,r8,r9,r10,fp,pc}
 	add	sp,sp,#0
 	.size	main, .-main
-	.comm test_block,256,4
-	.comm test_dct,256,4
-	.comm test_idct,256,4
+	.comm x,864000000,4
+	.comm y,864000000,4
 	.ident	"GCC: (Raspbian 8.3.0-6+rpi1) 8.3.0"
 	.section	.note.GNU-stack,"",%progbits

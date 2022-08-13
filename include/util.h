@@ -9,6 +9,8 @@
 #ifndef __UTIL_H
 #define __UTIL_H
 
+#include<algorithm>
+
 template<typename DATA_TYPE>
 void data_exchange(DATA_TYPE & x,DATA_TYPE & y)
 {

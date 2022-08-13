@@ -2079,19 +2079,7 @@ void Ic_optimizer::global_optimize()
 */
 void Ic_optimizer::thread_optimize(struct ic_func_flow_graph * func)
 {
-    if(func->func->type!=func_type::PROGRAMER_DEFINED)
-    {
-        return;
-    }
-    for(auto loop_info:func->loops_info)
-    {
-        //暂时只对最外层的循环进行多线程优化
-        if(loop_info.second->father_loop!=nullptr)
-        {
-            continue;
-        }
-
-    }
+    
 }
 
 /*
