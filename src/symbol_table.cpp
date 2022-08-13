@@ -294,12 +294,12 @@ ic_label::ic_label(string label_name):name(label_name)
 
 //===================================== struct ic_func =====================================//
 
-ic_func::ic_func(string name,enum language_data_type return_type,bool is_external,list<struct ic_data * > * f_params):name(name),return_type(return_type),f_params(f_params),is_external(is_external),scope(nullptr)
+ic_func::ic_func(string name,enum func_type type,enum language_data_type return_type,list<struct ic_data * > * f_params):name(name),return_type(return_type),f_params(f_params),type(type),scope(nullptr)
 {
     
 }
 
-ic_func::ic_func(string name,enum language_data_type return_type,bool is_external,size_t f_params_num,...):name(name),return_type(return_type),is_external(is_external),scope(nullptr)
+ic_func::ic_func(string name,enum func_type type,enum language_data_type return_type,size_t f_params_num,...):name(name),return_type(return_type),type(type),scope(nullptr)
 {
     struct ic_data * f_param;
     f_params=new list<struct ic_data * >;
@@ -480,37 +480,37 @@ Symbol_table::Symbol_table():tmp_vars_num_(0),labels_num_(0),current_scope_(null
     list<struct ic_data * > * dimensions_len;
     //把库中的函数进行定义
     //int getint()
-    functions_.insert(make_pair("getint",new struct ic_func("getint",language_data_type::INT,true,(size_t)0)));
+    functions_.insert(make_pair("getint",new struct ic_func("getint",func_type::LIBRARY,language_data_type::INT,(size_t)0)));
     //int getch()
-    functions_.insert(make_pair("getch",new struct ic_func("getch",language_data_type::INT,true,(size_t)0)));
+    functions_.insert(make_pair("getch",new struct ic_func("getch",func_type::LIBRARY,language_data_type::INT,(size_t)0)));
     //int getarray(int a[])
     dimensions_len=new list<struct ic_data * >;
     dimensions_len->push_back(const_entry(language_data_type::INT,OAA((int)0)));
-    functions_.insert(make_pair("getarray",new struct ic_func("getarray",language_data_type::INT,true,(size_t)1,new struct ic_data("a",language_data_type::INT,dimensions_len,false))));
+    functions_.insert(make_pair("getarray",new struct ic_func("getarray",func_type::LIBRARY,language_data_type::INT,(size_t)1,new struct ic_data("a",language_data_type::INT,dimensions_len,false))));
     //int getfarray(float a[])
     dimensions_len=new list<struct ic_data * >;
     dimensions_len->push_back(const_entry(language_data_type::INT,OAA((int)0)));
-    functions_.insert(make_pair("getfarray",new struct ic_func("getfarray",language_data_type::INT,true,(size_t)1,new struct ic_data("a",language_data_type::FLOAT,dimensions_len,false))));
+    functions_.insert(make_pair("getfarray",new struct ic_func("getfarray",func_type::LIBRARY,language_data_type::INT,(size_t)1,new struct ic_data("a",language_data_type::FLOAT,dimensions_len,false))));
     //float getfloat()
-    functions_.insert(make_pair("getfloat",new struct ic_func("getfloat",language_data_type::FLOAT,true,(size_t)0)));
+    functions_.insert(make_pair("getfloat",new struct ic_func("getfloat",func_type::LIBRARY,language_data_type::FLOAT,(size_t)0)));
     //void putint(int a)
-    functions_.insert(make_pair("putint",new struct ic_func("putint",language_data_type::VOID,true,(size_t)1,new struct ic_data("a",language_data_type::INT,nullptr,false))));
+    functions_.insert(make_pair("putint",new struct ic_func("putint",func_type::LIBRARY,language_data_type::VOID,(size_t)1,new struct ic_data("a",language_data_type::INT,nullptr,false))));
     //void putch(int a)
-    functions_.insert(make_pair("putch",new struct ic_func("putch",language_data_type::VOID,true,(size_t)1,new struct ic_data("a",language_data_type::INT,nullptr,false))));
+    functions_.insert(make_pair("putch",new struct ic_func("putch",func_type::LIBRARY,language_data_type::VOID,(size_t)1,new struct ic_data("a",language_data_type::INT,nullptr,false))));
     //void putarray(int n,int a[])
     dimensions_len=new list<struct ic_data * >;
     dimensions_len->push_back(const_entry(language_data_type::INT,OAA((int)0)));
-    functions_.insert(make_pair("putarray",new struct ic_func("putarray",language_data_type::VOID,true,(size_t)2,new struct ic_data("n",language_data_type::INT,nullptr,false),new struct ic_data("a",language_data_type::INT,dimensions_len,false))));
+    functions_.insert(make_pair("putarray",new struct ic_func("putarray",func_type::LIBRARY,language_data_type::VOID,(size_t)2,new struct ic_data("n",language_data_type::INT,nullptr,false),new struct ic_data("a",language_data_type::INT,dimensions_len,false))));
     //void putfloat(float a)
-    functions_.insert(make_pair("putfloat",new struct ic_func("putfloat",language_data_type::VOID,true,(size_t)1,new struct ic_data("a",language_data_type::FLOAT,nullptr,false))));
+    functions_.insert(make_pair("putfloat",new struct ic_func("putfloat",func_type::LIBRARY,language_data_type::VOID,(size_t)1,new struct ic_data("a",language_data_type::FLOAT,nullptr,false))));
     //void putfarray(int n,float a[])
     dimensions_len=new list<struct ic_data * >;
     dimensions_len->push_back(const_entry(language_data_type::INT,OAA((int)0)));
-    functions_.insert(make_pair("putfarray",new struct ic_func("putfarray",language_data_type::VOID,true,(size_t)2,new struct ic_data("n",language_data_type::INT,nullptr,false),new struct ic_data("a",language_data_type::FLOAT,dimensions_len,false))));
+    functions_.insert(make_pair("putfarray",new struct ic_func("putfarray",func_type::LIBRARY,language_data_type::VOID,(size_t)2,new struct ic_data("n",language_data_type::INT,nullptr,false),new struct ic_data("a",language_data_type::FLOAT,dimensions_len,false))));
     //void _sysy_starttime(int lineno)
-    functions_.insert(make_pair("_sysy_starttime",new struct ic_func("_sysy_starttime",language_data_type::VOID,true,(size_t)1,new struct ic_data("lineno",language_data_type::INT,nullptr,false))));
+    functions_.insert(make_pair("_sysy_starttime",new struct ic_func("_sysy_starttime",func_type::LIBRARY,language_data_type::VOID,(size_t)1,new struct ic_data("lineno",language_data_type::INT,nullptr,false))));
     //void _sysy_stoptime(int lineno)
-    functions_.insert(make_pair("_sysy_stoptime",new struct ic_func("_sysy_stoptime",language_data_type::VOID,true,(size_t)1,new struct ic_data("lineno",language_data_type::INT,nullptr,false))));
+    functions_.insert(make_pair("_sysy_stoptime",new struct ic_func("_sysy_stoptime",func_type::LIBRARY,language_data_type::VOID,(size_t)1,new struct ic_data("lineno",language_data_type::INT,nullptr,false))));
     //开始一个全局作用域
     start_scope();
 }
@@ -742,22 +742,22 @@ struct ic_label * Symbol_table::new_label()
 Parameters
 ----------
 name:函数名
+type:函数类型
 return_type:函数返回值类型
 f_params:函数形参列表(如果函数没有形参，那么这个参数就是nullptr)
-is_external:是否是外部函数
 
 Return
 ------
 如果定义成功，返回该函数在符号表中的表项的指针，否则返回nullptr
 */
-struct ic_func * Symbol_table::new_func(string name,enum language_data_type return_type,bool is_external,list<struct ic_data * > * f_params)
+struct ic_func * Symbol_table::new_func(string name,enum func_type type,enum language_data_type return_type,list<struct ic_data * > * f_params)
 {
     //需要查看是否有重名的函数被定义了(函数之间不能重名,但是函数和变量可以重名)
     if(func_entry(name)!=nullptr)
     {
         return nullptr;
     }
-    current_func_=new struct ic_func(name,return_type,is_external,f_params);
+    current_func_=new struct ic_func(name,type,return_type,f_params);
     functions_[name]=current_func_;
     return current_func_;
 }
@@ -1063,7 +1063,7 @@ bool Symbol_table::is_func_call_external_func(struct ic_func * func) const
     {
         called_func=called_funcs_stack.top();
         called_funcs_stack.pop();
-        if(called_func->is_external)
+        if(called_func->type==func_type::LIBRARY)
         {
             return true;
         }

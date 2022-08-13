@@ -215,14 +215,14 @@ struct operand2
             }
             mask=mask<<1;
         }
-        for(size_t i=0;i<8;i++)
+        /*for(size_t i=0;i<8;i++)
         {
             if((immed_8r & mask)==immed_8r)
             {
                 return true;
             }
             mask=((mask<<1) | 0x00000000000000000000000000000001);
-        }
+        }*/
         return false;
     };
 
@@ -1348,7 +1348,7 @@ struct arm_func_flow_graph
     void build_nexts_between_basic_blocks();
 
     //构建函数中的循环信息
-    void build_loop_info();
+    void build_loops_info();
 
     //往汇编函数流图中添加一条arm汇编
     void add_arm_asm(Arm_asm_file_line * arm_asm,bool new_basic_block);

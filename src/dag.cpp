@@ -675,7 +675,7 @@ bool DAG::function_call_common_expression_delete(struct ic_data * result,struct 
     //（1）外部函数
     //（2）调用的函数对全局变量或者函数的数组形参进行了更改或者使用
     //（3）直接或者间接调用了外部函数的函数
-    if(func->is_external || 
+    if(func->type==func_type::LIBRARY || 
     !symbol_table->get_func_def_globals_and_array_f_params(func).empty() || 
     !symbol_table->get_func_use_globals_and_array_f_params(func).empty() || 
     symbol_table->is_func_call_external_func(func))

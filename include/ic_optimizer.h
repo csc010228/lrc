@@ -9,7 +9,6 @@
 #ifndef __IC_OPTIMIZER_H
 #define __IC_OPTIMIZER_H
 
-#include<algorithm>
 #include "semantic_rules.h"
 
 //中间代码的位置
@@ -146,6 +145,9 @@ struct ic_basic_block
     //获取一个基本块的所有后继基本块
     set<struct ic_basic_block * > get_successors();
 
+    //删除基本块的数据流分析信息
+    void clear_all_data_flow_analyse_info();
+
     //基本块中的中间代码序列
     vector<struct quaternion_with_info> ic_sequence;
     //该基本块的后续基本块
@@ -177,9 +179,16 @@ struct ic_basic_block
 //循环信息
 struct loop_info
 {
+    loop_info():father_loop(nullptr)
+    {
+
+    };
+
     //set<list<struct ic_basic_block * > > loop_routes;               //循环路径，这这些路径里面不会包括小的循环
     set<struct ic_basic_block * > all_basic_blocks;                 //循环中的所有基本块，包括小的循环中的基本块
     set<struct ic_basic_block * > exit_basic_blocks;                //循环中的所有出口基本块
+    struct loop_info * father_loop;                                 //父循环
+    set<struct loop_info * > children_loops;                        //子循环
 };
 
 //一个中间代码的函数的流图
@@ -203,6 +212,9 @@ struct ic_func_flow_graph
 
     //构建函数流图中所有变量的定义点和使用点的信息
     void build_vars_def_and_use_pos_info();
+
+    //判断基本块1是否支配基本块2
+    bool is_dominated(struct ic_basic_block * bb1,struct ic_basic_block * bb2) const;
 
     //获取函数的出口个数
     size_t get_exit_num() const;
@@ -229,8 +241,10 @@ struct ic_func_flow_graph
     map<struct ic_data *,ic_pos> arrays_def_positions;
     //函数流图中所有的变量使用点
     map<struct ic_data *,set<ic_pos> > vars_use_positions;
+    //支配点集信息
+    map<struct ic_basic_block * ,set<struct ic_basic_block * > > dominated_relations;
     //循环信息，key是循环的开头基本块，value是循环的信息
-    map<struct ic_basic_block *,struct loop_info> loops_info;
+    map<struct ic_basic_block *,struct loop_info * > loops_info;
 };
 
 //中间代码的流图表示
@@ -277,8 +291,8 @@ protected:
     //数据流分析
     void data_flow_analysis();
 
-    //全局常量合并
-    void globale_constant_folding(struct ic_func_flow_graph * func);
+    //全局复制传播
+    void global_copy_progagation(struct ic_func_flow_graph * func);
     //全局公共子表达式删除
     void global_elimination_of_common_subexpression(struct ic_func_flow_graph * func);
     //全局死代码消除
@@ -290,6 +304,12 @@ protected:
 
     //全局优化
     void global_optimize();
+
+    //多线程优化
+    void thread_optimize(struct ic_func_flow_graph * func);
+
+    //联合优化
+    void union_optimize();
 
 public:
     //构造函数

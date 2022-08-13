@@ -1007,45 +1007,73 @@ void Global_register_manager::handle_SAVE_REGS_WHEN_CALLING_FUNC(struct ic_func 
     //（1）被调用的函数可能使用到的全局变量
     //（2）被调用函数可能会用到的数组形参对应的实参的数组取元素
     //（3）和上述两类变量有关的变量
+    //（4）传给库函数的所有数组实参所属的数组元素
     if(func)
     {
-        f_params=func->f_params;
-        if(f_params)
+        switch(func->type)
         {
-            f_param=f_params->begin();
-            r_param=r_params->begin();
-            while(f_param!=f_params->end() && r_param!=r_params->end())
-            {
-                f_to_r_params.insert(make_pair(*f_param,*r_param));
-                f_param++;
-                r_param++;
-            }
-        }
-        func_use_global_vars_and_f_params=symbol_table->get_func_use_globals_and_array_f_params(func);
-        for(auto var:func_use_global_vars_and_f_params)
-        {
-            if(var->is_array_var())
-            {
-                if(var->is_f_param())
+            case func_type::PROGRAMER_DEFINED:
+                f_params=func->f_params;
+                if(f_params)
                 {
-                    if(f_to_r_params.at(var)->is_array_member())
+                    f_param=f_params->begin();
+                    r_param=r_params->begin();
+                    while(f_param!=f_params->end() && r_param!=r_params->end())
                     {
-                        arrays_need_disposed.insert(f_to_r_params.at(var)->get_belong_array());
-                    }
-                    else
-                    {
-                        arrays_need_disposed.insert(f_to_r_params.at(var));
+                        f_to_r_params.insert(make_pair(*f_param,*r_param));
+                        f_param++;
+                        r_param++;
                     }
                 }
-                else
+                func_use_global_vars_and_f_params=symbol_table->get_func_use_globals_and_array_f_params(func);
+                for(auto var:func_use_global_vars_and_f_params)
                 {
-                    arrays_need_disposed.insert(var);
+                    if(var->is_array_var())
+                    {
+                        if(var->is_f_param())
+                        {
+                            if(f_to_r_params.at(var)->is_array_member())
+                            {
+                                arrays_need_disposed.insert(f_to_r_params.at(var)->get_belong_array());
+                            }
+                            else
+                            {
+                                arrays_need_disposed.insert(f_to_r_params.at(var));
+                            }
+                        }
+                        else
+                        {
+                            arrays_need_disposed.insert(var);
+                        }
+                    }
+                    else if(var->is_global())
+                    {
+                        non_arrays_need_disposed.insert(var);
+                    }
                 }
-            }
-            else if(var->is_global())
-            {
-                non_arrays_need_disposed.insert(var);
-            }
+                break;
+            case func_type::LIBRARY:
+                //如果要调用的函数是库函数，那么需要把传给该函数的所有数组实参所属的数组元素写回
+                if(func->type==func_type::LIBRARY)
+                {
+                    for(auto r_param:*r_params)
+                    {
+                        if(r_param->is_array_var())
+                        {
+                            if(r_param->is_array_member())
+                            {
+                                arrays_need_disposed.insert(r_param->get_belong_array());
+                            }
+                            else
+                            {
+                                arrays_need_disposed.insert(r_param);
+                            }
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
         }
     }
     for(auto array:arrays_need_disposed)

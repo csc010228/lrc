@@ -7,6 +7,7 @@
  *
 */
 #include"data_flow_analyse.h"
+#include<algorithm>
 
 /*
 数据流分析的准备
@@ -449,6 +450,50 @@ void Data_flow_analyzer::available_expression_analysis(struct ic_func_flow_graph
 
 }
 
+void Data_flow_analyzer::build_dominate_relations(struct ic_func_flow_graph * func)
+{
+    bool tag_1=true,tag_2;
+    set<struct ic_basic_block * > all_bbs,all_bbs_except_enter,new_dominate_set,temp;
+    //初始化
+    for(auto bb:func->basic_blocks)
+    {
+        all_bbs.insert(bb);
+        func->dominated_relations.insert(make_pair(bb,set<struct ic_basic_block * >()));
+    }
+    all_bbs_except_enter=all_bbs;
+    all_bbs_except_enter.erase(func->basic_blocks.front());
+    func->dominated_relations.at(func->basic_blocks.front()).insert(func->basic_blocks.front());
+    //开始迭代计算支配点集的信息
+    while(tag_1)
+    {
+        tag_1=false;
+        for(auto bb:all_bbs_except_enter)
+        {
+            tag_2=true;
+            for(auto precusor:bb->get_precursors())
+            {
+                temp.clear();
+                if(tag_2)
+                {
+                    tag_2=false;
+                    set_intersection(func->dominated_relations.at(precusor).begin(),func->dominated_relations.at(precusor).end(),all_bbs.begin(),all_bbs.end(),inserter(temp,temp.begin()));
+                }
+                else
+                {
+                    set_intersection(func->dominated_relations.at(precusor).begin(),func->dominated_relations.at(precusor).end(),new_dominate_set.begin(),new_dominate_set.end(),inserter(temp,temp.begin()));
+                }
+                new_dominate_set=temp;
+            }
+            new_dominate_set.insert(bb);
+            if(func->dominated_relations.at(bb)!=new_dominate_set)
+            {
+                tag_1=true;
+                func->dominated_relations.at(bb)=new_dominate_set;
+            }
+        }
+    }
+}
+
 void Data_flow_analyzer::build_loops_info(struct ic_func_flow_graph * func)
 {
     set<struct ic_basic_block * > pre_bbs;
@@ -477,9 +522,9 @@ void Data_flow_analyzer::build_loops_info(struct ic_func_flow_graph * func)
         {
             if(func->loops_info.find(i.second)==func->loops_info.end())
             {
-                func->loops_info.insert(make_pair(i.second,loop_info()));
+                func->loops_info.insert(make_pair(i.second,new struct loop_info()));
             }
-            func->loops_info.at(i.second).all_basic_blocks.insert(bb);
+            func->loops_info.at(i.second)->all_basic_blocks.insert(bb);
         }
         if(loop_end_start_map.find(bb)!=loop_end_start_map.end())
         {
@@ -487,16 +532,28 @@ void Data_flow_analyzer::build_loops_info(struct ic_func_flow_graph * func)
         }
     }
     //寻找循环的出口基本块
-    for(auto & loop:func->loops_info)
+    for(auto loop:func->loops_info)
     {
-        for(auto bb:loop.second.all_basic_blocks)
+        for(auto bb:loop.second->all_basic_blocks)
         {
             for(auto successor:bb->get_successors())
             {
-                if(loop.second.all_basic_blocks.find(successor)==loop.second.all_basic_blocks.end())
+                if(loop.second->all_basic_blocks.find(successor)==loop.second->all_basic_blocks.end())
                 {
-                    loop.second.exit_basic_blocks.insert(bb);
+                    loop.second->exit_basic_blocks.insert(bb);
                 }
+            }
+        }
+    }
+    //构建父子循环之间的关系
+    for(auto loop1:func->loops_info)
+    {
+        for(auto loop2:func->loops_info)
+        {
+            if(loop1.second->all_basic_blocks.size()>loop2.second->all_basic_blocks.size() && includes(loop1.second->all_basic_blocks.begin(),loop1.second->all_basic_blocks.end(),loop2.second->all_basic_blocks.begin(),loop2.second->all_basic_blocks.end()))
+            {
+                loop1.second->children_loops.insert(loop2.second);
+                loop2.second->father_loop=loop1.second;
             }
         }
     }

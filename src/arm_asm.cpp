@@ -1370,7 +1370,7 @@ void arm_func_flow_graph::build_nexts_between_basic_blocks()
     }
 }
 
-void arm_func_flow_graph::build_loop_info()
+void arm_func_flow_graph::build_loops_info()
 {
     map<struct arm_basic_block * ,struct ic_basic_block * > arm_to_ic_basic_block_map;
     map<struct ic_basic_block * ,struct arm_basic_block * > ic_to_arm_basic_block_map;
@@ -1386,7 +1386,7 @@ void arm_func_flow_graph::build_loop_info()
     }
     for(auto loop:function->loops_info)
     {
-        for(auto bb_in_loop:loop.second.all_basic_blocks)
+        for(auto bb_in_loop:loop.second->all_basic_blocks)
         {
             //basic_block_s_loop_count.at(ic_to_arm_basic_block_map.at(bb_in_loop))++;
             ic_to_arm_basic_block_map.at(bb_in_loop)->loop_count++;

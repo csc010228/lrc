@@ -164,12 +164,20 @@ struct ic_label
     string name;                    //标签名
 };
 
+//函数类型
+enum class func_type
+{
+    PROGRAMER_DEFINED,              //程序员定义函数
+    LIBRARY,                        //库函数
+    THREAD_PART,                    //多线程部分函数
+};
+
 //函数
 struct ic_func
 {
-    ic_func(string name,enum language_data_type return_type,bool is_external,list<struct ic_data * > * f_params);
+    ic_func(string name,enum func_type type,enum language_data_type return_type,list<struct ic_data * > * f_params);
 
-    ic_func(string name,enum language_data_type return_type,bool is_external,size_t f_params_num,...);
+    ic_func(string name,enum func_type type,enum language_data_type return_type,size_t f_params_num,...);
 
     struct ic_data * get_f_param(string f_param_name) const;
 
@@ -183,7 +191,8 @@ struct ic_func
     enum language_data_type return_type;                //返回值类型
     list<struct ic_data * > * f_params;                 //函数形参
     struct ic_scope * scope;                            //函数作用域
-    bool is_external;                                   //是否是外部函数
+    enum func_type type;                                //函数类型
+    //bool is_external;                                   //是否是外部函数
 };
 
 //作用域类型
@@ -309,7 +318,7 @@ public:
     struct ic_label * new_label();
 
     //定义一个函数
-    struct ic_func * new_func(string name,enum language_data_type return_type,bool is_external,list<struct ic_data * > * f_params);
+    struct ic_func * new_func(string name,enum func_type type,enum language_data_type return_type,list<struct ic_data * > * f_params);
 
     //获取正在生成的函数
     struct ic_func * get_current_func();

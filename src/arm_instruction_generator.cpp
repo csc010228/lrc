@@ -2011,7 +2011,7 @@ void Arm_instruction_generator::handle_CALL_FUNC(struct ic_func * func,list<stru
     notify(event(event_type::BEFORE_CALL_FUNC,(void *)return_value));
     //执行函数跳转
     push_instruction(new Arm_cpu_branch_instruction(arm_op::BL,arm_condition::NONE,func->name));
-    //如果函数有返回值，通知寄存器管理器：寄存器r0已经被相应的返回值占用了
+    //如果函数有返回值，通知寄存器管理器：寄存器r0或者s0已经被相应的返回值占用了
     //同时也会通知内存管理器，下一步将要把入栈的参数清除，需要其返回要出栈的大小
     event_data_1=new pair<pair<struct ic_func *,list<struct ic_data * > * >,pair<struct ic_data *,reg_index> >(make_pair(func,r_params),make_pair(return_value,return_reg));
     pop_stack_size=notify(event(event_type::RET_FROM_CALLED_FUNC,(void *)event_data_1)).int_data;

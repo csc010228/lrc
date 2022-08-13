@@ -314,7 +314,7 @@ new struct ic_data(name,type,dimensions_len,false)
 
 //在符号表中定义一个新的函数，返回其指针
 #define def_func(name,return_type,f_params) \
-symbol_table->new_func(name,return_type,false,f_params)
+symbol_table->new_func(name,func_type::PROGRAMER_DEFINED,return_type,f_params)
 
 //定义一个新的标号
 #define def_label() \

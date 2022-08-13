@@ -698,6 +698,8 @@ map<string,map<string,vector<int> > > syntax_symbol_offset_from_stack_top_map;
     struct ic_data * tmp_var;\
     OAA const_value;\
     enum language_data_type from_data_type=(value)->get_data_type();\
+    add_data_type_to_current_func(from_data_type);\
+    add_data_type_to_current_func(to_data_type);\
     if(from_data_type!=to_data_type)\
     {\
         if((value)->is_const() && !(value)->is_array_var())\
@@ -2302,6 +2304,8 @@ define_semantic_rule(___STMT_2___)
     struct ic_data * ic_data=(struct ic_data *)get_syntax_symbol_attribute(L_VAL,value,pointer),* arg1_or_result_value=(struct ic_data * )get_syntax_symbol_attribute(EXP,value,pointer);
     //生成赋值的中间代码
     gen_one_operand_code(ic_op::ASSIGN,ic_operand::DATA,arg1_or_result_value,ic_operand::DATA,ic_data);
+    add_data_type_to_current_func(arg1_or_result_value->get_data_type());\
+    add_data_type_to_current_func(ic_data->get_data_type());\
 end_define_semantic_rule
 
 /*

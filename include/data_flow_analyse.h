@@ -34,6 +34,9 @@ public:
     //可用表达式分析
     static void available_expression_analysis(struct ic_func_flow_graph * func);
 
+    //构造支配点集
+    static void build_dominate_relations(struct ic_func_flow_graph * func);
+
     //构造循环信息
     static void build_loops_info(struct ic_func_flow_graph * func);
 

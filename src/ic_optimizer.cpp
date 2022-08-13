@@ -12,6 +12,7 @@
 #include"symbol_table.h"
 #include<fstream>
 #include<iostream>
+#include<algorithm>
 
 //中间代码输出信息
 extern map<ic_op,ic_output> ic_outputs;
@@ -781,6 +782,15 @@ set<struct ic_basic_block * > ic_basic_block::get_successors()
     return res;
 }
 
+void ic_basic_block::clear_all_data_flow_analyse_info()
+{
+    use_def_analysis_info.in.clear();
+    use_def_analysis_info.out.clear();
+    live_analysis_info.in.clear();
+    live_analysis_info.out.clear();
+}
+
+
 //==========================================================================//
 
 
@@ -932,7 +942,12 @@ void ic_func_flow_graph::clear_all_data_flow_analyse_info()
     vars_def_positions.clear();
     arrays_def_positions.clear();
     vars_use_positions.clear();
+    for(auto loop:loops_info)
+    {
+        delete loop.second;
+    }
     loops_info.clear();
+    dominated_relations.clear();
     for(auto basic_block:basic_blocks)
     {
         for(auto & ic_with_info:basic_block->ic_sequence)
@@ -1066,6 +1081,11 @@ void ic_func_flow_graph::build_vars_def_and_use_pos_info()
             pos++;
         }
     }
+}
+
+bool ic_func_flow_graph::is_dominated(struct ic_basic_block * bb1,struct ic_basic_block * bb2) const
+{
+    return map_set_find(dominated_relations,bb1,bb2);
 }
 
 //获取函数的出口个数
@@ -1632,14 +1652,14 @@ void Ic_optimizer::local_optimize()
     //再进行函数内联
     if(need_optimize_)
     {
-        for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
-        {
-            function_inline(func);
-            for(auto basic_block:func->basic_blocks)
-            {
-                DAG_optimize(basic_block);
-            }
-        }
+        // for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
+        // {
+        //     function_inline(func);
+        //     for(auto basic_block:func->basic_blocks)
+        //     {
+        //         DAG_optimize(basic_block);
+        //     }
+        // }
     }
 }
 
@@ -1661,6 +1681,8 @@ void Ic_optimizer::data_flow_analysis_for_a_func(struct ic_func_flow_graph * fun
     {
         //可用表达式分析
         Data_flow_analyzer::available_expression_analysis(func);
+        //支配点集计算
+        Data_flow_analyzer::build_dominate_relations(func);
         //循环分析
         Data_flow_analyzer::build_loops_info(func);
     }
@@ -1678,32 +1700,31 @@ void Ic_optimizer::data_flow_analysis()
 }
 
 /*
-全局常量合并
+全局复制传播
 
 Parameters
 ----------
 func:要优化的函数流图
 */
-
-// TO-DO
-//还需要对全局变量进行判断
-void Ic_optimizer::globale_constant_folding(struct ic_func_flow_graph * func)
+void Ic_optimizer::global_copy_progagation(struct ic_func_flow_graph * func)
 {
     static Symbol_table * symbol_table=Symbol_table::get_instance();
     struct quaternion intermediate_code;
     struct ic_data * arg1,* res;
+    ic_pos pos;
     OAA tmp;
     bool tag;
     for(auto basic_block:func->basic_blocks)
     {
-        for(vector<struct quaternion_with_info>::iterator ic_with_info=basic_block->ic_sequence.begin();ic_with_info!=basic_block->ic_sequence.end();ic_with_info++)
+        for(auto & ic_with_info:basic_block->ic_sequence)
         {
             tag=false;
-            for(auto use:(*ic_with_info).uses)
+            for(auto use:ic_with_info.uses)
             {
-                if((*ic_with_info).ud_chain.find(use)!=(*ic_with_info).ud_chain.end() && (*ic_with_info).ud_chain.at(use).size()==1)
+                if(ic_with_info.ud_chain.find(use)!=ic_with_info.ud_chain.end() && ic_with_info.ud_chain.at(use).size()==1)
                 {
-                    intermediate_code=func->get_ic_with_info(*((*ic_with_info).ud_chain.at(use).begin())).intermediate_code;
+                    pos=*(ic_with_info.ud_chain.at(use).begin());
+                    intermediate_code=func->get_ic_with_info(pos).intermediate_code;
                     arg1=((struct ic_data *)intermediate_code.arg1.second);
                     res=((struct ic_data *)intermediate_code.result.second);
                     if(intermediate_code.op==ic_op::ASSIGN && arg1->is_const() && res==use)
@@ -1714,14 +1735,18 @@ void Ic_optimizer::globale_constant_folding(struct ic_func_flow_graph * func)
                             tmp.type_conversion(arg1->get_data_type(),use->get_data_type());
                             arg1=symbol_table->const_entry(use->get_data_type(),tmp);
                         }
-                        (*ic_with_info).replace_datas(use,arg1,true,false);
+                        if((use->is_global() || use->is_array_member() || use->is_f_param()) && (!func->is_dominated(basic_block,pos.basic_block) || basic_block==pos.basic_block))
+                        {
+                            continue;
+                        }
+                        ic_with_info.replace_datas(use,arg1,true,false);
                         tag=true;
                     }
                 }
             }
             if(tag)
             {
-                (*ic_with_info).build_info(false);
+                ic_with_info.build_info(false);
             }
         }
     }
@@ -1839,7 +1864,7 @@ void Ic_optimizer::loop_invariant_computation_motion(struct ic_func_flow_graph *
         unchange_poses.clear();
         ordered_unchange_poses.clear();
         target_basic_block=nullptr;
-        for(auto bb:loop.second.all_basic_blocks)
+        for(auto bb:loop.second->all_basic_blocks)
         {
             pos=0;
             for(auto ic_with_info:bb->ic_sequence)
@@ -1855,7 +1880,7 @@ void Ic_optimizer::loop_invariant_computation_motion(struct ic_func_flow_graph *
                     {
                         for(auto define_pos:ic_with_info.ud_chain.at(use))
                         {
-                            if(loop.second.all_basic_blocks.find(define_pos.basic_block)!=loop.second.all_basic_blocks.end())
+                            if(loop.second->all_basic_blocks.find(define_pos.basic_block)!=loop.second->all_basic_blocks.end())
                             {
                                 goto next_1;
                             }
@@ -1872,7 +1897,7 @@ next_1:
         while(tag)
         {
             tag=false;
-            for(auto bb:loop.second.all_basic_blocks)
+            for(auto bb:loop.second->all_basic_blocks)
             {
                 pos=0;
                 for(auto ic_with_info:bb->ic_sequence)
@@ -1912,17 +1937,28 @@ next_2:
         {
             struct quaternion_with_info & ic_with_info=func->get_ic_with_info(unchange_pos);
             //目前暂时不处理对数组和数组元素的明确定义
-            // if(ic_with_info.explicit_def->is_array_member() || ic_with_info.explicit_def->is_array_var())
-            // {
-            //     goto next_3;
-            // }
-            if(!ic_with_info.explicit_def->is_tmp_var())
+            if(ic_with_info.explicit_def->is_array_member() || ic_with_info.explicit_def->is_array_var())
             {
                 goto next_3;
             }
+            // if(!ic_with_info.explicit_def->is_tmp_var())
+            // {
+            //     goto next_3;
+            // }
+            // //将要外提的语句s所在的基本块必须能够达到
+            // if(unchange_pos.basic_block->get_precursors().empty())
+            // {
+            //     goto next_3;
+            // }
             //将要外提的语句s所在的块支配循环L的所有出口
-            //TO-DO
-            for(auto i:loop.second.all_basic_blocks)
+            for(auto loop_exit:loop.second->exit_basic_blocks)
+            {
+                if(!func->is_dominated(loop_exit,unchange_pos.basic_block))
+                {
+                    goto next_3;
+                }
+            }
+            for(auto i:loop.second->all_basic_blocks)
             {
                 pos=0;
                 for(auto j:i->ic_sequence)
@@ -1945,7 +1981,7 @@ next_2:
             {
                 precursors=loop.first->get_precursors();
                 temp.clear();
-                set_difference(precursors.begin(),precursors.end(),loop.second.all_basic_blocks.begin(),loop.second.all_basic_blocks.end(),inserter(temp,temp.begin()));
+                set_difference(precursors.begin(),precursors.end(),loop.second->all_basic_blocks.begin(),loop.second->all_basic_blocks.end(),inserter(temp,temp.begin()));
                 if(temp.size()==1 && (*temp.begin())->get_successors().size()==1)
                 {
                     target_basic_block=(*temp.begin());
@@ -1975,9 +2011,9 @@ next_2:
                     }
                     for(auto & loop_info:func->loops_info)
                     {
-                        if(loop_info.first!=loop.first && loop_info.second.all_basic_blocks.find(loop.first)!=loop_info.second.all_basic_blocks.end())
+                        if(loop_info.first!=loop.first && loop_info.second->all_basic_blocks.find(loop.first)!=loop_info.second->all_basic_blocks.end())
                         {
-                            loop_info.second.all_basic_blocks.insert(target_basic_block);
+                            loop_info.second->all_basic_blocks.insert(target_basic_block);
                         }
                     }
                 }
@@ -2013,8 +2049,8 @@ void Ic_optimizer::global_optimize()
 {
     for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
     {
-        //全局常量合并
-        globale_constant_folding(func);
+        //全局复制传播
+        global_copy_progagation(func);
         if(need_optimize_)
         {
             //全局公共子表达式删除
@@ -2039,6 +2075,37 @@ void Ic_optimizer::global_optimize()
 }
 
 /*
+多线程优化
+*/
+void Ic_optimizer::thread_optimize(struct ic_func_flow_graph * func)
+{
+    if(func->func->type!=func_type::PROGRAMER_DEFINED)
+    {
+        return;
+    }
+    for(auto loop_info:func->loops_info)
+    {
+        //暂时只对最外层的循环进行多线程优化
+        if(loop_info.second->father_loop!=nullptr)
+        {
+            continue;
+        }
+
+    }
+}
+
+/*
+联合优化
+*/
+void Ic_optimizer::union_optimize()
+{
+    for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
+    {
+        thread_optimize(func);
+    }
+}
+
+/*
 代码优化
 
 Parameters
@@ -2059,6 +2126,8 @@ struct ic_flow_graph * Ic_optimizer::optimize(list<struct quaternion> * intermed
     data_flow_analysis();
     //全局优化
     global_optimize();
+    //联合优化
+    union_optimize();
     //返回优化结果
     return intermediate_codes_flow_graph_;
 }
