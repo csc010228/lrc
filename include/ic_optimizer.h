@@ -202,7 +202,7 @@ struct ic_func_flow_graph
     void add_ic(struct quaternion ic);
 
     //清空函数中所有的数据流分析信息
-    void clear_all_data_flow_analyse_info();
+    void clear_all_data_flow_analyse_info(bool further_analyse);
 
     //构建函数流图中各个基本块之间的跳转关系
     void build_nexts_between_basic_blocks();
@@ -287,7 +287,7 @@ protected:
     void local_optimize();
     
     //为一个函数进行数据流分析
-    void data_flow_analysis_for_a_func(struct ic_func_flow_graph * func);
+    void data_flow_analysis_for_a_func(struct ic_func_flow_graph * func,bool further_analyse);
     //数据流分析
     void data_flow_analysis();
 

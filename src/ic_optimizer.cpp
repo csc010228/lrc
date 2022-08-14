@@ -935,19 +935,22 @@ void ic_func_flow_graph::build_nexts_between_basic_blocks()
 }
 
 //清空函数中所有的数据流分析信息
-void ic_func_flow_graph::clear_all_data_flow_analyse_info()
+void ic_func_flow_graph::clear_all_data_flow_analyse_info(bool further_analyse)
 {
     array_to_array_member_map.clear();
     offset_to_array_member_map.clear();
     vars_def_positions.clear();
     arrays_def_positions.clear();
     vars_use_positions.clear();
-    for(auto loop:loops_info)
+    if(further_analyse)
     {
-        delete loop.second;
+        for(auto loop:loops_info)
+        {
+            delete loop.second;
+        }
+        loops_info.clear();
+        dominated_relations.clear();
     }
-    loops_info.clear();
-    dominated_relations.clear();
     for(auto basic_block:basic_blocks)
     {
         for(auto & ic_with_info:basic_block->ic_sequence)
@@ -1249,7 +1252,7 @@ void Ic_optimizer::function_inline(struct ic_func_flow_graph * func)
     struct ic_func * current_func,* called_func;
     set<struct ic_func * > funcs_called_directly_by_called_func;
     struct ic_func_flow_graph * called_func_flow_graph;
-    set<struct ic_data * > called_func_def_globals_and_f_params;
+    set<struct ic_data * > called_func_def_globals_and_f_params,offsets;
     list<struct ic_data * > * f_params,* r_params;
     list<struct ic_data * >::iterator f_param_iterator,r_param_iterator;
     list<struct ic_basic_block * > copyed_basic_blocks;
@@ -1301,6 +1304,7 @@ again:
                     //（3）要么所有的形参在函数中都不会被改变，要么被调用的函数只有一个基本块
                     //（4）要么函数调用的时候实参不能存在临时变量，要么被调用的函数只有一个基本块
                     //（5）如果函数调用有返回值，那么要么这个返回值不能是临时变量，要么被调用的函数只有一个出口（即该函数末尾）
+                    //（6）函数调用的返回值不会用于IF_JMP和IF_NOT_JMP
                     r_params=(list<struct ic_data * > * )(*ic_with_info).intermediate_code.arg2.second;
                     // if(called_func_flow_graph->basic_blocks.size()>1)
                     // {
@@ -1321,6 +1325,11 @@ again:
                         }
                     }
                     result=(struct ic_data *)(*ic_with_info).intermediate_code.result.second;
+                    if((basic_block->ic_sequence.back().intermediate_code.op==ic_op::IF_JMP || basic_block->ic_sequence.back().intermediate_code.op==ic_op::IF_NOT_JMP) && 
+                    basic_block->ic_sequence.back().intermediate_code.arg1.second==result)
+                    {
+                        goto next;
+                    }
                     called_func_exit_num=called_func_flow_graph->get_exit_num();
                     // if(result && result->is_tmp_var() && called_func_exit_num>1)
                     // {
@@ -1345,20 +1354,24 @@ again:
                     inline_func_scope->func=called_func;
                     inline_var_num=0;
                     called_func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_f_params(called_func);
-                    for(auto called_func_def_global_or_f_param:called_func_def_globals_and_f_params)
+                    // for(auto called_func_def_global_or_f_param:called_func_def_globals_and_f_params)
+                    // {
+                    //     if(called_func_def_global_or_f_param->is_f_param())
+                    //     {
+                    //         // if(called_func_flow_graph->basic_blocks.size()>1)
+                    //         // {
+                    //         //     old_and_new_vars_map.clear();
+                    //         //     goto next;
+                    //         // }
+                    //         // else
+                    //         // {
+                    //             old_and_new_vars_map.insert(make_pair(called_func_def_global_or_f_param,symbol_table->new_var(/*called_func_def_global_or_f_param->get_var_name()*/"<"+to_string(inline_var_num++)+">",called_func_def_global_or_f_param->get_data_type(),called_func_def_global_or_f_param->dimensions_len,called_func_def_global_or_f_param->get_value(),called_func_def_global_or_f_param->type==ic_data_type::CONST_FUNC_F_PARAM,inline_func_scope)));
+                    //         // }
+                    //     }
+                    // }
+                    for(auto f_param:*f_params)
                     {
-                        if(called_func_def_global_or_f_param->is_f_param())
-                        {
-                            // if(called_func_flow_graph->basic_blocks.size()>1)
-                            // {
-                            //     old_and_new_vars_map.clear();
-                            //     goto next;
-                            // }
-                            // else
-                            // {
-                                old_and_new_vars_map.insert(make_pair(called_func_def_global_or_f_param,symbol_table->new_var(/*called_func_def_global_or_f_param->get_var_name()*/"<"+to_string(inline_var_num++)+">",called_func_def_global_or_f_param->get_data_type(),called_func_def_global_or_f_param->dimensions_len,called_func_def_global_or_f_param->get_value(),called_func_def_global_or_f_param->type==ic_data_type::CONST_FUNC_F_PARAM,inline_func_scope)));
-                            // }
-                        }
+                        old_and_new_vars_map.insert(make_pair(f_param,symbol_table->new_var(/*f_param->get_var_name()*/"<"+to_string(inline_var_num++)+">",f_param->get_data_type(),f_param->dimensions_len,f_param->get_value(),f_param->type==ic_data_type::CONST_FUNC_F_PARAM,inline_func_scope)));
                     }
                     //将要复制的流图中的变量和标签进行相应的替换，并更改其相应的作用域
                     for(auto called_basic_block:called_func_flow_graph->basic_blocks)
@@ -1374,7 +1387,12 @@ again:
                                 }
                                 if(old_and_new_vars_map.find(called_ic_with_info_releated_var)==old_and_new_vars_map.end())
                                 {
-                                    if(called_ic_with_info_releated_var->is_f_param() || called_ic_with_info_releated_var->is_global() || called_ic_with_info_releated_var->is_array_member())
+                                    if(called_ic_with_info_releated_var->is_array_member())
+                                    {
+                                        offsets.insert(called_ic_with_info_releated_var->get_offset());
+                                        continue;
+                                    }
+                                    else if(called_ic_with_info_releated_var->is_f_param() || called_ic_with_info_releated_var->is_global())
                                     {
                                         continue;
                                     }
@@ -1404,9 +1422,12 @@ again:
                     r_param_iterator=r_params->begin();
                     while(f_param_iterator!=f_params->end() && r_param_iterator!=r_params->end())
                     {
-                        if(old_and_new_vars_map.find(*f_param_iterator)==old_and_new_vars_map.end())
+                        //if(old_and_new_vars_map.find(*f_param_iterator)==old_and_new_vars_map.end())
+                        if(called_func_def_globals_and_f_params.find(*f_param_iterator)==called_func_def_globals_and_f_params.end() && 
+                        (offsets.find(*f_param_iterator)==offsets.end() || !(*r_param_iterator)->is_array_member()))
                         {
-                            old_and_new_vars_map.insert(make_pair(*f_param_iterator,*r_param_iterator));
+                            old_and_new_vars_map.at(*f_param_iterator)=*r_param_iterator;
+                            //old_and_new_vars_map.insert(make_pair(*f_param_iterator,*r_param_iterator));
                         }
                         else
                         {
@@ -1425,8 +1446,24 @@ again:
                     //再构建新拷贝出来的流图的跳转关系，并把拷贝出来的流图的所属函数流图进行更新
                     for(auto copyed_basic_block:copyed_basic_blocks)
                     {
-                        copyed_basic_block->set_sequential_next(old_and_new_ic_basic_block_map[copyed_basic_block->sequential_next]);
-                        copyed_basic_block->set_jump_next(old_and_new_ic_basic_block_map[copyed_basic_block->jump_next]);
+                        // copyed_basic_block->set_sequential_next(old_and_new_ic_basic_block_map[copyed_basic_block->sequential_next]);
+                        // copyed_basic_block->set_jump_next(old_and_new_ic_basic_block_map[copyed_basic_block->jump_next]);
+                        if(old_and_new_ic_basic_block_map.find(copyed_basic_block->sequential_next)!=old_and_new_ic_basic_block_map.end())
+                        {
+                            copyed_basic_block->set_sequential_next(old_and_new_ic_basic_block_map.at(copyed_basic_block->sequential_next));
+                        }
+                        else
+                        {
+                            copyed_basic_block->set_sequential_next(nullptr);
+                        }
+                        if(old_and_new_ic_basic_block_map.find(copyed_basic_block->jump_next)!=old_and_new_ic_basic_block_map.end())
+                        {
+                            copyed_basic_block->set_jump_next(old_and_new_ic_basic_block_map.at(copyed_basic_block->jump_next));
+                        }
+                        else
+                        {
+                            copyed_basic_block->set_jump_next(nullptr);
+                        }
                     }
                     //删除FUNC_DEFINE和END_FUNC_DEFINE中间代码
                     if(copyed_basic_blocks.front()->ic_sequence.front().intermediate_code.op==ic_op::FUNC_DEFINE)
@@ -1543,6 +1580,7 @@ for_iterator:
                     old_and_new_vars_map.clear();
                     old_and_new_labels_map.clear();
                     new_basic_block_ic_sequence.clear();
+                    offsets.clear();
                     goto again;
                 }
             }
@@ -1652,23 +1690,21 @@ void Ic_optimizer::local_optimize()
     //再进行函数内联
     if(need_optimize_)
     {
-        // for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
-        // {
-        //     function_inline(func);
-        //     for(auto basic_block:func->basic_blocks)
-        //     {
-        //         DAG_optimize(basic_block);
-        //     }
-        // }
+        for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
+        {
+            function_inline(func);
+            for(auto basic_block:func->basic_blocks)
+            {
+                DAG_optimize(basic_block);
+            }
+        }
     }
 }
 
-void Ic_optimizer::data_flow_analysis_for_a_func(struct ic_func_flow_graph * func)
+void Ic_optimizer::data_flow_analysis_for_a_func(struct ic_func_flow_graph * func,bool further_analyse)
 {
     //准备进行数据流分析
-    Data_flow_analyzer::prepare_before_data_flow_analyse(func);
-    //重新构建循环的基本块跳转信息，因为在优化的时候可能会被改变
-    func->build_nexts_between_basic_blocks();
+    Data_flow_analyzer::prepare_before_data_flow_analyse(func,further_analyse);
     //到达-定义分析
     Data_flow_analyzer::use_define_analysis(func);
     //构建ud-链
@@ -1677,7 +1713,7 @@ void Ic_optimizer::data_flow_analysis_for_a_func(struct ic_func_flow_graph * fun
     Data_flow_analyzer::live_variable_analysis(func);
     //构建du-链
     Data_flow_analyzer::build_du_chain(func);
-    if(need_optimize_)
+    if(further_analyse)
     {
         //可用表达式分析
         Data_flow_analyzer::available_expression_analysis(func);
@@ -1695,7 +1731,7 @@ void Ic_optimizer::data_flow_analysis()
 {
     for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
     {
-        data_flow_analysis_for_a_func(func);
+        data_flow_analysis_for_a_func(func,true);
     }
 }
 
@@ -1821,21 +1857,6 @@ void Ic_optimizer::global_dead_code_elimination(struct ic_func_flow_graph * func
                 default:
                     break;
             }
-            // if((*ic_with_info).intermediate_code.op!=ic_op::NOP && 
-            // (*ic_with_info).intermediate_code.op!=ic_op::JMP && 
-            // (*ic_with_info).intermediate_code.op!=ic_op::IF_JMP && 
-            // (*ic_with_info).intermediate_code.op!=ic_op::IF_NOT_JMP && 
-            // (*ic_with_info).intermediate_code.op!=ic_op::VAR_DEFINE && 
-            // (*ic_with_info).intermediate_code.op!=ic_op::LABEL_DEFINE && 
-            // (*ic_with_info).intermediate_code.op!=ic_op::FUNC_DEFINE && 
-            // (*ic_with_info).intermediate_code.op!=ic_op::END_FUNC_DEFINE && 
-            // (*ic_with_info).intermediate_code.op!=ic_op::CALL && 
-            // (*ic_with_info).intermediate_code.op!=ic_op::RET && 
-            // !(*ic_with_info).check_if_def_global_or_f_param_array() && 
-            // (*ic_with_info).du_chain.empty())
-            // {
-            //     (*ic_with_info)=quaternion_with_info();
-            // }
         }
     }
 }
@@ -1856,7 +1877,7 @@ void Ic_optimizer::loop_invariant_computation_motion(struct ic_func_flow_graph *
     set<ic_pos> unchange_poses;
     list<ic_pos> ordered_unchange_poses;
     list<struct quaternion_with_info> target_ic_with_infos;
-    bool tag;
+    bool tag,tag_1,tag_2;
     //对每一个循环分别进行操作
     for(auto loop:func->loops_info)
     {
@@ -1864,6 +1885,7 @@ void Ic_optimizer::loop_invariant_computation_motion(struct ic_func_flow_graph *
         unchange_poses.clear();
         ordered_unchange_poses.clear();
         target_basic_block=nullptr;
+        //如果语句s的运算对象或者是常数，或者它们的所有到达-定义都在循环L的外面，那么将语句s标记为“不变”
         for(auto bb:loop.second->all_basic_blocks)
         {
             pos=0;
@@ -1894,6 +1916,8 @@ next_1:
             }
         }
         tag=true;
+        //如果语句s先前没有被标记
+        //并且s的所有运算对象或者是常数，或者所有到达-定义都在循环L的外面，或者只有一个到达定义，这个定义是循环L中已标记为“不变”的语句
         while(tag)
         {
             tag=false;
@@ -1936,8 +1960,8 @@ next_2:
         for(auto unchange_pos:ordered_unchange_poses)
         {
             struct quaternion_with_info & ic_with_info=func->get_ic_with_info(unchange_pos);
-            //目前暂时不处理对数组和数组元素的明确定义
-            if(ic_with_info.explicit_def->is_array_member() || ic_with_info.explicit_def->is_array_var())
+            //目前暂时不处理对全局变量，数组和数组元素的明确定义，也不处理函数调用
+            if(ic_with_info.intermediate_code.op==ic_op::CALL || ic_with_info.explicit_def->is_array_member() || ic_with_info.explicit_def->is_array_var() || ic_with_info.explicit_def->is_global())
             {
                 goto next_3;
             }
@@ -1950,13 +1974,34 @@ next_2:
             // {
             //     goto next_3;
             // }
-            //将要外提的语句s所在的块支配循环L的所有出口
+            //要么将要外提的语句s所在的块支配循环L的所有出口
+            tag_1=true;
+            tag_2=true;
             for(auto loop_exit:loop.second->exit_basic_blocks)
             {
                 if(!func->is_dominated(loop_exit,unchange_pos.basic_block))
                 {
-                    goto next_3;
+                    tag_1=false;
+                    break;
                 }
+            }
+            //要么将要外提的语句s定义的变量x在循环的外面没有被使用，并且在循环内部的所有x的使用，只有可能来自s的定义
+            if(ic_with_info.du_chain.find(ic_with_info.explicit_def)!=ic_with_info.du_chain.end())
+            {
+                for(auto use_pos:ic_with_info.du_chain.at(ic_with_info.explicit_def))
+                {
+                    if(loop.second->all_basic_blocks.find(use_pos.basic_block)==loop.second->all_basic_blocks.end() || 
+                    *(func->get_ic_with_info(use_pos).ud_chain.at(ic_with_info.explicit_def).begin())!=unchange_pos || 
+                    func->get_ic_with_info(use_pos).ud_chain.at(ic_with_info.explicit_def).size()!=1)
+                    {
+                        tag_2=false;
+                        break;
+                    }
+                }
+            }
+            if(!tag_1 && !tag_2)
+            {
+                goto next_3;
             }
             for(auto i:loop.second->all_basic_blocks)
             {
@@ -2022,8 +2067,11 @@ next_2:
             ic_with_info=quaternion_with_info();
             //外提的时候更改ud链和du链的信息
             current_pos=ic_pos(target_basic_block,target_basic_block->ic_sequence.size()-1);
-            Data_flow_analyzer::change_ud_chain(func,unchange_pos,current_pos);
-            Data_flow_analyzer::change_du_chain(func,unchange_pos,current_pos);
+            // Data_flow_analyzer::change_ud_chain(func,unchange_pos,current_pos);
+            // Data_flow_analyzer::change_du_chain(func,unchange_pos,current_pos);
+            data_flow_analysis_for_a_func(func,false);
+            //同时需要修改变量的定义点和使用点的信息
+            //TO-DO
 next_3:
             ;
         }
@@ -2057,13 +2105,13 @@ void Ic_optimizer::global_optimize()
             global_elimination_of_common_subexpression(func);
         }
         //需要重新进行数据流分析
-        data_flow_analysis_for_a_func(func);
+        data_flow_analysis_for_a_func(func,false);
         //全局死代码消除
         global_dead_code_elimination(func);
         if(need_optimize_)
         {
             //需要重新进行数据流分析
-            data_flow_analysis_for_a_func(func);
+            data_flow_analysis_for_a_func(func,false);
             //循环不变量外提
             loop_invariant_computation_motion(func);
             //归纳变量删除
@@ -2079,7 +2127,122 @@ void Ic_optimizer::global_optimize()
 */
 void Ic_optimizer::thread_optimize(struct ic_func_flow_graph * func)
 {
-    
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
+    size_t thread_part_func_num=0;
+    struct ic_func * thread_part_func;
+    struct ic_func_flow_graph * thread_part_func_flow_graph;
+    struct ic_scope * thread_part_func_s_scope;
+    struct ic_data * new_var;
+    struct ic_basic_block * new_basic_block;
+    struct ic_label * old_label;
+    map<struct ic_data *,struct ic_data * > old_and_new_vars_map;
+    map<struct ic_label *,struct ic_label * > old_and_new_labels_map;
+    map<struct ic_basic_block *,struct ic_basic_block * > old_and_new_ic_basic_block_map;
+    list<struct ic_data * > * thread_part_func_s_f_params;
+    list<struct ic_basic_block * > copyed_basic_blocks;
+    if(func->func->type!=func_type::PROGRAMER_DEFINED)
+    {
+        return;
+    }
+    for(auto loop_info:func->loops_info)
+    {
+        //暂时只对最外层的循环进行多线程优化
+        if(loop_info.second->father_loop!=nullptr)
+        {
+            continue;
+        }
+        //满足下列所有条件的循环才能进行自动多线程：
+        //（1）循环中没有return
+        //（2）
+        //把符合条件的循环抽象成一个函数
+        thread_part_func_s_f_params=new list<struct ic_data * >;
+        thread_part_func=symbol_table->new_func(func->func->name+".thread."+to_string(thread_part_func_num++),func_type::THREAD_PART,language_data_type::VOID,thread_part_func_s_f_params);
+        thread_part_func_s_scope=new ic_scope(symbol_table->get_global_scope(),thread_part_func);
+        //将要循环中的变量进行相应的替换，并更改其相应的作用域
+        for(auto bb_in_loop:loop_info.second->all_basic_blocks)
+        {
+            for(auto ic_with_info_in_loop:bb_in_loop->ic_sequence)
+            {
+                for(auto var:ic_with_info_in_loop.get_all_datas())
+                {
+                    if(old_and_new_vars_map.find(var)==old_and_new_vars_map.end())
+                    {
+                        if(var->is_global() || var->is_array_member())
+                        {
+                            continue;
+                        }
+                        else if(var->is_const())
+                        {
+                            new_var=symbol_table->const_entry(var->get_data_type(),var->get_value());
+                        }
+                        else if(var->is_tmp_var())
+                        {
+                            new_var=symbol_table->new_tmp_var(var->get_data_type(),var->dimensions_len,var->get_value(),var->type==ic_data_type::CONST_TMP_VAR);
+                        }
+                        else
+                        {
+                            new_var=symbol_table->new_var(var->get_var_name(),var->get_data_type(),var->dimensions_len,var->get_value(),var->type==ic_data_type::LOCAL_CONST_VAR,thread_part_func_s_scope);
+                        }
+                        old_and_new_vars_map.insert(make_pair(var,new_var));
+                    }
+                }
+                old_label=ic_with_info_in_loop.get_related_label();
+                if(old_label && old_and_new_labels_map.find(old_label)==old_and_new_labels_map.end())
+                {
+                    old_and_new_labels_map.insert(make_pair(old_label,symbol_table->new_label()));
+                }
+            }
+        }
+        //将循环中的所有基本块复制一份
+        for(auto old_basic_block:loop_info.second->all_basic_blocks)
+        {
+            new_basic_block=new ic_basic_block(*old_basic_block,func,old_and_new_vars_map,old_and_new_labels_map);
+            copyed_basic_blocks.push_back(new_basic_block);
+            old_and_new_ic_basic_block_map.insert(make_pair(old_basic_block,new_basic_block));
+        }
+        //将复制完成的循环基本块流图放入新的函数
+        thread_part_func_flow_graph=new ic_func_flow_graph(thread_part_func);
+        intermediate_codes_flow_graph_->func_flow_graphs.push_front(thread_part_func_flow_graph);
+        thread_part_func_flow_graph->basic_blocks=copyed_basic_blocks;
+        for(auto old_and_new_label:old_and_new_labels_map)
+        {
+            if(old_and_new_ic_basic_block_map.find(func->label_basic_block_map.at(old_and_new_label.first))!=old_and_new_ic_basic_block_map.end())
+            {
+                thread_part_func_flow_graph->label_basic_block_map.insert(make_pair(old_and_new_label.second,old_and_new_ic_basic_block_map.at(func->label_basic_block_map.at(old_and_new_label.first))));
+            }
+        }
+        //添加FUNC_DEFINE和END_FUNC_DEFINE语句
+        new_basic_block=new ic_basic_block(thread_part_func_flow_graph);
+        new_basic_block->add_ic(quaternion(ic_op::FUNC_DEFINE,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::FUNC,thread_part_func));
+        thread_part_func_flow_graph->basic_blocks.push_front(new_basic_block);
+        new_basic_block=new ic_basic_block(thread_part_func_flow_graph);
+        new_basic_block->add_ic(quaternion(ic_op::END_FUNC_DEFINE,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::FUNC,thread_part_func));
+        thread_part_func_flow_graph->basic_blocks.push_back(new_basic_block);
+        //将那些跳出循环的语句改成return
+        for(auto bb:thread_part_func_flow_graph->basic_blocks)
+        {
+            switch(bb->ic_sequence.back().intermediate_code.op)
+            {
+                case ic_op::JMP:
+                case ic_op::IF_JMP:
+                case ic_op::IF_NOT_JMP:
+                    if(thread_part_func_flow_graph->label_basic_block_map.find((struct ic_label *)(bb->ic_sequence.back().intermediate_code.result.second))==thread_part_func_flow_graph->label_basic_block_map.end())
+                    {
+                        *(--bb->ic_sequence.end())=quaternion_with_info(quaternion(ic_op::RET,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr));
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        //最后对新构建的函数的数据流分析
+        data_flow_analysis_for_a_func(thread_part_func_flow_graph,true);
+        //清理现场
+        old_and_new_vars_map.clear();
+        old_and_new_labels_map.clear();
+        old_and_new_ic_basic_block_map.clear();
+        copyed_basic_blocks.clear();
+    }
 }
 
 /*
@@ -2115,7 +2278,7 @@ struct ic_flow_graph * Ic_optimizer::optimize(list<struct quaternion> * intermed
     //全局优化
     global_optimize();
     //联合优化
-    union_optimize();
+    //union_optimize();
     //返回优化结果
     return intermediate_codes_flow_graph_;
 }

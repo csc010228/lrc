@@ -289,6 +289,9 @@ protected:
     //目前的作用域
     struct ic_scope * current_scope_;
 
+    //全局作用域
+    struct ic_scope * global_scope_;
+
 public:
     //单例模式不应该有克隆构造函数
     Symbol_table(Symbol_table & other) = delete;
@@ -331,6 +334,9 @@ public:
 
     //获取当前的作用域
     struct ic_scope * get_current_scope();
+
+    //获取全局作用域
+    struct ic_scope * get_global_scope();
 
     //获取符号表中的某一个变量
     struct ic_data * var_entry(string var_name) const;

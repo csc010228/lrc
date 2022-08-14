@@ -397,9 +397,9 @@ struct ic_data * DAG::copy_progagation(struct ic_data * data,bool stop_when_arra
     while(node->related_op==ic_op::ASSIGN)
     {
         child=node->get_only_child();
-        if(!(child->related_data->get_data_type()==data->get_data_type() && 
-        check_data_s_node_available(child->related_data,child) && 
-        (!(stop_when_array_member && child->related_data->is_array_member()))))
+        if(child->related_data->get_data_type()!=data->get_data_type() || 
+        !check_data_s_node_available(child->related_data,child) || 
+        (stop_when_array_member && child->related_data->is_array_member()))
         {
             break;
         }

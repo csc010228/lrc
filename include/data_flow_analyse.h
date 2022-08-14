@@ -17,7 +17,7 @@ class Data_flow_analyzer
 private:
 public:
     //数据流分析的准备
-    static void prepare_before_data_flow_analyse(struct ic_func_flow_graph * func);
+    static void prepare_before_data_flow_analyse(struct ic_func_flow_graph * func,bool further_analyse);
 
     //到达-定义分析
     static void use_define_analysis(struct ic_func_flow_graph * func);

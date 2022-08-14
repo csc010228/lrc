@@ -16,14 +16,16 @@ Parameters
 ----------
 func:要分析的函数流图
 */
-void Data_flow_analyzer::prepare_before_data_flow_analyse(struct ic_func_flow_graph * func)
+void Data_flow_analyzer::prepare_before_data_flow_analyse(struct ic_func_flow_graph * func,bool further_analyse)
 {
     //清空原有的数据流信息
-    func->clear_all_data_flow_analyse_info();
+    func->clear_all_data_flow_analyse_info(further_analyse);
     //获取要分析的函数流图的数组元素的所属数组和偏移量信息
     func->build_array_and_offset_to_array_member_map();
     //获取要分析的函数流图的变量定义点和使用点信息
     func->build_vars_def_and_use_pos_info();
+    //重新构建循环的基本块跳转信息，因为在优化的时候可能会被改变
+    func->build_nexts_between_basic_blocks();
 }
 
 /*

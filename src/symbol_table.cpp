@@ -513,6 +513,7 @@ Symbol_table::Symbol_table():tmp_vars_num_(0),labels_num_(0),current_scope_(null
     functions_.insert(make_pair("_sysy_stoptime",new struct ic_func("_sysy_stoptime",func_type::LIBRARY,language_data_type::VOID,(size_t)1,new struct ic_data("lineno",language_data_type::INT,nullptr,false))));
     //开始一个全局作用域
     start_scope();
+    global_scope_=current_scope_;
 }
 
 /*
@@ -819,16 +820,14 @@ struct ic_scope * Symbol_table::end_scope()
     return res;
 }
 
-/*
-获取当前的作用域
-
-Return
-------
-返回当前的作用域
-*/
 struct ic_scope * Symbol_table::get_current_scope()
 {
     return current_scope_;
+}
+
+struct ic_scope * Symbol_table::get_global_scope()
+{
+    return global_scope_;
 }
 
 /*
