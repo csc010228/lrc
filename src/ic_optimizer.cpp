@@ -8,6 +8,7 @@
 */
 #include"ic_optimizer.h"
 #include"dag.h"
+#include"pool.h"
 #include"data_flow_analyse.h"
 #include"symbol_table.h"
 #include<fstream>
@@ -903,6 +904,7 @@ void ic_func_flow_graph::build_nexts_between_basic_blocks()
     bool need_set_sequential_next=false;
     for(auto basic_block:basic_blocks)
     {
+        basic_block->precursors.clear();
         if(need_set_sequential_next)
         {
             pre_basic_block->set_sequential_next(basic_block);
@@ -1797,7 +1799,71 @@ func:要优化的函数流图
 */
 void Ic_optimizer::global_elimination_of_common_subexpression(struct ic_func_flow_graph * func)
 {
+    // printf("func < %s >\n", func->func->name.c_str());
 
+    map< ic_basic_block*, pool* > blk_to_pool;   // 基本块的池, first 是入口池, second 是出口池
+    ic_basic_block* blk;
+    pool *pn_in, *pn_out, *sp, *new_sp, *jp, *new_jp;
+
+    for( auto blk:func->basic_blocks ){
+        blk_to_pool[blk] = new pool(blk);
+    }
+
+    blk_to_pool.at(func->basic_blocks.front())->set_pool_old();
+    list< ic_basic_block* > proc_list = {func->basic_blocks.front()};   // 第一个基本块入队列
+
+    while( !proc_list.empty() ){
+
+        blk = proc_list.front();
+        pn_in = blk_to_pool.at(blk);
+        pn_out = pn_in->interation();         // 块内迭代, 得到 pn_out
+
+        // printf("\tblk:%lx, in_size = %d, out_size = %d\n", blk, blk_to_pool[blk]->get_pi_count(), pn_out->get_pi_count());
+        
+        // 更新顺序后一块的入口池
+        // printf("\n\tsequential_next  %lx\n", blk->sequential_next);
+        if( blk->sequential_next != nullptr ){
+            sp = blk_to_pool.at(blk->sequential_next);
+            new_sp = sp->pool_intersection( pn_out );
+            if ( !sp->pool_same_judge(new_sp) ){
+                sp->~pool();        // 销毁旧池
+                blk_to_pool.at(blk->sequential_next) = new_sp;  // 更新入口池
+                proc_list.push_back(blk->sequential_next);      // 将后一个块入队列
+            }else{
+                new_sp->~pool();    // 销毁新池
+            }
+        }
+
+        // 更新跳转后一块的入口池
+        // printf("\n\tjump_next  %lx\n", blk->jump_next);
+        if( blk->jump_next != nullptr ){
+            jp = blk_to_pool.at(blk->jump_next);
+            new_jp = jp->pool_intersection( pn_out );
+            if ( !jp->pool_same_judge(new_jp) ){
+                jp->~pool();        // 销毁旧池
+                blk_to_pool.at(blk->jump_next) = new_jp;        // 更新入口池
+                proc_list.push_back(blk->jump_next);            // 将后一个块入队列
+            }else{
+                new_jp->~pool();    // 销毁新池
+            }
+        }
+        pn_out->~pool();    // 释放 pn_out
+
+        proc_list.pop_front();  // 将 blk 从队列移除
+    }
+
+    int sum = 0;
+    for( auto blk:func->basic_blocks ){
+        // printf("pool for %lx is new %d\n", blk, blk_to_pool.at(blk)->is_new());
+        sum += eliminate_common_exp_in_basic_block(blk, blk_to_pool.at(blk));  // 进行公共子表达式消除
+    }
+
+    // 释放 本 函数相关的池
+    for( auto blk:func->basic_blocks ){
+        blk_to_pool.at(blk)->~pool();
+    }
+
+    // printf("out func < %s > sum = %d\n", func->func->name.c_str(), sum);
 }
 
 /*
@@ -2129,18 +2195,23 @@ void Ic_optimizer::thread_optimize(struct ic_func_flow_graph * func)
 {
     static Symbol_table * symbol_table=Symbol_table::get_instance();
     string f_param_name;
-    size_t thread_part_func_num=0,new_f_param_num;
+    size_t thread_part_func_num=0,new_f_param_num,offset;
     struct ic_func * thread_part_func;
     struct ic_func_flow_graph * thread_part_func_flow_graph;
     struct ic_scope * thread_part_func_s_scope;
-    struct ic_data * new_var,* var;
+    struct ic_data * new_var,* var,* belong_array;
     struct ic_basic_block * new_basic_block;
-    struct ic_label * old_label,* new_label;
+    struct ic_label * old_label,* new_label,* out_label;
+    struct quaternion new_ic;
+    map<struct ic_data *,set<struct ic_data * > > def_array_members,use_array_members;
     map<struct ic_data *,struct ic_data * > old_and_new_vars_map;
     map<struct ic_label *,struct ic_label * > old_and_new_labels_map;
     map<struct ic_basic_block *,struct ic_basic_block * > old_and_new_ic_basic_block_map;
-    list<struct ic_data * > * thread_part_func_s_f_params;
-    list<struct ic_basic_block * > copyed_basic_blocks;
+    map<struct ic_label * ,struct ic_basic_block * > new_label_basic_block_map;
+    list<struct ic_data * > * thread_part_func_s_f_params,* thread_part_func_s_r_params;
+    list<struct ic_basic_block * > copyed_basic_blocks,new_basic_blocks;
+    ic_pos pos;
+    bool tag=false;
     if(func->func->type!=func_type::PROGRAMER_DEFINED)
     {
         return;
@@ -2154,19 +2225,50 @@ void Ic_optimizer::thread_optimize(struct ic_func_flow_graph * func)
         }
         //满足下列所有条件的循环才能进行自动多线程：
         //（1）循环中没有return
-        //（2）
+        //（2）循环中没有函数调用
+        //（3）循环中定义的数据不会被循环外用到
+        //（4）循环中定义的数组元素是互不干扰的
+        //（5）只有一处IF_JMP或者IF_NOT_JMP可以跳出循环
+        //寻找循环，以及它的所有子循环的出口
+
         //查看循环中有哪些使用的数据是循环外部定义的
+        //查看循环中有哪些定义的数据会传递到循环外部
         new_f_param_num=0;
         for(auto bb_in_loop:loop_info.second->all_basic_blocks)
         {
+            offset=0;
             for(auto ic_with_info_in_loop:bb_in_loop->ic_sequence)
             {
+                pos=ic_pos(bb_in_loop,offset);
+                switch(ic_with_info_in_loop.intermediate_code.op)
+                {
+                    case ic_op::VAR_DEFINE:
+                        if(((struct ic_data *)ic_with_info_in_loop.intermediate_code.result.second)->is_array_var())
+                        {
+                            goto out;
+                        }
+                        break;
+                    case ic_op::CALL:
+                    case ic_op::RET:
+                        goto out;
+                        break;
+                    case ic_op::IF_JMP:
+                    case ic_op::IF_NOT_JMP:
+                        break;
+                    default:
+                        break;
+                }
                 for(auto ud_chain_node:ic_with_info_in_loop.ud_chain)
                 {
                     if(old_and_new_vars_map.find(ud_chain_node.first)!=old_and_new_vars_map.end() || 
-                    ud_chain_node.first->is_array_member() || 
                     ud_chain_node.first->is_global())
                     {
+                        continue;
+                    }
+                    if(ud_chain_node.first->is_array_member())
+                    {
+                        belong_array=ud_chain_node.first->get_belong_array();
+                        map_set_insert(use_array_members,belong_array,ud_chain_node.first);
                         continue;
                     }
                     for(auto def_pos:ud_chain_node.second)
@@ -2186,9 +2288,45 @@ void Ic_optimizer::thread_optimize(struct ic_func_flow_graph * func)
                         }
                     }
                 }
+                for(auto du_chain_node:ic_with_info_in_loop.du_chain)
+                {
+                    if(du_chain_node.first->is_array_var())
+                    {
+                        if(!du_chain_node.first->is_global())
+                        {
+                            old_and_new_vars_map.insert(make_pair(du_chain_node.first,new struct ic_data(du_chain_node.first->get_var_name(),du_chain_node.first->get_data_type(),du_chain_node.first->dimensions_len,false)));
+                        }
+                        continue;
+                    }
+                    if(du_chain_node.first->is_array_member())
+                    {
+                        belong_array=du_chain_node.first->get_belong_array();
+                        map_set_insert(def_array_members,belong_array,du_chain_node.first);
+                        continue;
+                    }
+                    if(du_chain_node.first->is_global())
+                    {
+                        goto out;
+                    }
+                    for(auto use_pos:du_chain_node.second)
+                    {
+                        if(loop_info.second->all_basic_blocks.find(use_pos.basic_block)==loop_info.second->all_basic_blocks.end())
+                        {
+                            goto out;
+                        }
+                    }
+                }
+                offset++;
             }
         }
-        //把符合条件的循环抽象成一个函数
+        for(auto def_array_and_member:def_array_members)
+        {
+            if(use_array_members.find(def_array_and_member.first)!=use_array_members.end())
+            {
+                goto out;
+            }
+        }
+        //把符合条件的循环抽象成一个thread函数
         thread_part_func_s_f_params=new list<struct ic_data * >;
         for(auto new_f_param:old_and_new_vars_map)
         {
@@ -2196,8 +2334,13 @@ void Ic_optimizer::thread_optimize(struct ic_func_flow_graph * func)
         }
         thread_part_func=symbol_table->new_func(func->func->name+".thread."+to_string(thread_part_func_num++),func_type::THREAD_PART,language_data_type::VOID,thread_part_func_s_f_params);
         thread_part_func_s_scope=new ic_scope(symbol_table->get_global_scope(),thread_part_func);
-        //查看循环中有哪些定义的数据会传递到循环外部
-
+        //生成调用该thread函数的语句
+        thread_part_func_s_r_params=new list<struct ic_data * >;
+        for(auto new_r_param:old_and_new_vars_map)
+        {
+            thread_part_func_s_r_params->push_back(new_r_param.first);
+        }
+        new_ic=quaternion(ic_op::CALL,ic_operand::FUNC,(void *)thread_part_func,ic_operand::DATAS,(void *)thread_part_func_s_r_params,ic_operand::NONE,nullptr);
         //将要循环中的变量进行相应的替换，并更改其相应的作用域
         for(auto bb_in_loop:loop_info.second->all_basic_blocks)
         {
@@ -2232,6 +2375,7 @@ void Ic_optimizer::thread_optimize(struct ic_func_flow_graph * func)
                     old_and_new_labels_map.insert(make_pair(old_label,symbol_table->new_label()));
                     if(loop_info.second->all_basic_blocks.find(func->label_basic_block_map.at(old_label))==loop_info.second->all_basic_blocks.end())
                     {
+                        out_label=old_label;
                         new_label=old_and_new_labels_map.at(old_label);
                     }
                 }
@@ -2265,30 +2409,49 @@ void Ic_optimizer::thread_optimize(struct ic_func_flow_graph * func)
         new_basic_block->add_ic(quaternion(ic_op::RET,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr));
         new_basic_block->add_ic(quaternion(ic_op::END_FUNC_DEFINE,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::FUNC,thread_part_func));
         thread_part_func_flow_graph->basic_blocks.push_back(new_basic_block);
-        // //将那些跳出循环的语句改成return
-        // for(auto bb:thread_part_func_flow_graph->basic_blocks)
-        // {
-        //     switch(bb->ic_sequence.back().intermediate_code.op)
-        //     {
-        //         case ic_op::JMP:
-        //         case ic_op::IF_JMP:
-        //         case ic_op::IF_NOT_JMP:
-        //             if(thread_part_func_flow_graph->label_basic_block_map.find((struct ic_label *)(bb->ic_sequence.back().intermediate_code.result.second))==thread_part_func_flow_graph->label_basic_block_map.end())
-        //             {
-        //                 *(--bb->ic_sequence.end())=quaternion_with_info(quaternion(ic_op::RET,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr));
-        //             }
-        //             break;
-        //         default:
-        //             break;
-        //     }
-        // }
-        //最后对新构建的函数的数据流分析
+        //对新构建的thread函数的数据流分析
         data_flow_analysis_for_a_func(thread_part_func_flow_graph,true);
+        //将旧的函数中的循环替换成一条函数调用
+        tag=false;
+        for(auto bb:func->basic_blocks)
+        {
+            if(loop_info.second->all_basic_blocks.find(bb)==loop_info.second->all_basic_blocks.end())
+            {
+                new_basic_blocks.push_back(bb);
+            }
+            else if(!tag)
+            {
+                tag=true;
+                new_basic_block=new ic_basic_block(func);
+                new_basic_block->add_ic(new_ic);
+                new_basic_blocks.push_back(new_basic_block);
+            }
+        }
+        func->basic_blocks=new_basic_blocks;
+        for(auto label_to_bb:func->label_basic_block_map)
+        {
+            if(loop_info.second->all_basic_blocks.find(label_to_bb.second)==loop_info.second->all_basic_blocks.end())
+            {
+                new_label_basic_block_map.insert(label_to_bb);
+            }
+        }
+        func->label_basic_block_map=new_label_basic_block_map;
+out:
         //清理现场
         old_and_new_vars_map.clear();
         old_and_new_labels_map.clear();
         old_and_new_ic_basic_block_map.clear();
         copyed_basic_blocks.clear();
+        def_array_members.clear();
+        use_array_members.clear();
+        new_basic_blocks.clear();
+        new_label_basic_block_map.clear();
+    }
+    if(tag)
+    {
+        //重新对旧的函数进行数据流分析
+        func->build_nexts_between_basic_blocks();
+        data_flow_analysis_for_a_func(func,true);
     }
 }
 
