@@ -2128,13 +2128,14 @@ void Ic_optimizer::global_optimize()
 void Ic_optimizer::thread_optimize(struct ic_func_flow_graph * func)
 {
     static Symbol_table * symbol_table=Symbol_table::get_instance();
-    size_t thread_part_func_num=0;
+    string f_param_name;
+    size_t thread_part_func_num=0,new_f_param_num;
     struct ic_func * thread_part_func;
     struct ic_func_flow_graph * thread_part_func_flow_graph;
     struct ic_scope * thread_part_func_s_scope;
-    struct ic_data * new_var;
+    struct ic_data * new_var,* var;
     struct ic_basic_block * new_basic_block;
-    struct ic_label * old_label;
+    struct ic_label * old_label,* new_label;
     map<struct ic_data *,struct ic_data * > old_and_new_vars_map;
     map<struct ic_label *,struct ic_label * > old_and_new_labels_map;
     map<struct ic_basic_block *,struct ic_basic_block * > old_and_new_ic_basic_block_map;
@@ -2154,10 +2155,49 @@ void Ic_optimizer::thread_optimize(struct ic_func_flow_graph * func)
         //满足下列所有条件的循环才能进行自动多线程：
         //（1）循环中没有return
         //（2）
+        //查看循环中有哪些使用的数据是循环外部定义的
+        new_f_param_num=0;
+        for(auto bb_in_loop:loop_info.second->all_basic_blocks)
+        {
+            for(auto ic_with_info_in_loop:bb_in_loop->ic_sequence)
+            {
+                for(auto ud_chain_node:ic_with_info_in_loop.ud_chain)
+                {
+                    if(old_and_new_vars_map.find(ud_chain_node.first)!=old_and_new_vars_map.end() || 
+                    ud_chain_node.first->is_array_member() || 
+                    ud_chain_node.first->is_global())
+                    {
+                        continue;
+                    }
+                    for(auto def_pos:ud_chain_node.second)
+                    {
+                        if(loop_info.second->all_basic_blocks.find(def_pos.basic_block)==loop_info.second->all_basic_blocks.end())
+                        {
+                            if(ud_chain_node.first->is_tmp_var())
+                            {
+                                f_param_name="%"+to_string(new_f_param_num++);
+                            }
+                            else
+                            {
+                                f_param_name=ud_chain_node.first->get_var_name();
+                            }
+                            old_and_new_vars_map.insert(make_pair(ud_chain_node.first,new struct ic_data(f_param_name,ud_chain_node.first->get_data_type(),ud_chain_node.first->dimensions_len,false)));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
         //把符合条件的循环抽象成一个函数
         thread_part_func_s_f_params=new list<struct ic_data * >;
+        for(auto new_f_param:old_and_new_vars_map)
+        {
+            thread_part_func_s_f_params->push_back(new_f_param.second);
+        }
         thread_part_func=symbol_table->new_func(func->func->name+".thread."+to_string(thread_part_func_num++),func_type::THREAD_PART,language_data_type::VOID,thread_part_func_s_f_params);
         thread_part_func_s_scope=new ic_scope(symbol_table->get_global_scope(),thread_part_func);
+        //查看循环中有哪些定义的数据会传递到循环外部
+
         //将要循环中的变量进行相应的替换，并更改其相应的作用域
         for(auto bb_in_loop:loop_info.second->all_basic_blocks)
         {
@@ -2190,6 +2230,10 @@ void Ic_optimizer::thread_optimize(struct ic_func_flow_graph * func)
                 if(old_label && old_and_new_labels_map.find(old_label)==old_and_new_labels_map.end())
                 {
                     old_and_new_labels_map.insert(make_pair(old_label,symbol_table->new_label()));
+                    if(loop_info.second->all_basic_blocks.find(func->label_basic_block_map.at(old_label))==loop_info.second->all_basic_blocks.end())
+                    {
+                        new_label=old_and_new_labels_map.at(old_label);
+                    }
                 }
             }
         }
@@ -2211,30 +2255,33 @@ void Ic_optimizer::thread_optimize(struct ic_func_flow_graph * func)
                 thread_part_func_flow_graph->label_basic_block_map.insert(make_pair(old_and_new_label.second,old_and_new_ic_basic_block_map.at(func->label_basic_block_map.at(old_and_new_label.first))));
             }
         }
-        //添加FUNC_DEFINE和END_FUNC_DEFINE语句
+        //添加FUNC_DEFINE，RET和END_FUNC_DEFINE语句
         new_basic_block=new ic_basic_block(thread_part_func_flow_graph);
         new_basic_block->add_ic(quaternion(ic_op::FUNC_DEFINE,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::FUNC,thread_part_func));
         thread_part_func_flow_graph->basic_blocks.push_front(new_basic_block);
         new_basic_block=new ic_basic_block(thread_part_func_flow_graph);
+        thread_part_func_flow_graph->label_basic_block_map.insert(make_pair(new_label,new_basic_block));
+        new_basic_block->add_ic(quaternion(ic_op::LABEL_DEFINE,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::LABEL,(void *)new_label));
+        new_basic_block->add_ic(quaternion(ic_op::RET,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr));
         new_basic_block->add_ic(quaternion(ic_op::END_FUNC_DEFINE,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::FUNC,thread_part_func));
         thread_part_func_flow_graph->basic_blocks.push_back(new_basic_block);
-        //将那些跳出循环的语句改成return
-        for(auto bb:thread_part_func_flow_graph->basic_blocks)
-        {
-            switch(bb->ic_sequence.back().intermediate_code.op)
-            {
-                case ic_op::JMP:
-                case ic_op::IF_JMP:
-                case ic_op::IF_NOT_JMP:
-                    if(thread_part_func_flow_graph->label_basic_block_map.find((struct ic_label *)(bb->ic_sequence.back().intermediate_code.result.second))==thread_part_func_flow_graph->label_basic_block_map.end())
-                    {
-                        *(--bb->ic_sequence.end())=quaternion_with_info(quaternion(ic_op::RET,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr));
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
+        // //将那些跳出循环的语句改成return
+        // for(auto bb:thread_part_func_flow_graph->basic_blocks)
+        // {
+        //     switch(bb->ic_sequence.back().intermediate_code.op)
+        //     {
+        //         case ic_op::JMP:
+        //         case ic_op::IF_JMP:
+        //         case ic_op::IF_NOT_JMP:
+        //             if(thread_part_func_flow_graph->label_basic_block_map.find((struct ic_label *)(bb->ic_sequence.back().intermediate_code.result.second))==thread_part_func_flow_graph->label_basic_block_map.end())
+        //             {
+        //                 *(--bb->ic_sequence.end())=quaternion_with_info(quaternion(ic_op::RET,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr));
+        //             }
+        //             break;
+        //         default:
+        //             break;
+        //     }
+        // }
         //最后对新构建的函数的数据流分析
         data_flow_analysis_for_a_func(thread_part_func_flow_graph,true);
         //清理现场

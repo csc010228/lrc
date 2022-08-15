@@ -99,11 +99,21 @@ template<typename MAP_SET_KEY,typename MAP_SET_VALUE>
 map<MAP_SET_KEY,set<MAP_SET_VALUE> > map_set_difference(const map<MAP_SET_KEY,set<MAP_SET_VALUE> > & arg1,const map<MAP_SET_KEY,set<MAP_SET_VALUE> > & arg2)
 {
     map<MAP_SET_KEY,set<MAP_SET_VALUE> > res=arg1;
+    set<MAP_SET_VALUE> temp;
     for(auto map_member:arg2)
     {
         if(res.find(map_member.first)!=res.end())
         {
-            set_difference(map_member.second.begin(),map_member.second.end(),res.at(map_member.first).begin(),res.at(map_member.first).end(),inserter(res.at(map_member.first),res.at(map_member.first).begin()));
+            temp.clear();
+            set_difference(res.at(map_member.first).begin(),res.at(map_member.first).end(),map_member.second.begin(),map_member.second.end(),inserter(temp,temp.begin()));
+            if(temp.empty())
+            {
+                res.erase(map_member.first);
+            }
+            else
+            {
+                res.at(map_member.first)=temp;
+            }
         }
     }
     return res;
