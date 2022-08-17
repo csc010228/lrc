@@ -3,85 +3,85 @@ sum:
 	vpush	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
 	add	fp,sp,#100
 	sub	sp,sp,#4
-	mov	VR87,r0
-	mov	VR91,r1
-	mov	VR119,r2
-	mov	VR52,r3
-	ldr	VR85,[VR87,#0]
-	ldr	VR63,[VR91,#8]
-	add	VR69,VR85,VR63
-	ldr	VR107,[VR119,#4]
-	add	VR59,VR69,VR107
-	ldr	VR76,[VR52,#40]
-	add	VR93,VR59,VR76
-	add	VR57,fp,#0
-	ldr	VR58,[VR57]
-	ldr	VR71,[VR58,#24]
-	add	VR56,VR93,VR71
-	add	VR114,fp,#4
-	ldr	VR115,[VR114]
-	ldr	VR108,[VR115,#228]
-	add	VR51,VR56,VR108
-	add	VR78,fp,#8
-	ldr	VR79,[VR78]
-	ldr	VR66,[VR79,#56]
-	add	VR106,VR51,VR66
-	add	VR116,fp,#12
-	ldr	VR117,[VR116]
-	ldr	VR72,[VR117,#964]
-	add	VR84,VR106,VR72
-	add	VR67,fp,#16
-	ldr	VR68,[VR67]
-	ldr	VR92,[VR68,#224]
-	add	VR50,VR84,VR92
-	add	VR111,fp,#20
-	ldr	VR112,[VR111]
-	ldr	VR60,[VR112,#804]
-	add	VR94,VR50,VR60
-	add	VR54,fp,#24
+	mov	VR50,r0
+	mov	VR51,r1
+	mov	VR52,r2
+	mov	VR53,r3
+	ldr	VR84,[VR50,#0]
+	ldr	VR85,[VR51,#8]
+	add	VR86,VR84,VR85
+	ldr	VR87,[VR52,#4]
+	add	VR88,VR86,VR87
+	ldr	VR89,[VR53,#40]
+	add	VR90,VR88,VR89
+	add	VR54,fp,#0
 	ldr	VR55,[VR54]
-	ldr	VR118,[VR55,#1996]
-	add	VR113,VR94,VR118
-	add	VR73,fp,#28
-	ldr	VR74,[VR73]
-	ldr	VR101,[VR74,#3224]
-	add	VR77,VR113,VR101
-	add	VR109,fp,#32
-	ldr	VR110,[VR109]
+	ldr	VR91,[VR55,#24]
+	add	VR92,VR90,VR91
+	add	VR56,fp,#4
+	ldr	VR57,[VR56]
+	ldr	VR93,[VR57,#228]
+	add	VR94,VR92,VR93
+	add	VR58,fp,#8
+	ldr	VR59,[VR58]
+	ldr	VR95,[VR59,#56]
+	add	VR96,VR94,VR95
+	add	VR60,fp,#12
+	ldr	VR61,[VR60]
+	ldr	VR97,[VR61,#964]
+	add	VR98,VR96,VR97
+	add	VR62,fp,#16
+	ldr	VR63,[VR62]
+	ldr	VR99,[VR63,#224]
+	add	VR100,VR98,VR99
+	add	VR64,fp,#20
+	ldr	VR65,[VR64]
+	ldr	VR101,[VR65,#804]
+	add	VR102,VR100,VR101
+	add	VR66,fp,#24
+	ldr	VR67,[VR66]
+	ldr	VR103,[VR67,#1996]
+	add	VR104,VR102,VR103
+	add	VR68,fp,#28
+	ldr	VR69,[VR68]
+	ldr	VR105,[VR69,#3224]
+	add	VR106,VR104,VR105
+	add	VR70,fp,#32
+	ldr	VR71,[VR70]
 	movw	VR121,#26400
-	ldr	VR95,[VR110,VR121]
-	add	VR53,VR77,VR95
-	add	VR89,fp,#36
-	ldr	VR90,[VR89]
-	ldr	VR64,[VR90,#508]
-	add	VR88,VR53,VR64
-	add	VR104,fp,#40
-	ldr	VR105,[VR104]
-	ldr	VR86,[VR105,#124]
-	add	VR75,VR88,VR86
-	add	VR61,fp,#44
-	ldr	VR62,[VR61]
+	ldr	VR107,[VR71,VR121]
+	add	VR108,VR106,VR107
+	add	VR72,fp,#36
+	ldr	VR73,[VR72]
+	ldr	VR109,[VR73,#508]
+	add	VR110,VR108,VR109
+	add	VR74,fp,#40
+	ldr	VR75,[VR74]
+	ldr	VR111,[VR75,#124]
+	add	VR112,VR110,VR111
+	add	VR76,fp,#44
+	ldr	VR77,[VR76]
 	movw	VR122,#50064
 	movt	VR122,#3
-	ldr	VR65,[VR62,VR122]
-	add	VR103,VR75,VR65
-	add	VR96,fp,#48
-	ldr	VR97,[VR96]
+	ldr	VR113,[VR77,VR122]
+	add	VR114,VR112,VR113
+	add	VR78,fp,#48
+	ldr	VR79,[VR78]
 	movw	VR123,#15956
-	ldr	VR80,[VR97,VR123]
-	add	VR70,VR103,VR80
-	add	VR99,fp,#52
-	ldr	VR100,[VR99]
+	ldr	VR115,[VR79,VR123]
+	add	VR116,VR114,VR115
+	add	VR80,fp,#52
+	ldr	VR81,[VR80]
 	movw	VR124,#41932
 	movt	VR124,#12
-	ldr	VR81,[VR100,VR124]
-	add	VR98,VR70,VR81
+	ldr	VR117,[VR81,VR124]
+	add	VR118,VR116,VR117
 	add	VR82,fp,#56
 	ldr	VR83,[VR82]
 	movw	VR125,#19456
 	movt	VR125,#4
-	ldr	VR102,[VR83,VR125]
-	add	VR120,VR98,VR102
+	ldr	VR119,[VR83,VR125]
+	add	VR120,VR118,VR119
 	mov	r0,VR120
 	add	sp,sp,#4
 	vpop	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
@@ -104,7 +104,7 @@ main:
 	movw	VR148,#0
 	mov	r2,#2097152
 	bl	memset
-	mov	VR116,#0
+	mov	VR51,#0
 	mov	VR168,#0
 	str	VR168,[sp,#144]
 	add	sp,sp,#0
@@ -118,99 +118,103 @@ main:
 	mov	VR171,#0
 	str	VR171,[sp,#140]
 	ldr	VR173,[sp,#144]
-	lsl	VR311,VR173,#18
-	str	VR311,[sp,#48]
+	lsl	VR174,VR173,#18
+	str	VR174,[sp,#0]
 	add	sp,sp,#0
 .1:
 	sub	sp,sp,#8
-	ldr	VR174,[sp,#148]
-	cmp	VR174,#2
+	ldr	VR176,[sp,#148]
+	cmp	VR176,#2
 	add	sp,sp,#8
 	bge	.36
 	sub	sp,sp,#0
-	mov	VR175,#0
-	str	VR175,[sp,#136]
-	ldr	VR177,[sp,#140]
-	lsl	VR313,VR177,#17
-	str	VR313,[sp,#16]
+	mov	VR177,#0
+	str	VR177,[sp,#136]
+	ldr	VR179,[sp,#140]
+	lsl	VR180,VR179,#17
+	str	VR180,[sp,#4]
 	add	sp,sp,#0
 .2:
 	sub	sp,sp,#8
-	ldr	VR178,[sp,#144]
-	cmp	VR178,#2
+	ldr	VR182,[sp,#144]
+	cmp	VR182,#2
 	add	sp,sp,#8
 	bge	.35
 	sub	sp,sp,#0
-	mov	VR179,#0
-	str	VR179,[sp,#132]
-	ldr	VR181,[sp,#136]
-	lsl	VR182,VR181,#16
-	str	VR182,[sp,#0]
+	mov	VR183,#0
+	str	VR183,[sp,#132]
+	ldr	VR185,[sp,#136]
+	lsl	VR186,VR185,#16
+	str	VR186,[sp,#8]
 	add	sp,sp,#0
 .3:
 	sub	sp,sp,#8
-	ldr	VR184,[sp,#140]
-	cmp	VR184,#2
+	ldr	VR188,[sp,#140]
+	cmp	VR188,#2
 	add	sp,sp,#8
 	bge	.34
 	sub	sp,sp,#0
-	mov	VR185,#0
-	str	VR185,[sp,#128]
-	ldr	VR187,[sp,#132]
-	lsl	VR315,VR187,#15
-	str	VR315,[sp,#44]
+	mov	VR189,#0
+	str	VR189,[sp,#128]
+	ldr	VR191,[sp,#132]
+	lsl	VR192,VR191,#15
+	str	VR192,[sp,#12]
 	add	sp,sp,#0
 .4:
 	sub	sp,sp,#8
-	ldr	VR188,[sp,#136]
-	cmp	VR188,#2
+	ldr	VR194,[sp,#136]
+	cmp	VR194,#2
 	add	sp,sp,#8
 	bge	.33
 	sub	sp,sp,#0
-	mov	VR189,#0
-	str	VR189,[sp,#124]
-	ldr	VR191,[sp,#128]
-	lsl	VR192,VR191,#14
-	str	VR192,[sp,#8]
+	mov	VR195,#0
+	str	VR195,[sp,#124]
+	ldr	VR197,[sp,#128]
+	lsl	VR311,VR197,#14
+	add	VR312,sp,#16
+	str	VR311,[sp,#16]
 	add	sp,sp,#0
 .5:
 	sub	sp,sp,#8
-	ldr	VR194,[sp,#132]
-	cmp	VR194,#2
+	ldr	VR198,[sp,#132]
+	cmp	VR198,#2
 	add	sp,sp,#8
 	bge	.32
 	sub	sp,sp,#0
-	mov	VR195,#0
-	str	VR195,[sp,#120]
-	ldr	VR197,[sp,#124]
-	lsl	VR198,VR197,#13
-	str	VR198,[sp,#36]
+	mov	VR199,#0
+	str	VR199,[sp,#120]
+	ldr	VR201,[sp,#124]
+	lsl	VR313,VR201,#13
+	add	VR314,sp,#20
+	str	VR313,[sp,#20]
 	add	sp,sp,#0
 .6:
 	sub	sp,sp,#8
-	ldr	VR200,[sp,#128]
-	cmp	VR200,#2
+	ldr	VR202,[sp,#128]
+	cmp	VR202,#2
 	add	sp,sp,#8
 	bge	.31
 	sub	sp,sp,#0
-	mov	VR201,#0
-	str	VR201,[sp,#116]
-	ldr	VR203,[sp,#120]
-	lsl	VR317,VR203,#12
-	str	VR317,[sp,#12]
+	mov	VR203,#0
+	str	VR203,[sp,#116]
+	ldr	VR205,[sp,#120]
+	lsl	VR315,VR205,#12
+	add	VR316,sp,#24
+	str	VR315,[sp,#24]
 	add	sp,sp,#0
 .7:
 	sub	sp,sp,#8
-	ldr	VR204,[sp,#124]
-	cmp	VR204,#2
+	ldr	VR206,[sp,#124]
+	cmp	VR206,#2
 	add	sp,sp,#8
 	bge	.30
 	sub	sp,sp,#0
-	mov	VR205,#0
-	str	VR205,[sp,#112]
-	ldr	VR207,[sp,#116]
-	lsl	VR208,VR207,#11
-	str	VR208,[sp,#56]
+	mov	VR207,#0
+	str	VR207,[sp,#112]
+	ldr	VR209,[sp,#116]
+	lsl	VR317,VR209,#11
+	add	VR318,sp,#28
+	str	VR317,[sp,#28]
 	add	sp,sp,#0
 .8:
 	sub	sp,sp,#8
@@ -222,180 +226,187 @@ main:
 	mov	VR211,#0
 	str	VR211,[sp,#108]
 	ldr	VR213,[sp,#112]
-	lsl	VR214,VR213,#10
-	str	VR214,[sp,#4]
+	lsl	VR319,VR213,#10
+	add	VR320,sp,#32
+	str	VR319,[sp,#32]
 	add	sp,sp,#0
 .9:
 	sub	sp,sp,#8
-	ldr	VR216,[sp,#116]
-	cmp	VR216,#2
+	ldr	VR214,[sp,#116]
+	cmp	VR214,#2
 	add	sp,sp,#8
 	bge	.28
 	sub	sp,sp,#0
-	mov	VR217,#0
-	str	VR217,[sp,#104]
-	ldr	VR219,[sp,#108]
-	lsl	VR319,VR219,#9
-	str	VR319,[sp,#40]
+	mov	VR215,#0
+	str	VR215,[sp,#104]
+	ldr	VR217,[sp,#108]
+	lsl	VR321,VR217,#9
+	add	VR322,sp,#36
+	str	VR321,[sp,#36]
 	add	sp,sp,#0
 .10:
 	sub	sp,sp,#8
-	ldr	VR220,[sp,#112]
-	cmp	VR220,#2
+	ldr	VR218,[sp,#112]
+	cmp	VR218,#2
 	add	sp,sp,#8
 	bge	.27
 	sub	sp,sp,#0
-	mov	VR221,#0
-	str	VR221,[sp,#100]
-	ldr	VR223,[sp,#104]
-	lsl	VR321,VR223,#8
-	str	VR321,[sp,#20]
+	mov	VR219,#0
+	str	VR219,[sp,#100]
+	ldr	VR221,[sp,#104]
+	lsl	VR323,VR221,#8
+	add	VR324,sp,#40
+	str	VR323,[sp,#40]
 	add	sp,sp,#0
 .11:
 	sub	sp,sp,#8
-	ldr	VR224,[sp,#108]
-	cmp	VR224,#2
+	ldr	VR222,[sp,#108]
+	cmp	VR222,#2
 	add	sp,sp,#8
 	bge	.26
 	sub	sp,sp,#0
-	mov	VR225,#0
-	str	VR225,[sp,#96]
-	ldr	VR227,[sp,#100]
-	lsl	VR228,VR227,#7
-	add	VR229,sp,#64
-	str	VR228,[sp,#64]
+	mov	VR223,#0
+	str	VR223,[sp,#96]
+	ldr	VR225,[sp,#100]
+	lsl	VR102,VR225,#7
 	add	sp,sp,#0
 .12:
 	sub	sp,sp,#8
-	ldr	VR230,[sp,#104]
-	cmp	VR230,#2
+	ldr	VR226,[sp,#104]
+	cmp	VR226,#2
 	add	sp,sp,#8
 	bge	.25
 	sub	sp,sp,#0
-	mov	VR231,#0
-	str	VR231,[sp,#92]
-	ldr	VR233,[sp,#96]
-	lsl	VR101,VR233,#6
+	mov	VR227,#0
+	str	VR227,[sp,#92]
+	ldr	VR229,[sp,#96]
+	lsl	VR100,VR229,#6
 	add	sp,sp,#0
 .13:
 	sub	sp,sp,#8
-	ldr	VR234,[sp,#100]
-	cmp	VR234,#2
+	ldr	VR230,[sp,#100]
+	cmp	VR230,#2
 	add	sp,sp,#8
 	bge	.24
 	sub	sp,sp,#0
-	mov	VR235,#0
-	str	VR235,[sp,#88]
-	ldr	VR237,[sp,#92]
-	lsl	VR238,VR237,#5
-	add	VR239,sp,#24
-	str	VR238,[sp,#24]
+	mov	VR231,#0
+	str	VR231,[sp,#88]
+	ldr	VR233,[sp,#92]
+	lsl	VR234,VR233,#5
+	add	VR235,sp,#52
+	str	VR234,[sp,#52]
 	add	sp,sp,#0
 .14:
 	sub	sp,sp,#8
-	ldr	VR240,[sp,#96]
-	cmp	VR240,#2
+	ldr	VR236,[sp,#96]
+	cmp	VR236,#2
 	add	sp,sp,#8
 	bge	.23
 	sub	sp,sp,#0
-	mov	VR241,#0
-	str	VR241,[sp,#84]
-	ldr	VR243,[sp,#88]
-	lsl	VR74,VR243,#4
+	mov	VR237,#0
+	str	VR237,[sp,#84]
+	ldr	VR239,[sp,#88]
+	lsl	VR240,VR239,#4
+	add	VR241,sp,#56
+	str	VR240,[sp,#56]
 	add	sp,sp,#0
 .15:
 	sub	sp,sp,#8
-	ldr	VR244,[sp,#92]
-	cmp	VR244,#2
+	ldr	VR242,[sp,#92]
+	cmp	VR242,#2
 	add	sp,sp,#8
 	bge	.22
 	sub	sp,sp,#0
-	mov	VR245,#0
-	str	VR245,[sp,#80]
-	ldr	VR247,[sp,#84]
-	lsl	VR248,VR247,#3
-	add	VR249,sp,#68
-	str	VR248,[sp,#68]
+	mov	VR243,#0
+	str	VR243,[sp,#80]
+	ldr	VR245,[sp,#84]
+	lsl	VR246,VR245,#3
+	add	VR247,sp,#60
+	str	VR246,[sp,#60]
 	add	sp,sp,#0
 .16:
 	sub	sp,sp,#8
-	ldr	VR250,[sp,#88]
-	cmp	VR250,#2
+	ldr	VR248,[sp,#88]
+	cmp	VR248,#2
 	add	sp,sp,#8
 	bge	.21
 	sub	sp,sp,#0
-	mov	VR251,#0
-	str	VR251,[sp,#76]
-	ldr	VR253,[sp,#80]
-	lsl	VR254,VR253,#2
-	add	VR255,sp,#52
-	str	VR254,[sp,#52]
+	mov	VR249,#0
+	str	VR249,[sp,#76]
+	ldr	VR251,[sp,#80]
+	lsl	VR252,VR251,#2
+	add	VR253,sp,#64
+	str	VR252,[sp,#64]
 	add	sp,sp,#0
 .17:
 	sub	sp,sp,#8
-	ldr	VR256,[sp,#84]
-	cmp	VR256,#2
+	ldr	VR254,[sp,#84]
+	cmp	VR254,#2
 	add	sp,sp,#8
 	bge	.20
 	sub	sp,sp,#0
-	mov	VR257,#0
-	add	VR258,sp,#72
-	str	VR257,[sp,#72]
-	ldr	VR259,[sp,#76]
-	lsl	VR100,VR259,#1
+	mov	VR255,#0
+	add	VR256,sp,#72
+	str	VR255,[sp,#72]
+	ldr	VR257,[sp,#76]
+	lsl	VR258,VR257,#1
+	add	VR259,sp,#68
+	str	VR258,[sp,#68]
 	add	sp,sp,#0
 .18:
-	ldr	VR260,[VR258]
+	ldr	VR260,[VR256]
 	cmp	VR260,#2
 	bge	.19
 	sub	sp,sp,#72
-	ldr	VR261,[VR258]
-	add	VR83,VR100,VR261
-	ldr	VR262,[VR255]
-	add	VR118,VR262,VR83
-	ldr	VR263,[VR249]
-	add	VR61,VR263,VR118
-	add	VR110,VR74,VR61
-	ldr	VR264,[VR239]
-	add	VR104,VR264,VR110
-	add	VR78,VR101,VR104
-	ldr	VR265,[VR229]
-	add	VR75,VR265,VR78
-	add	VR406,sp,#92
-	ldr	VR323,[VR406]
-	add	VR54,VR323,VR75
-	add	VR407,sp,#112
-	ldr	VR324,[VR407]
-	add	VR57,VR324,VR54
-	ldr	VR266,[sp,#76]
-	add	VR58,VR266,VR57
-	ldr	VR267,[sp,#128]
-	add	VR64,VR267,VR58
-	add	VR408,sp,#84
-	ldr	VR325,[VR408]
-	add	VR97,VR325,VR64
-	ldr	VR268,[sp,#108]
-	add	VR96,VR268,VR97
-	ldr	VR269,[sp,#80]
-	add	VR117,VR269,VR96
-	add	VR409,sp,#116
-	ldr	VR326,[VR409]
-	add	VR73,VR326,VR117
+	ldr	VR261,[VR256]
+	ldr	VR262,[VR259]
+	add	VR91,VR262,VR261
+	ldr	VR263,[VR253]
+	add	VR93,VR263,VR91
+	ldr	VR264,[VR247]
+	add	VR95,VR264,VR93
+	ldr	VR265,[VR241]
+	add	VR97,VR265,VR95
+	ldr	VR266,[VR235]
+	add	VR99,VR266,VR97
+	add	VR101,VR100,VR99
+	add	VR103,VR102,VR101
+	add	VR409,sp,#112
+	ldr	VR325,[VR409]
+	add	VR105,VR325,VR103
+	add	VR410,sp,#108
+	ldr	VR326,[VR410]
+	add	VR107,VR326,VR105
+	add	VR411,sp,#104
+	ldr	VR327,[VR411]
+	add	VR109,VR327,VR107
+	add	VR412,sp,#100
+	ldr	VR328,[VR412]
+	add	VR111,VR328,VR109
+	add	VR413,sp,#96
+	ldr	VR329,[VR413]
+	add	VR113,VR329,VR111
+	add	VR414,sp,#92
+	ldr	VR330,[VR414]
+	add	VR115,VR330,VR113
+	add	VR415,sp,#88
+	ldr	VR331,[VR415]
+	add	VR117,VR331,VR115
+	ldr	VR267,[sp,#84]
+	add	VR119,VR267,VR117
+	ldr	VR268,[sp,#80]
+	add	VR121,VR268,VR119
+	ldr	VR269,[sp,#76]
+	add	VR123,VR269,VR121
 	ldr	VR270,[sp,#72]
-	add	VR60,VR270,VR73
-	add	VR410,sp,#88
-	ldr	VR327,[VR410]
-	add	VR85,VR327,VR60
-	add	VR411,sp,#120
-	ldr	VR328,[VR411]
-	add	VR109,VR328,VR85
-	mov	VR126,VR116
-	add	VR116,VR116,#1
-	ldr	VR271,[VR258]
+	add	VR125,VR270,VR123
+	mov	VR126,VR51
+	add	VR51,VR51,#1
+	ldr	VR271,[VR256]
 	add	VR271,VR271,#1
-	str	VR271,[VR258]
+	str	VR271,[VR256]
 	add	VR291,sp,#224
-	str	VR126,[VR291,VR109,lsl 2]
+	str	VR126,[VR291,VR125,lsl 2]
 	add	sp,sp,#72
 	b	.18
 .19:
@@ -527,8 +538,8 @@ main:
 .37:
 	sub	sp,sp,#8
 	sub	sp,sp,#4
-	add	VR292,sp,#164
-	push	{VR292}
+	add	VR408,sp,#164
+	push	{VR408}
 	add	VR293,sp,#168
 	add	VR144,VR293,#0
 	push	{VR144}

@@ -598,7 +598,7 @@ Parameters
 ----------
 arm_flow_graph:要优化的arm汇编代码流图
 */
-void Arm_asm_optimizer::handle_OPTIMIZE(struct arm_flow_graph * arm_flow_graph)
+void Arm_asm_optimizer::handle_OPTIMIZE_ASM(struct arm_flow_graph * arm_flow_graph)
 {
     arm_flow_graph_=arm_flow_graph;
     //局部优化
@@ -623,8 +623,8 @@ struct event Arm_asm_optimizer::handler(struct event event)
     struct event res;
     switch(event.type)
     {
-        case event_type::OPTIMIZE:
-            handle_OPTIMIZE((struct arm_flow_graph *)event.pointer_data);
+        case event_type::OPTIMIZE_ASM:
+            handle_OPTIMIZE_ASM((struct arm_flow_graph *)event.pointer_data);
             break;
         default:
             break;

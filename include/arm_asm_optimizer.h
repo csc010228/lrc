@@ -37,7 +37,7 @@ private:
     void global_optimize();
 
     //进行arm汇编优化
-    void handle_OPTIMIZE(struct arm_flow_graph * arm_flow_graph);
+    void handle_OPTIMIZE_ASM(struct arm_flow_graph * arm_flow_graph);
 
 public:
     //构造函数

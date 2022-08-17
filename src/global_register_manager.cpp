@@ -9,25 +9,6 @@
 #include "global_register_manager.h"
 #include "util.h"
 
-//===================================== struct virtual_reg =====================================//
-
-void virtual_reg::set_related_data(OAA const_value)
-{
-    related_const=const_value;
-    data_type=virtual_related_data_type::CONST;
-    is_effective=true;
-}
-
-void virtual_reg::set_related_data(struct ic_data * var,enum virtual_related_data_type value_or_addr)
-{
-    related_var=var;
-    data_type=value_or_addr;
-    is_effective=true;
-}
-
-//==========================================================================//
-
-
 
 //===================================== struct virtual_regs_info =====================================//
 

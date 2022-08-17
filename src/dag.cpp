@@ -1112,6 +1112,10 @@ void DAG::algebraic_simplification_in_DAG_tree(struct DAG_node * father_node)
 
 void DAG::algebraic_simplification()
 {
+    if(nodes_order_.size()>300)
+    {
+        return;
+    }
     for(auto father_node:nodes_order_)
     {
         algebraic_simplification_in_DAG_tree(father_node);
@@ -1120,12 +1124,12 @@ void DAG::algebraic_simplification()
 
 void DAG::optimize()
 {
-    //将多个加法转换成乘法
-    a_lot_of_adds_to_multi();
-    //n个+1转换成1个+n
-    n_selfadd_one_to_one_selfadd_n();
     //代数化简
     algebraic_simplification();
+    //将多个加法转换成乘法
+    //a_lot_of_adds_to_multi();
+    //n个+1转换成1个+n
+    //n_selfadd_one_to_one_selfadd_n();
 }
 
 list<struct quaternion> DAG::to_basic_block()

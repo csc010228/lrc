@@ -8,256 +8,10 @@
 */
 #include "graph_coloring_register_manager.h"
 #include "util.h"
+#include<iostream>
 #include<fstream>
 
 #define VIRTUAL_ASM_CODES_OUTPUT_FILE_SUFFIX ".vs"                   //虚拟目标汇编代码输出的文件
-
-//===================================== struct live_analysis =====================================//
-
-void live_analysis::clear()
-{
-    basic_block_s_live_analysis_infos.clear();
-}
-
-//==========================================================================//
-
-
-
-//===================================== struct virutal_reg_s_live_interval =====================================//
-
-virutal_reg_s_live_interval::virutal_reg_s_live_interval():is_extending(false),score(0)
-{
-
-}
-
-void virutal_reg_s_live_interval::start(virtual_target_code_pos start_pos,virtual_target_code_pos end_pos)
-{
-    is_extending=true;
-    live_interval.push_front(make_pair(start_pos,end_pos));
-}
-
-void virutal_reg_s_live_interval::cut_off(virtual_target_code_pos pos)
-{
-    if(is_extending)
-    {
-        live_interval.front().first=pos;
-    }
-    else
-    {
-        start(pos,pos+1);
-    }
-    is_extending=false;
-}
-
-void virutal_reg_s_live_interval::extend(virtual_target_code_pos pos)
-{
-    live_interval.front().first=pos;
-}
-
-void virutal_reg_s_live_interval::add_use_pos(struct arm_basic_block * bb,virtual_target_code_pos pos)
-{
-    map_set_insert(use_poses,bb,pos);
-}
-
-void virutal_reg_s_live_interval::add_def_pos(struct arm_basic_block * bb,virtual_target_code_pos pos)
-{
-    map_set_insert(def_poses,bb,pos);
-}
-
-bool virutal_reg_s_live_interval::is_def_pos(virtual_target_code_pos pos) const
-{
-    for(auto def_bb_and_poses:def_poses)
-    {
-        if(def_bb_and_poses.second.find(pos)!=def_bb_and_poses.second.end())
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool virutal_reg_s_live_interval::is_use_pos(virtual_target_code_pos pos) const
-{
-    for(auto use_bb_and_poses:use_poses)
-    {
-        if(use_bb_and_poses.second.find(pos)!=use_bb_and_poses.second.end())
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-size_t virutal_reg_s_live_interval::get_score()
-{
-    if(score==0)
-    {
-        for(auto i:use_poses)
-        {
-            // if(score<i.first->loop_count)
-            // {
-            //     score=i.first->loop_count;
-            // }
-            if(score<i.first->loop_count*100)
-            {
-                score=i.first->loop_count*100+i.second.size();
-                if(def_poses.find(i.first)!=def_poses.end())
-                {
-                    score+=def_poses.at(i.first).size()*4;
-                }
-            }
-        }
-        for(auto i:def_poses)
-        {
-            // if(score<i.first->loop_count)
-            // {
-            //     score=i.first->loop_count;
-            // }
-            if(score<i.first->loop_count*100)
-            {
-                score=i.first->loop_count*100+i.second.size();
-                if(use_poses.find(i.first)!=use_poses.end())
-                {
-                    score+=use_poses.at(i.first).size();
-                }
-            }
-        }
-    }
-    return score;
-}
-
-//==========================================================================//
-
-
-
-//===================================== struct live_intervals =====================================//
-
-void live_intervals::clear()
-{
-    virtual_regs_s_live_intervals.clear();
-}
-
-void live_intervals::new_empty_virtual_code_segment(virtual_target_code_pos pos,size_t add_size)
-{
-    for(auto reg_s_live_interval:virtual_regs_s_live_intervals)
-    {
-        for(auto & live_interval_segment:reg_s_live_interval.second.live_interval)
-        {
-            if(live_interval_segment.first>=pos)
-            {
-                live_interval_segment.first+=add_size;
-            }
-            if(live_interval_segment.second>pos)
-            {
-                live_interval_segment.second+=add_size;
-            }
-        }
-        // for(auto & use_bb_and_pos:reg_s_live_interval.second.use_poses)
-        // {
-        //     for(auto & use_pos:use_bb_and_pos.second)
-        //     {
-        //         if(use_pos>=pos)
-        //         {
-        //             use_pos+=pos;
-        //         }
-        //     }
-        // }
-        // for(auto & def_bb_and_pos:reg_s_live_interval.second.def_poses)
-        // {
-        //     for(auto & def_pos:def_bb_and_pos.second)
-        //     {
-        //         if(def_pos>=pos)
-        //         {
-        //             def_pos+=pos;
-        //         }
-        //     }
-        // }
-    }
-}
-
-//==========================================================================//
-
-
-
-//===================================== struct coherent_diagram_node =====================================//
-
-coherent_diagram_node::coherent_diagram_node(reg_index reg,enum coherent_diagram_node_s_data_type data_type,struct virutal_reg_s_live_interval live_interval):reg(reg),degree(0),live_interval(live_interval),data_type(data_type)
-{
-
-}
-
-void coherent_diagram_node::add_a_move_related_neighbour(struct coherent_diagram_node * node)
-{
-    
-}
-
-void coherent_diagram_node::add_a_collision_neighbour(struct coherent_diagram_node * node)
-{
-    if(collision_nodes.find(node)==collision_nodes.end())
-    {
-        collision_nodes.insert(node);
-        degree++;
-    }
-}
-
-size_t coherent_diagram_node::get_score()
-{
-    return collision_nodes.size();
-}
-
-//==========================================================================//
-
-
-
-//===================================== struct coherent_diagram =====================================//
-
-coherent_diagram::~coherent_diagram()
-{
-    clear();
-}
-
-void coherent_diagram::clear()
-{
-    for(auto node:nodes)
-    {
-        delete node.second;
-    }
-    nodes.clear();
-}
-
-struct coherent_diagram_node * coherent_diagram::new_node(reg_index reg,enum coherent_diagram_node_s_data_type data_type)
-{
-    struct coherent_diagram_node * res=nullptr;
-    if(nodes.find(reg)==nodes.end())
-    {
-        res=new coherent_diagram_node(reg,data_type,current_func_s_live_intervals.virtual_regs_s_live_intervals.at(reg));
-        nodes.insert(make_pair(reg,res));
-    }
-    return res;
-}
-
-struct coherent_diagram_node * coherent_diagram::get_coherent_diagram_node(reg_index reg)
-{
-    return nodes.at(reg);
-}
-
-void coherent_diagram::add_move_related(reg_index reg_1,reg_index reg_2)
-{
-    
-}
-
-void coherent_diagram::add_collision(reg_index reg_1,reg_index reg_2)
-{
-    struct coherent_diagram_node * node_1,* node_2;
-    node_1=get_coherent_diagram_node(reg_1);
-    node_2=get_coherent_diagram_node(reg_2);
-    node_1->add_a_collision_neighbour(node_2);
-    node_2->add_a_collision_neighbour(node_1);
-}
-
-//==========================================================================//
-
-
 
 //===================================== class Graph_coloring_register_manager =====================================//
 
@@ -445,7 +199,7 @@ set<reg_index> Graph_coloring_register_manager::get_virtual_traget_instruction_s
     }
     return res;
 }
-#include<iostream>
+
 set<reg_index> Graph_coloring_register_manager::get_virtual_traget_instruction_s_all_destination_regs(Arm_asm_file_line * line)
 {
     static Symbol_table * symbol_table=Symbol_table::get_instance();
@@ -881,297 +635,6 @@ next:
     // cout<<endl;
 }
 
-//减少常量寄存器
-void Graph_coloring_register_manager::reduce_const_regs()
-{
-    reg_index reg;
-    virtual_target_code_pos pos;
-    list<Arm_asm_file_line *>::iterator line_it;
-    Arm_asm_file_line * line;
-    Arm_instruction * ins;
-    Arm_cpu_instruction * cpu_ins;
-    Arm_cpu_data_process_instruction * cpu_data_process_ins;
-    int const_int_data;
-    bool tag;
-    struct operand2 op2;
-    for(auto virtual_regs_s_live_interval:current_func_s_live_intervals.virtual_regs_s_live_intervals)
-    {
-        reg=virtual_regs_s_live_interval.first;
-        if(virtual_regs_info_.is_physical_reg(reg) || 
-        virtual_regs_info_.reg_indexs.at(reg).data_type!=virtual_related_data_type::CONST || 
-        virtual_regs_info_.reg_indexs.at(reg).processor!=reg_processor::CPU || 
-        !operand2::is_legal_immed_8r(virtual_regs_info_.reg_indexs.at(reg).related_const.int_data))
-        {
-            continue;
-        }
-        const_int_data=virtual_regs_info_.reg_indexs.at(reg).related_const.int_data;
-        for(auto live_interval_segment:virtual_regs_s_live_interval.second.live_interval)
-        {
-            pos=live_interval_segment.second;
-            tag=true;
-            while(pos>live_interval_segment.first)
-            {
-                if(virtual_regs_s_live_interval.second.is_use_pos(pos))
-                {
-                    line=*get_virtual_target_code(pos);
-                    if(line->is_instruction())
-                    {
-                        ins=dynamic_cast<Arm_instruction * >(line);
-                        if(ins->is_cpu_instruction())
-                        {
-                            cpu_ins=dynamic_cast<Arm_cpu_instruction * >(ins);
-                            if(cpu_ins->is_data_process_instruction())
-                            {
-                                cpu_data_process_ins=dynamic_cast<Arm_cpu_data_process_instruction * >(cpu_ins);
-                                if(cpu_data_process_ins->get_op()==arm_op::MOV && 
-                                cpu_data_process_ins->get_all_source_regs().size()==1 && 
-                                (*cpu_data_process_ins->get_all_source_regs().begin())==reg)
-                                {
-                                    cpu_data_process_ins->change_operand2_to_immed_8r(const_int_data);
-                                }
-                                else
-                                {
-                                    tag=false;
-                                }
-                            }
-                            else
-                            {
-                                tag=false;
-                            }
-                        }
-                        else
-                        {
-                            tag=false;
-                        }
-                    }
-                    else
-                    {
-                        tag=false;
-                    }
-                }
-                else if(virtual_regs_s_live_interval.second.is_def_pos(pos))
-                {
-                    tag=false;
-                }
-                pos--;
-            }
-            if(tag && virtual_regs_s_live_interval.second.is_def_pos(pos))
-            {
-                line_it=get_virtual_target_code(pos);
-                delete (*line_it);
-                (*line_it)=new Arm_pseudo_instruction();
-            }
-        }
-    }
-}
-
-//分裂寄存器，把有些寄存器进行分裂
-void Graph_coloring_register_manager::fission_regs()
-{
-    reg_index new_reg,old_reg;
-    map<reg_index,reg_index> old_new_regs;
-    struct arm_basic_block * bb;
-    virtual_target_code_pos live_pos,farest_pos;
-    Arm_asm_file_line * line;
-    map<reg_index,set<reg_index> > debug_info;
-    list<pair<virtual_target_code_pos,virtual_target_code_pos> > fission_reg_s_live_interval;
-    bool tag;
-    for(auto virtual_regs_s_live_interval:current_func_s_live_intervals.virtual_regs_s_live_intervals)
-    {
-        old_reg=virtual_regs_s_live_interval.first;
-        if(virtual_regs_info_.is_physical_reg(old_reg) || virtual_regs_s_live_interval.second.live_interval.size()==1)
-        {
-            continue;
-        }
-        fission_reg_s_live_interval.clear();
-        farest_pos=0;
-        for(auto live_interval_segment:virtual_regs_s_live_interval.second.live_interval)
-        {
-            if(fission_reg_s_live_interval.empty())
-            {
-                fission_reg_s_live_interval.push_back(live_interval_segment);
-            }
-            else
-            {
-                // if(fission_reg_s_live_interval.back().second==live_interval_segment.first || 
-                // !virtual_regs_s_live_interval.second.is_def_pos(live_interval_segment.first) || 
-                // (get_pos_s_basic_block(live_interval_segment.first)==get_pos_s_basic_block(fission_reg_s_live_interval.back().second)))
-                // {
-                //     fission_reg_s_live_interval.back().second=live_interval_segment.second;
-                // }
-                // else
-                // {
-                //     fission_reg_s_live_interval.push_back(live_interval_segment);
-                // }
-                if(live_interval_segment.first>=farest_pos && virtual_regs_s_live_interval.second.is_def_pos(live_interval_segment.first) && fission_reg_s_live_interval.back().second!=live_interval_segment.first)
-                {
-                    fission_reg_s_live_interval.push_back(live_interval_segment);
-                }
-                else
-                {
-                    fission_reg_s_live_interval.back().second=live_interval_segment.second;
-                }
-            }
-            bb=get_pos_s_basic_block(live_interval_segment.first);
-            tag=false;
-            for(auto basic_block:virtual_target_code->basic_blocks)
-            {
-                if(bb!=basic_block && !tag)
-                {
-                    continue;
-                }
-                tag=true;
-                if(get_basic_block_s_end_pos(bb)>=live_interval_segment.second)
-                {
-                    break;
-                }
-                for(auto successor:basic_block->get_successors())
-                {
-                    if(farest_pos<get_basic_block_s_start_pos(successor))
-                    {
-                        farest_pos=get_basic_block_s_start_pos(successor);
-                    }
-                }
-            }
-        }
-        fission_reg_s_live_interval.pop_front();
-        for(auto new_reg_s_live_interval:fission_reg_s_live_interval)
-        {
-            switch(virtual_regs_info_.reg_indexs.at(old_reg).data_type)
-            {
-                case virtual_related_data_type::CONST:
-                    new_reg=virtual_regs_info_.new_temp_for_const(virtual_regs_info_.reg_indexs.at(old_reg).related_const,virtual_regs_info_.get_reg_s_processor(old_reg));
-                    break;
-                case virtual_related_data_type::VAR_ADDR:
-                    new_reg=virtual_regs_info_.new_temp_for_var_addr(virtual_regs_info_.reg_indexs.at(old_reg).related_var,virtual_regs_info_.get_reg_s_processor(old_reg));
-                    break;
-                case virtual_related_data_type::VAR_VALUE:
-                    new_reg=virtual_regs_info_.new_temp_for_var_value(virtual_regs_info_.reg_indexs.at(old_reg).related_var,virtual_regs_info_.get_reg_s_processor(old_reg));
-                    break;
-                default:
-                    break;
-            }
-
-
-            map_set_insert(debug_info,old_reg,new_reg);
-
-
-            old_new_regs.clear();
-            old_new_regs.insert(make_pair(old_reg,new_reg));
-            for(auto def_basic_block_and_poses:virtual_regs_s_live_interval.second.def_poses)
-            {
-                for(auto def_pos:def_basic_block_and_poses.second)
-                {
-                    if(def_pos>=new_reg_s_live_interval.first && def_pos<=new_reg_s_live_interval.second)
-                    {
-                        line=*get_virtual_target_code(def_pos);
-                        line->replace_regs(old_new_regs);
-                    }
-                }
-            }
-            for(auto use_basic_block_and_poses:virtual_regs_s_live_interval.second.use_poses)
-            {
-                for(auto use_pos:use_basic_block_and_poses.second)
-                {
-                    if(use_pos>=new_reg_s_live_interval.first && use_pos<=new_reg_s_live_interval.second)
-                    {
-                        line=*get_virtual_target_code(use_pos);
-                        line->replace_regs(old_new_regs);
-                    }
-                }
-            }
-        }
-    }
-    // cout<<endl<<"FISSION REGS:"<<endl;
-    // for(auto i:debug_info)
-    // {
-    //     cout<<"VR"<<i.first<<"->{";
-    //     for(auto j:i.second)
-    //     {
-    //         cout<<"VR"<<j<<",";
-    //     }
-    //     cout<<"}"<<endl;
-    // }
-}
-
-void Graph_coloring_register_manager::peephole_optimization()
-{
-    static reg_index sp=regs_info_.reg_names.at("sp");
-    reg_index reg;
-    list<Arm_asm_file_line * >::iterator next_line;
-    Arm_instruction * ins;
-    Arm_cpu_instruction * cpu_ins;
-    Arm_cpu_data_process_instruction * cpu_data_process_ins;
-    Arm_cpu_single_register_load_and_store_instruction * cpu_single_register_load_and_store_ins,* new_cpu_single_register_load_and_store_ins;
-    for(auto bb:virtual_target_code->basic_blocks)
-    {
-        for(list<Arm_asm_file_line * >::iterator line=bb->arm_sequence.begin();line!=bb->arm_sequence.end();line++)
-        {
-            if((*line)->is_instruction())
-            {
-                ins=dynamic_cast<Arm_instruction * >(*line);
-                if(ins->is_cpu_instruction())
-                {
-                    cpu_ins=dynamic_cast<Arm_cpu_instruction * >(ins);
-                    if(cpu_ins->is_data_process_instruction())
-                    {
-                        cpu_data_process_ins=dynamic_cast<Arm_cpu_data_process_instruction * >(cpu_ins);
-                        if(cpu_data_process_ins->get_op()==arm_op::ADD && 
-                        cpu_data_process_ins->get_all_destination_regs().size()==1 && 
-                        cpu_data_process_ins->get_all_source_regs().size()==1 && 
-                        *(cpu_data_process_ins->get_all_source_regs().begin())==sp && 
-                        cpu_data_process_ins->get_operand2().type==operand2_type::IMMED_8R && 
-                        flexoffset::is_legal_expr(cpu_data_process_ins->get_operand2().immed_8r))
-                        {
-                            reg=*(cpu_data_process_ins->get_all_destination_regs().begin());
-                            next_line=line;
-                            advance(next_line,1);
-                            if(next_line!=bb->arm_sequence.end() && (*next_line)->is_instruction())
-                            {
-                                ins=dynamic_cast<Arm_instruction * >(*next_line);
-                                if(ins->is_cpu_instruction())
-                                {
-                                    cpu_ins=dynamic_cast<Arm_cpu_instruction * >(ins);
-                                    if(cpu_ins->is_single_register_load_and_store_instruction())
-                                    {
-                                        cpu_single_register_load_and_store_ins=dynamic_cast<Arm_cpu_single_register_load_and_store_instruction * >(cpu_ins);
-                                        if(cpu_single_register_load_and_store_ins->get_single_register_load_and_store_type()==arm_single_register_load_and_store_type::ZERO_OFFSET && 
-                                        reg==(cpu_single_register_load_and_store_ins->get_source_registers().registers_.front()))
-                                        {
-                                            new_cpu_single_register_load_and_store_ins=new Arm_cpu_single_register_load_and_store_instruction(cpu_single_register_load_and_store_ins->get_op(),cpu_single_register_load_and_store_ins->get_cond(),cpu_single_register_load_and_store_ins->get_data_type(),cpu_single_register_load_and_store_ins->get_destination_registers().registers_.front(),sp,flexoffset(cpu_data_process_ins->get_operand2().immed_8r));
-                                            delete (*next_line);
-                                            (*next_line)=new_cpu_single_register_load_and_store_ins;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-void Graph_coloring_register_manager::remove_useless_regs()
-{
-
-}
-
-void Graph_coloring_register_manager::optimize_virtual_for_less_spill_regs()
-{
-    reduce_const_regs();
-    fission_regs();
-    // peephole_optimization();
-    // remove_useless_regs();
-}
-
-void Graph_coloring_register_manager::optimize_after_rewrite_program()
-{
-    // peephole_optimization();
-    // remove_useless_regs();
-}
-
 void Graph_coloring_register_manager::mk_worklists()
 {
     for(auto reg_s_node:current_func_s_coherent_diagram.nodes)
@@ -1416,30 +879,22 @@ void Graph_coloring_register_manager::set_registers_when_spilling_var_value_s_re
                     kills.at(basic_block).insert(target_reg);
                 }
             }
-            if(line->is_instruction())
+            cpu_branch_inst=to_Arm_cpu_branch_instruction(line);
+            if(cpu_branch_inst)
             {
-                inst=dynamic_cast<Arm_instruction * >(line);
-                if(inst->is_cpu_instruction())
+                func_name=cpu_branch_inst->get_label().name_;
+                if(symbol_table->is_a_defined_or_library_func(func_name))
                 {
-                    cpu_inst=dynamic_cast<Arm_cpu_instruction * >(inst);
-                    if(cpu_inst->is_branch_instruction())
+                    func=symbol_table->func_entry(func_name);
+                    func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_array_f_params(func);
+                    for(auto target_reg:target_regs)
                     {
-                        cpu_branch_inst=dynamic_cast<Arm_cpu_branch_instruction * >(cpu_inst);
-                        func_name=cpu_branch_inst->get_label().name_;
-                        if(symbol_table->is_a_defined_or_library_func(func_name))
+                        if(virtual_regs_info_.reg_indexs.at(target_reg).data_type==virtual_related_data_type::VAR_VALUE && 
+                        virtual_regs_info_.reg_indexs.at(target_reg).related_var->is_global() && 
+                        !virtual_regs_info_.reg_indexs.at(target_reg).related_var->is_array_var() && 
+                        func_def_globals_and_f_params.find(virtual_regs_info_.reg_indexs.at(target_reg).related_var)!=func_def_globals_and_f_params.end())
                         {
-                            func=symbol_table->func_entry(func_name);
-                            func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_array_f_params(func);
-                            for(auto target_reg:target_regs)
-                            {
-                                if(virtual_regs_info_.reg_indexs.at(target_reg).data_type==virtual_related_data_type::VAR_VALUE && 
-                                virtual_regs_info_.reg_indexs.at(target_reg).related_var->is_global() && 
-                                !virtual_regs_info_.reg_indexs.at(target_reg).related_var->is_array_var() && 
-                                func_def_globals_and_f_params.find(virtual_regs_info_.reg_indexs.at(target_reg).related_var)!=func_def_globals_and_f_params.end())
-                                {
-                                    gens.at(basic_block).insert(target_reg);
-                                }
-                            }
+                            gens.at(basic_block).insert(target_reg);
                         }
                     }
                 }
@@ -1481,31 +936,23 @@ void Graph_coloring_register_manager::set_registers_when_spilling_var_value_s_re
     {
         temp=get_virtual_traget_instruction_s_all_regs(*pos);
         set_intersection(temp.begin(),temp.end(),target_regs.begin(),target_regs.end(),inserter(effective_regs,effective_regs.begin()));
-        if((*pos)->is_instruction())
+        cpu_branch_inst=to_Arm_cpu_branch_instruction(*pos);
+        if(cpu_branch_inst)
         {
-            inst=dynamic_cast<Arm_instruction * >(*pos);
-            if(inst->is_cpu_instruction())
+            func_name=cpu_branch_inst->get_label().name_;
+            if(symbol_table->is_a_defined_or_library_func(func_name))
             {
-                cpu_inst=dynamic_cast<Arm_cpu_instruction * >(inst);
-                if(cpu_inst->is_branch_instruction())
+                func=symbol_table->func_entry(func_name);
+                func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_array_f_params(func);
+                temp=effective_regs;
+                for(auto effective_reg:temp)
                 {
-                    cpu_branch_inst=dynamic_cast<Arm_cpu_branch_instruction * >(cpu_inst);
-                    func_name=cpu_branch_inst->get_label().name_;
-                    if(symbol_table->is_a_defined_or_library_func(func_name))
+                    if(virtual_regs_info_.reg_indexs.at(effective_reg).data_type==virtual_related_data_type::VAR_VALUE && 
+                    virtual_regs_info_.reg_indexs.at(effective_reg).related_var->is_global() && 
+                    !virtual_regs_info_.reg_indexs.at(effective_reg).related_var->is_array_var() && 
+                    func_def_globals_and_f_params.find(virtual_regs_info_.reg_indexs.at(effective_reg).related_var)!=func_def_globals_and_f_params.end())
                     {
-                        func=symbol_table->func_entry(func_name);
-                        func_def_globals_and_f_params=symbol_table->get_func_def_globals_and_array_f_params(func);
-                        temp=effective_regs;
-                        for(auto effective_reg:temp)
-                        {
-                            if(virtual_regs_info_.reg_indexs.at(effective_reg).data_type==virtual_related_data_type::VAR_VALUE && 
-                            virtual_regs_info_.reg_indexs.at(effective_reg).related_var->is_global() && 
-                            !virtual_regs_info_.reg_indexs.at(effective_reg).related_var->is_array_var() && 
-                            func_def_globals_and_f_params.find(virtual_regs_info_.reg_indexs.at(effective_reg).related_var)!=func_def_globals_and_f_params.end())
-                            {
-                                effective_regs.erase(effective_reg);
-                            }
-                        }
+                        effective_regs.erase(effective_reg);
                     }
                 }
             }
@@ -2063,13 +1510,13 @@ void Graph_coloring_register_manager::graph_coloring_register_distribute(bool fi
         if(first_time)
         {
             //先对虚拟目标代码进行优化，减少spill的寄存器
-            optimize_virtual_for_less_spill_regs();
+            optimize_for_less_spill_regs();
         }
         else
         {
+            //在重写虚拟目标代码之前进行优化
+            optimize_before_rewrite_program();
             rewrite_program();
-            //在重写虚拟目标代码之后进行优化
-            optimize_after_rewrite_program();
         }
         clear_info();
         graph_coloring_register_distribute(false);
@@ -2154,9 +1601,9 @@ void Graph_coloring_register_manager::handle_END_FUNC()
 {
     static Symbol_table * symbol_table=Symbol_table::get_instance();
     //获取当前函数的虚拟目标代码
-    static reg_index fp=regs_info_.reg_names.at("fp");
-    static reg_index lr=regs_info_.reg_names.at("lr");
-    static reg_index ip=regs_info_.reg_names.at("ip");
+    static reg_index fp=regs_info_.reg_names.at("fp"),
+    lr=regs_info_.reg_names.at("lr"),
+    ip=regs_info_.reg_names.at("ip");
     virtual_target_code=(struct arm_func_flow_graph *)notify(event(event_type::GET_VIRTUAL_TRAGET_CODE_OF_CURRENT_FUNC,nullptr)).pointer_data;
     virtual_target_code->build_nexts_between_basic_blocks();
     virtual_target_code->build_loops_info();
@@ -2180,7 +1627,7 @@ void Graph_coloring_register_manager::handle_END_FUNC()
     //     cout<<i.first->reg<<"-->"<<i.second<<endl;
     // }
     //对虚拟目标代码进行优化
-    notify(event(event_type::OPTIMIZE,(void *)virtual_target_code));
+    optimize_virtual_code();
     //如果带有debug，输出虚拟目标代码
     if(symbol_table->get_debug_setting())
     {

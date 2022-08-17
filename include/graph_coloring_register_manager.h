@@ -10,172 +10,7 @@
 #define __GRAPH_COLORING_REGISTER_MANAGER_H
 
 #include"global_register_manager.h"
-
-typedef size_t virtual_target_code_pos;
-
-//基本块的虚拟寄存器的活跃分析结果
-struct basic_block_s_live_analysis
-{
-    set<reg_index> live_def;
-    set<reg_index> live_use;
-    set<reg_index> live_in;
-    set<reg_index> live_out;
-};
-
-//函数的虚拟寄存器的活跃分析结果
-struct live_analysis
-{
-    //清空信息
-    void clear();
-
-    //每一个基本块的活跃虚拟寄存器信息
-    map<struct arm_basic_block *,struct basic_block_s_live_analysis> basic_block_s_live_analysis_infos;
-};
-
-//一个虚拟寄存器的生命周期
-struct virutal_reg_s_live_interval
-{
-    virutal_reg_s_live_interval();
-
-    //新增
-    void start(virtual_target_code_pos start_pos,virtual_target_code_pos end_pos);
-
-    //截断
-    void cut_off(virtual_target_code_pos pos);
-
-    //延长
-    void extend(virtual_target_code_pos pos);
-
-    //增加该虚拟寄存器的使用点
-    void add_use_pos(struct arm_basic_block * bb,virtual_target_code_pos pos);
-
-    //增加该虚拟寄存器的定义点
-    void add_def_pos(struct arm_basic_block * bb,virtual_target_code_pos pos);
-
-    //某一个点是否是该虚拟寄存器的定义点
-    bool is_def_pos(virtual_target_code_pos pos) const;
-
-    //某一个点是否是该虚拟寄存器的使用点
-    bool is_use_pos(virtual_target_code_pos pos) const;
-
-    //获取寄存器溢出时的分数，分数越高，越不能溢出
-    size_t get_score();
-
-    //该生命周期是否正在延长
-    bool is_extending;
-
-    //该虚拟寄存器的所有使用点所在的基本块
-    map<struct arm_basic_block * ,set<virtual_target_code_pos> > use_poses;
-
-    //该虚拟寄存器的所有定义点所在的基本块
-    map<struct arm_basic_block * ,set<virtual_target_code_pos> > def_poses;
-
-    //生命周期，每一个pair的first是起点，second是终点
-    list<pair<virtual_target_code_pos,virtual_target_code_pos> > live_interval;
-
-    //分数
-    size_t score;
-};
-
-//一个函数中的所有虚拟寄存器的生命周期
-struct live_intervals
-{
-    //清空信息
-    void clear();
-
-    //将整个虚拟目标代码新增一段空白
-    void new_empty_virtual_code_segment(virtual_target_code_pos pos,size_t add_size);
-
-    //获取某一个虚拟寄存器的生命周期
-    inline struct virutal_reg_s_live_interval & get_reg_s_live_interval(reg_index reg)
-    {
-        if(virtual_regs_s_live_intervals.find(reg)==virtual_regs_s_live_intervals.end())
-        {
-            virtual_regs_s_live_intervals.insert(make_pair(reg,virutal_reg_s_live_interval()));
-        }
-        return virtual_regs_s_live_intervals.at(reg);
-    };
-
-    //该函数中所有虚拟寄存器的生命周期
-    map<reg_index,struct virutal_reg_s_live_interval> virtual_regs_s_live_intervals;
-};
-
-enum class coherent_diagram_node_s_data_type
-{
-    CONST,
-    ADDR,
-    ARRAY_MEMBER_VALUE,
-    VALUE,
-};
-
-//虚拟寄存器相干图中的一个点
-struct coherent_diagram_node
-{
-    coherent_diagram_node(reg_index reg,enum coherent_diagram_node_s_data_type data_type,struct virutal_reg_s_live_interval live_interval);
-
-    //增加一个点重合（移动关联）的邻居
-    void add_a_move_related_neighbour(struct coherent_diagram_node * node);
-
-    //增加一个线重合（冲突）的邻居
-    void add_a_collision_neighbour(struct coherent_diagram_node * node);
-    
-    //获取分数
-    size_t get_score();
-
-    //该点对应的虚拟寄存器
-    reg_index reg;
-
-    //度数
-    size_t degree;
-
-    //对应的类型
-    enum coherent_diagram_node_s_data_type data_type;
-
-    //和该点点重合的所有点
-    set<struct coherent_diagram_node * > move_related_nodes;
-
-    //和该点线重合的所有点
-    set<struct coherent_diagram_node * > collision_nodes;
-
-    //该点对应的虚拟寄存器的live interval
-    struct virutal_reg_s_live_interval live_interval;
-};
-
-//虚拟寄存器的相干图
-struct coherent_diagram
-{
-    coherent_diagram()
-    {
-
-    };
-
-    coherent_diagram(struct live_intervals current_func_s_live_intervals):current_func_s_live_intervals(current_func_s_live_intervals)
-    {
-
-    };
-
-    ~coherent_diagram();
-
-    //清空信息
-    void clear();
-
-    //新建一个相干图中的节点
-    struct coherent_diagram_node * new_node(reg_index reg,enum coherent_diagram_node_s_data_type data_type);
-
-    //获取一个寄存器对应的相干图中的点
-    struct coherent_diagram_node * get_coherent_diagram_node(reg_index reg);
-
-    //给两个寄存器增加点重合（移动关联）（虚线）
-    void add_move_related(reg_index reg_1,reg_index reg_2);
-
-    //给两个寄存器增加线重合（冲突）（实线）
-    void add_collision(reg_index reg_1,reg_index reg_2);
-
-    //相干图中的所有点
-    map<reg_index,struct coherent_diagram_node * > nodes;
-    //当前函数中的寄存器的live intervals
-    struct live_intervals current_func_s_live_intervals;
-};
+#include"virtual_target_code.h"
 
 class Graph_coloring_register_manager:public Global_register_manager
 {
@@ -224,6 +59,25 @@ private:
 
     set<struct coherent_diagram_node * > worklist_moves;
 
+    //减少常量寄存器
+    void reduce_const_regs();
+    //分裂虚拟寄存器
+    void fission_regs();
+    //窥孔优化
+    void peephole_optimization();
+    //删除无用寄存器
+    void remove_useless_regs();
+    //优化函数和基本块的出入口代码
+    void optimize_func_and_basic_block_s_enter_and_exit();
+    //局部优化
+    void local_optimize();
+    //全局优化
+    void global_optimize();
+
+    void optimize_for_less_spill_regs();
+    void optimize_before_rewrite_program();
+    void optimize_virtual_code();
+
     //获取某一个位置的虚拟目标代码
     list<Arm_asm_file_line *>::iterator get_virtual_target_code(virtual_target_code_pos pos) const;
 
@@ -253,18 +107,6 @@ private:
 
     //构建相干图
     void build_coherent_diagram();
-
-    //减少虚拟寄存器使用的一些优化
-    void reduce_const_regs();
-    void fission_regs();
-    void peephole_optimization();
-    void remove_useless_regs();
-
-    //在寄存器分配之前进行虚拟目标代码的优化，以减少寄存器的spill
-    void optimize_virtual_for_less_spill_regs();
-
-    //在重写虚拟目标代码之后进行优化
-    void optimize_after_rewrite_program();
 
     //根据相干图初始化各个worklist
     void mk_worklists();

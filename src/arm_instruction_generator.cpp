@@ -26,7 +26,7 @@ void Arm_instruction_generator::generate_asm_codes()
     //生成汇编代码流图
     generate_arm_flow_graph();
     //arm汇编代码优化
-    notify(event(event_type::OPTIMIZE,(void *)(& arm_flow_graph_)));
+    notify(event(event_type::OPTIMIZE_ASM,(void *)(& arm_flow_graph_)));
     //转换成字符串
     asm_codes_=arm_flow_graph_.to_string();
 }

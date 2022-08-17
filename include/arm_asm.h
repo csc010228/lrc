@@ -995,6 +995,10 @@ public:
         return op_==arm_op::LDM || op_==arm_op::POP;
     };
 
+    set<reg_index> get_all_destination_regs() const;
+
+    set<reg_index> get_all_source_regs() const;
+
     //转换成字符串
     string to_string() const;
 };
@@ -1305,6 +1309,11 @@ public:
     //转换成字符串
     string to_string() const;
 };
+
+//arm汇编文件行转换
+Arm_cpu_branch_instruction * to_Arm_cpu_branch_instruction(Arm_asm_file_line * line);
+Arm_cpu_data_process_instruction * to_Arm_cpu_data_process_instruction(Arm_asm_file_line * line);
+Arm_cpu_single_register_load_and_store_instruction * to_Arm_cpu_single_register_load_and_store_instruction(Arm_asm_file_line * line);
 
 //arm流图中的基本块
 struct arm_basic_block

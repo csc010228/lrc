@@ -10,40 +10,7 @@
 #define __GLOBAL_REGISTER_MANAGER_H
 
 #include"register_manager.h"
-#include"arm_asm.h"
-
-//虚拟寄存器存储的数据种类
-enum class virtual_related_data_type
-{
-    CONST,                  //常量
-    VAR_VALUE,              //变量值
-    VAR_ADDR                //变量地址
-};
-
-//虚拟寄存器
-struct virtual_reg
-{
-    virtual_reg(enum reg_processor processor):is_effective(false),is_var_value_drity(false),processor(processor),data_type(virtual_related_data_type::CONST)
-    {
-
-    };
-
-    //设置改虚拟寄存器相关的数据
-    void set_related_data(OAA const_value);
-
-    //设置改虚拟寄存器相关的数据
-    void set_related_data(struct ic_data * var,enum virtual_related_data_type value_ro_addr);
-
-    union
-    {
-        struct ic_data * related_var;              //和该虚拟寄存器相关的变量
-        OAA related_const;                          //和该虚拟寄存器相关的常量
-    };
-    bool is_effective;                                          //该虚拟寄存器此时是否有效
-    bool is_var_value_drity;                                    //该虚拟寄存器中存放的变量的值是否是脏值
-    enum reg_processor processor;                               //该虚拟寄存器所属的处理器
-    enum virtual_related_data_type data_type;                   //该虚拟寄存器相关的变量的状态
-};
+#include"virtual_target_code.h"
 
 //虚拟寄存器堆
 struct virtual_regs_info

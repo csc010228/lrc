@@ -10,7 +10,6 @@
 #include "arm_instruction_generator.h"
 #include "arm_asm_optimizer.h"
 #include "arm_abi_manager.h"
-#include "virtual_arm_asm_optimizer.h"
 
 //ARM内存信息
 string arm_memory_info="little_ending";
@@ -36,13 +35,6 @@ bool Arm_asm_generator::create_asm_optimizer(bool optimize)
 {
     asm_optimizer_=new Arm_asm_optimizer(optimize);
     asm_optimizer_->set_mediator(this);
-    return true;
-}
-
-bool Arm_asm_generator::create_virtual_asm_optimizer(bool optimize)
-{
-    virtual_asm_optimizer_=new Virtual_arm_asm_optimizer(optimize);
-    virtual_asm_optimizer_->set_mediator(this);
     return true;
 }
 
@@ -169,7 +161,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
                 register_manager_->handler(event);
                 res=memory_manager_->handler(event);
                 break;
-            case event_type::OPTIMIZE:
+            case event_type::OPTIMIZE_ASM:
                 asm_optimizer_->handler(event);
                 break;
             default:
@@ -223,9 +215,6 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::IS_AN_ABI_FUNC:
             case event_type::GET_AN_ABI_FUNC_S_PARAM_REGS:
                 res=abi_manager_->handler(event);
-                break;
-            case event_type::OPTIMIZE:
-                res=virtual_asm_optimizer_->handler(event);
                 break;
             default:
                 break;
@@ -316,20 +305,6 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
         switch(event.type)
         {
             case event_type::GET_REG_BY_NAME:
-                res=register_manager_->handler(event);
-                break;
-            default:
-                break;
-        }
-    }
-    else if(sender==virtual_asm_optimizer_)
-    {
-        //cout<<"virtual_asm_optimizer_ send "<<(int)event.type<<endl;
-        switch(event.type)
-        {
-            case event_type::GET_SP_REG:
-            case event_type::GET_FP_REG:
-            case event_type::GET_LR_REG:
                 res=register_manager_->handler(event);
                 break;
             default:

@@ -661,12 +661,33 @@ set<reg_index> Arm_asm_file_line::get_all_regs() const
 
 set<reg_index> Arm_asm_file_line::get_all_destination_regs() const
 {
-    return set<reg_index>();
+    set<reg_index> dest_regs;
+    Arm_instruction * ins;
+    Arm_pseudo_instruction * pseudo_ins;
+    if(is_instruction())
+    {
+        ins=dynamic_cast<Arm_instruction * >((Arm_instruction * )this);
+        dest_regs=ins->get_all_destination_regs();
+    }
+    else if(is_pseudo_instruction())
+    {
+        pseudo_ins=dynamic_cast<Arm_pseudo_instruction * >((Arm_pseudo_instruction * )this);
+        dest_regs=pseudo_ins->get_all_destination_regs();
+    }
+    return dest_regs;
 }
 
 set<reg_index> Arm_asm_file_line::get_all_source_regs() const
 {
-    return set<reg_index>();
+    set<reg_index> source_regs;
+    Arm_instruction * ins;
+    Arm_pseudo_instruction * pseudo_ins;
+    if(is_instruction())
+    {
+        ins=dynamic_cast<Arm_instruction * >((Arm_instruction * )this);
+        source_regs=ins->get_all_source_regs();
+    }
+    return source_regs;
 }
 
 //==========================================================================//
@@ -740,6 +761,17 @@ void Arm_instruction::replace_destination_regs(const map<reg_index,reg_index> & 
 set<reg_index> Arm_instruction::get_all_destination_regs() const
 {
     set<reg_index> res;
+    Arm_cpu_instruction * cpu_ins;
+    Arm_cpu_multiple_registers_load_and_store_instruction * cpu_multiple_registers_load_and_store_ins;
+    if(is_cpu_instruction())
+    {
+        cpu_ins=dynamic_cast<Arm_cpu_instruction * >((Arm_instruction * )this);
+        if(cpu_ins->is_multiple_registers_load_and_store_instruction())
+        {
+            cpu_multiple_registers_load_and_store_ins=dynamic_cast<Arm_cpu_multiple_registers_load_and_store_instruction * >(cpu_ins);
+            return cpu_multiple_registers_load_and_store_ins->get_all_destination_regs();
+        }
+    }
     for(auto reg:destination_registers_.registers_)
     {
         res.insert(reg);
@@ -750,6 +782,29 @@ set<reg_index> Arm_instruction::get_all_destination_regs() const
 set<reg_index> Arm_instruction::get_all_source_regs() const
 {
     set<reg_index> res;
+    Arm_cpu_instruction * cpu_ins;
+    Arm_cpu_data_process_instruction * cpu_data_process_ins;
+    Arm_cpu_single_register_load_and_store_instruction * cpu_single_register_load_and_store_ins;
+    Arm_cpu_multiple_registers_load_and_store_instruction * cpu_multiple_registers_load_and_store_ins;
+    if(is_cpu_instruction())
+    {
+        cpu_ins=dynamic_cast<Arm_cpu_instruction * >((Arm_instruction * )this);
+        if(cpu_ins->is_data_process_instruction())
+        {
+            cpu_data_process_ins=dynamic_cast<Arm_cpu_data_process_instruction * >(cpu_ins);
+            return cpu_data_process_ins->get_all_source_regs();
+        }
+        else if(cpu_ins->is_single_register_load_and_store_instruction())
+        {
+            cpu_single_register_load_and_store_ins=dynamic_cast<Arm_cpu_single_register_load_and_store_instruction * >(cpu_ins);
+            return cpu_single_register_load_and_store_ins->get_all_source_regs();
+        }
+        else if(cpu_ins->is_multiple_registers_load_and_store_instruction())
+        {
+            cpu_multiple_registers_load_and_store_ins=dynamic_cast<Arm_cpu_multiple_registers_load_and_store_instruction * >(cpu_ins);
+            return cpu_multiple_registers_load_and_store_ins->get_all_source_regs();
+        }
+    }
     for(auto reg:source_registers_.registers_)
     {
         res.insert(reg);
@@ -968,7 +1023,11 @@ void Arm_cpu_data_process_instruction::replace_destination_regs(const map<reg_in
 
 set<reg_index> Arm_cpu_data_process_instruction::get_all_source_regs() const
 {
-    set<reg_index> source_regs=Arm_instruction::get_all_source_regs(),res=operand2_.get_all_regs();
+    set<reg_index> source_regs,res=operand2_.get_all_regs();
+    for(auto reg:source_registers_.registers_)
+    {
+        source_regs.insert(reg);
+    }
     set_union(res.begin(),res.end(),source_regs.begin(),source_regs.end(),inserter(res,res.begin()));
     return res;
 }
@@ -1010,6 +1069,32 @@ string Arm_cpu_data_process_instruction::to_string() const
 
 
 //===================================== class Arm_cpu_multiple_registers_load_and_store_instruction =====================================//
+
+set<reg_index> Arm_cpu_multiple_registers_load_and_store_instruction::get_all_destination_regs() const
+{
+    set<reg_index> res;
+    if(op_==arm_op::POP || op_==arm_op::LDM)
+    {
+        for(auto reg:destination_registers_.registers_)
+        {
+            res.insert(reg);
+        }
+    }
+    return res;
+}
+
+set<reg_index> Arm_cpu_multiple_registers_load_and_store_instruction::get_all_source_regs() const
+{
+    set<reg_index> res;
+    if(op_==arm_op::PUSH || op_==arm_op::STM)
+    {
+        for(auto reg:destination_registers_.registers_)
+        {
+            res.insert(reg);
+        }
+    }
+    return res;
+}
 
 string Arm_cpu_multiple_registers_load_and_store_instruction::to_string() const
 {
@@ -1063,7 +1148,11 @@ void Arm_cpu_single_register_load_and_store_instruction::replace_destination_reg
 
 set<reg_index> Arm_cpu_single_register_load_and_store_instruction::get_all_source_regs() const
 {
-    set<reg_index> res=Arm_instruction::get_all_source_regs(),temp;
+    set<reg_index> res,temp;
+    for(auto reg:source_registers_.registers_)
+    {
+        res.insert(reg);
+    }
     if(single_register_load_and_store_type_==arm_single_register_load_and_store_type::PRE_INDEXED_OFFSET || 
     single_register_load_and_store_type_==arm_single_register_load_and_store_type::POST_INDEXED_OFFSET)
     {
@@ -1203,6 +1292,72 @@ string Arm_vfp_single_register_load_and_store_instruction::to_string() const
     }
 
     return res;
+}
+
+//==========================================================================//
+
+
+
+//===================================== arm asm transfer =====================================//
+
+Arm_cpu_branch_instruction * to_Arm_cpu_branch_instruction(Arm_asm_file_line * line)
+{
+    Arm_instruction * ins;
+    Arm_cpu_instruction * cpu_ins;
+    Arm_cpu_branch_instruction * cpu_branch_ins=nullptr;
+    if(line->is_instruction())
+    {
+        ins=dynamic_cast<Arm_instruction * >(line);
+        if(ins->is_cpu_instruction())
+        {
+            cpu_ins=dynamic_cast<Arm_cpu_instruction * >(ins);
+            if(cpu_ins->is_branch_instruction())
+            {
+                cpu_branch_ins=dynamic_cast<Arm_cpu_branch_instruction * >(cpu_ins);
+            }
+        }
+    }
+    return cpu_branch_ins;
+}
+
+Arm_cpu_data_process_instruction * to_Arm_cpu_data_process_instruction(Arm_asm_file_line * line)
+{
+    Arm_instruction * ins;
+    Arm_cpu_instruction * cpu_ins;
+    Arm_cpu_data_process_instruction * cpu_data_process_ins=nullptr;
+    if(line->is_instruction())
+    {
+        ins=dynamic_cast<Arm_instruction * >(line);
+        if(ins->is_cpu_instruction())
+        {
+            cpu_ins=dynamic_cast<Arm_cpu_instruction * >(ins);
+            if(cpu_ins->is_data_process_instruction())
+            {
+                cpu_data_process_ins=dynamic_cast<Arm_cpu_data_process_instruction * >(cpu_ins);
+            }
+        }
+    }
+    return cpu_data_process_ins;
+}
+
+Arm_cpu_single_register_load_and_store_instruction * to_Arm_cpu_single_register_load_and_store_instruction(Arm_asm_file_line * line)
+{
+    Arm_instruction * ins;
+    Arm_cpu_instruction * cpu_ins;
+    Arm_cpu_single_register_load_and_store_instruction * cpu_single_register_load_and_store_ins=nullptr;
+    if(line->is_instruction())
+    {
+        ins=dynamic_cast<Arm_instruction * >(line);
+        if(ins->is_cpu_instruction())
+        {
+            cpu_ins=dynamic_cast<Arm_cpu_instruction * >(ins);
+            if(cpu_ins->is_single_register_load_and_store_instruction())
+            {
+                cpu_single_register_load_and_store_ins=dynamic_cast<Arm_cpu_single_register_load_and_store_instruction * >(cpu_ins);
+            }
+        }
+    }
+    return cpu_single_register_load_and_store_ins;
 }
 
 //==========================================================================//
