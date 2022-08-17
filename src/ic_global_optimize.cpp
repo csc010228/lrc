@@ -408,8 +408,7 @@ next_2:
             current_pos=ic_pos(target_basic_block,target_basic_block->ic_sequence.size()-1);
             // Data_flow_analyzer::change_ud_chain(func,unchange_pos,current_pos);
             // Data_flow_analyzer::change_du_chain(func,unchange_pos,current_pos);
-            //Data_flow_analyzer::data_flow_analysis_for_a_func(func,false);
-            Data_flow_analyzer::data_flow_analysis_for_a_func(func,true);
+            Data_flow_analyzer::data_flow_analysis_for_a_func(func,false);
             //同时需要修改变量的定义点和使用点的信息
             //TO-DO
 next_3:

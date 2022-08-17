@@ -12,7 +12,6 @@
 /*
 多线程优化
 */
-#include<iostream>
 void thread_optimize(struct ic_flow_graph * intermediate_codes_flow_graph,struct ic_func_flow_graph * func)
 {
     static Symbol_table * symbol_table=Symbol_table::get_instance();
