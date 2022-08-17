@@ -256,6 +256,12 @@ protected:
     //优化选项
     bool optimize_setting_;
 
+    //debug选项
+    bool debug_setting_;
+
+    //目标文件名
+    string target_filename_;
+
     //临时变量的个数
     size_t tmp_vars_num_;
 
@@ -310,6 +316,18 @@ public:
 
     //获取优化选项
     bool get_optimize_setting() const;
+
+    //设置debug选项
+    void set_debug_setting(bool debug);
+
+    //获取debug选项
+    bool get_debug_setting() const;
+
+    //设置目标文件名
+    void set_target_filename(string target_filename);
+
+    //获取目标文件名
+    string get_target_filename() const;
 
     //往符号表中添加一个用户定义的变量
     struct ic_data * new_var(string name,enum language_data_type data_type,list<struct ic_data * > * dimensions_len,OAA const_or_init_value,bool is_const,struct ic_scope * belong_scope=nullptr);

@@ -197,6 +197,7 @@ struct event Arm_asm_generator::notify(Asm_generator_component *sender, struct e
             case event_type::GET_VFP_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC:
             case event_type::GET_FUNC_S_F_PARAMS_IN_REGS:
             case event_type::IS_FUNC_S_ANY_F_PARAMS_IN_MEMORY:
+            case event_type::GET_F_PARAMS_REGS:
                 res=register_manager_->handler(event);
                 break;
             case event_type::IS_VAR_STILL_ALIVE:

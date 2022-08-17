@@ -143,6 +143,7 @@ enum class event_type
     IS_REG_EFFECTIVE,
     CHANGE_TO_EASYER_REGISTER_MANAGER,
     CHANGE_TO_BETTER_REGISTER_MANAGER,
+    GET_F_PARAMS_REGS,
 };
 
 //汇编代码生成器组件之间互相传递的事件

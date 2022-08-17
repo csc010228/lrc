@@ -1077,6 +1077,26 @@ public:
         return op_==arm_op::LDR;
     };
 
+    inline enum arm_data_type get_data_type() const
+    {
+        return data_type_;
+    };
+
+    inline void set_data_type(enum arm_data_type data_type)
+    {
+        data_type=data_type;
+    };
+
+    inline enum arm_single_register_load_and_store_type get_single_register_load_and_store_type() const
+    {
+        return single_register_load_and_store_type_;
+    };
+
+    inline void set_single_register_load_and_store_type(enum arm_single_register_load_and_store_type single_register_load_and_store_type)
+    {
+        single_register_load_and_store_type_=single_register_load_and_store_type;
+    };
+
     void replace_regs(const map<reg_index,reg_index> & regs_map);
 
     void replace_source_regs(const map<reg_index,reg_index> & regs_map);

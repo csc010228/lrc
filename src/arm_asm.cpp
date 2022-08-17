@@ -1092,7 +1092,7 @@ string Arm_cpu_single_register_load_and_store_instruction::to_string() const
             res+=label_;
             break;
         case arm_single_register_load_and_store_type::POST_INDEXED_OFFSET:  
-            res+=("["+source_registers_.to_string()+"],"+flexoffset_.to_string());
+            res+=("["+source_registers_.to_string()+","+flexoffset_.to_string()+"]");
             break;
         default:
             break;

@@ -212,6 +212,22 @@ size_t regs_info::get_CPU_ARGUMENT_reg_num() const
     return cpu_argument_reg_num;
 }
 
+list<reg_index> regs_info::get_CPU_ARGUMENT_regs() const
+{
+    static list<reg_index> cpu_argument_regs;
+    if(cpu_argument_regs.empty())
+    {
+        for(auto reg:reg_indexs)
+        {
+            if(reg.second.processor==reg_processor::CPU && reg.second.attr==reg_attr::ARGUMENT)
+            {
+                cpu_argument_regs.push_back(reg.first);
+            }
+        }
+    }
+    return cpu_argument_regs;
+}
+
 size_t regs_info::get_VFP_ARGUMENT_reg_num() const
 {
     static size_t vfp_argument_reg_num=0;
@@ -226,6 +242,22 @@ size_t regs_info::get_VFP_ARGUMENT_reg_num() const
         }
     }
     return vfp_argument_reg_num;
+}
+
+list<reg_index> regs_info::get_VFP_ARGUMENT_regs() const
+{
+    static list<reg_index> vfp_argument_regs;
+    if(vfp_argument_regs.empty())
+    {
+        for(auto reg:reg_indexs)
+        {
+            if(reg.second.processor==reg_processor::VFP && reg.second.attr==reg_attr::ARGUMENT)
+            {
+                vfp_argument_regs.push_back(reg.first);
+            }
+        }
+    }
+    return vfp_argument_regs;
 }
 
 //==========================================================================//
@@ -1378,6 +1410,33 @@ struct event Register_manager::handle_IS_REG_EFFECTIVE(reg_index reg)
     return event(event_type::RESPONSE_BOOL,regs_info_.reg_indexs.at(reg).state==reg_state::USED);
 }
 
+struct event Register_manager::handle_GET_F_PARAMS_REGS(struct ic_func * func)
+{
+    list<reg_index> cpu_argument_regs=regs_info_.get_CPU_ARGUMENT_regs();
+    list<reg_index> vfp_argument_regs=regs_info_.get_VFP_ARGUMENT_regs();
+    map<struct ic_data * ,reg_index> * f_params_regs=new map<struct ic_data * ,reg_index>;
+    for(auto f_param:(*func->f_params))
+    {
+        if(f_param->is_array_var() || f_param->get_data_type()==language_data_type::INT)
+        {
+            if(!cpu_argument_regs.empty())
+            {
+                f_params_regs->insert(make_pair(f_param,cpu_argument_regs.front()));
+                cpu_argument_regs.pop_front();
+            }
+        }
+        else if(f_param->get_data_type()==language_data_type::FLOAT)
+        {
+            if(!vfp_argument_regs.empty())
+            {
+                f_params_regs->insert(make_pair(f_param,vfp_argument_regs.front()));
+                vfp_argument_regs.pop_front();
+            }
+        }
+    }
+    return event(event_type::RESPONSE_POINTER,(void *)f_params_regs);
+}
+
 struct event Register_manager::handle_GET_FUNC_S_F_PARAMS_IN_REGS(struct ic_func * func)
 {
     static size_t cpu_argument_reg_num=regs_info_.get_CPU_ARGUMENT_reg_num();
@@ -1848,6 +1907,9 @@ struct event Register_manager::handler(struct event event)
             break;
         case event_type::IS_REG_EFFECTIVE:
             response=handle_IS_REG_EFFECTIVE((reg_index)event.int_data);
+            break;
+        case event_type::GET_F_PARAMS_REGS:
+            response=handle_GET_F_PARAMS_REGS((struct ic_func *)event.pointer_data);
             break;
         default:
             break;

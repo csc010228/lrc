@@ -681,6 +681,30 @@ bool Symbol_table::get_optimize_setting() const
     return optimize_setting_;
 }
 
+//设置debug选项
+void Symbol_table::set_debug_setting(bool debug)
+{
+    debug_setting_=debug;
+}
+
+//获取debug选项
+bool Symbol_table::get_debug_setting() const
+{
+    return debug_setting_;
+}
+
+//设置目标文件名
+void Symbol_table::set_target_filename(string target_filename)
+{
+    target_filename_=target_filename;
+}
+
+//获取目标文件名
+string Symbol_table::get_target_filename() const
+{
+    return target_filename_;
+}
+
 /*
 往符号表中添加一个用户定义的变量
 

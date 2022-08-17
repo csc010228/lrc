@@ -1847,8 +1847,10 @@ void Arm_instruction_generator::handle_LOAD_VAR_TO_REG(struct ic_data * var,reg_
 
 void Arm_instruction_generator::handle_WRITE_ADDR_TO_REG(struct ic_data * var,reg_index reg)
 {
+    static reg_index sp=(reg_index)notify(event(event_type::GET_SP_REG,nullptr)).int_data;
+    static reg_index fp=(reg_index)notify(event(event_type::GET_FP_REG,nullptr)).int_data;
     size_t var_stack_pos_from_sp,var_stack_pos_from_fp;
-    reg_index sp,fp,const_reg;
+    reg_index const_reg;
     struct operand2 op2;
     pair<OAA,reg_index> * event_data;
 
@@ -1862,7 +1864,6 @@ void Arm_instruction_generator::handle_WRITE_ADDR_TO_REG(struct ic_data * var,re
     else if(notify(event(event_type::IS_F_PARAM_PASSED_BY_STACK,(void *)var)).bool_data)
     {
         //如果要获取地址的变量是通过栈传递的函数参数
-        fp=(reg_index)notify(event(event_type::GET_FP_REG,nullptr)).int_data;
         var_stack_pos_from_fp=(size_t)notify(event(event_type::GET_VAR_STACK_POS_FROM_FP,(void *)var)).int_data;
         op2=get_operand2(var_stack_pos_from_fp);
         push_instruction(new Arm_cpu_data_process_instruction(arm_op::ADD,arm_condition::NONE,false,reg,fp,op2));
@@ -1870,7 +1871,6 @@ void Arm_instruction_generator::handle_WRITE_ADDR_TO_REG(struct ic_data * var,re
     else
     {
         //如果要获取地址的变量是局部变量或者临时变量或者通过寄存器传递的函数参数
-        sp=(reg_index)notify(event(event_type::GET_SP_REG,nullptr)).int_data;
         //这里不能使用如下的方法：
         //var_stack_pos_from_sp=(size_t)notify(event(event_type::GET_VAR_STACK_POS_FROM_SP,(void *)var)).int_data;
         //op2=get_operand2(var_stack_pos_from_sp);

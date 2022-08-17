@@ -189,14 +189,8 @@ private:
     //目前正在处理哪一个处理器上的寄存器
     enum reg_processor current_processor;
 
-    //本函数中可以用于着色的CPU物理寄存器个数
-    //size_t available_physical_cpu_reg_num;
-
     //本函数中可以用于着色的CPU物理寄存器
     set<reg_index> available_physical_cpu_regs;
-
-    //本函数中可以用于着色的VFP物理寄存器个数
-    //size_t available_physical_vfp_reg_num;
 
     //本函数中可以用于着色的VFP物理寄存器
     set<reg_index> available_physical_vfp_regs;
@@ -263,9 +257,14 @@ private:
     //减少虚拟寄存器使用的一些优化
     void reduce_const_regs();
     void fission_regs();
+    void peephole_optimization();
+    void remove_useless_regs();
 
     //在寄存器分配之前进行虚拟目标代码的优化，以减少寄存器的spill
     void optimize_virtual_for_less_spill_regs();
+
+    //在重写虚拟目标代码之后进行优化
+    void optimize_after_rewrite_program();
 
     //根据相干图初始化各个worklist
     void mk_worklists();
@@ -314,6 +313,9 @@ private:
 
     //把虚拟寄存器分配的信息清空
     void clear_info();
+
+    //输出虚拟目标代码到文件
+    bool output_virtual_target_code_to_file(const char * filename);
     
 protected:
     void handle_END_FUNC();

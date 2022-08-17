@@ -310,8 +310,12 @@ struct regs_info
     reg_index get_max_reg_index() const;
     //获取CPU参数寄存器的个数
     size_t get_CPU_ARGUMENT_reg_num() const;
+    //按顺序获取CPU参数寄存器
+    list<reg_index> get_CPU_ARGUMENT_regs() const;
     //获取VFP参数寄存器的个数
     size_t get_VFP_ARGUMENT_reg_num() const;
+    //按顺序获取VFP参数寄存器
+    list<reg_index> get_VFP_ARGUMENT_regs() const;
     //查看一个寄存器是否是ARGUMENT寄存器
     inline bool is_ARGUMENT_REG(reg_index reg) const
     {
@@ -403,6 +407,7 @@ protected:
     virtual void handle_DEAL_WITH_PARMAS_IN_ARGUMENT_REGS();
     virtual struct event handle_GET_REG_BY_NAME(string name);
     virtual struct event handle_IS_REG_EFFECTIVE(reg_index reg);
+    virtual struct event handle_GET_F_PARAMS_REGS(struct ic_func * func);
     virtual struct event handle_GET_FUNC_S_F_PARAMS_IN_REGS(struct ic_func * func);
     virtual struct event handle_IS_FUNC_S_ANY_F_PARAMS_IN_MEMORY(struct ic_func * func);
     virtual struct event handle_GET_CPU_REGS_HOLDING_F_PARAMS_WHEN_ENTERING_FUNC(struct ic_func * func);

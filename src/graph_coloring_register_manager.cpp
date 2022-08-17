@@ -8,6 +8,9 @@
 */
 #include "graph_coloring_register_manager.h"
 #include "util.h"
+#include<fstream>
+
+#define VIRTUAL_ASM_CODES_OUTPUT_FILE_SUFFIX ".vs"                   //虚拟目标汇编代码输出的文件
 
 //===================================== struct live_analysis =====================================//
 
@@ -1091,10 +1094,82 @@ void Graph_coloring_register_manager::fission_regs()
     // }
 }
 
+void Graph_coloring_register_manager::peephole_optimization()
+{
+    static reg_index sp=regs_info_.reg_names.at("sp");
+    reg_index reg;
+    list<Arm_asm_file_line * >::iterator next_line;
+    Arm_instruction * ins;
+    Arm_cpu_instruction * cpu_ins;
+    Arm_cpu_data_process_instruction * cpu_data_process_ins;
+    Arm_cpu_single_register_load_and_store_instruction * cpu_single_register_load_and_store_ins,* new_cpu_single_register_load_and_store_ins;
+    for(auto bb:virtual_target_code->basic_blocks)
+    {
+        for(list<Arm_asm_file_line * >::iterator line=bb->arm_sequence.begin();line!=bb->arm_sequence.end();line++)
+        {
+            if((*line)->is_instruction())
+            {
+                ins=dynamic_cast<Arm_instruction * >(*line);
+                if(ins->is_cpu_instruction())
+                {
+                    cpu_ins=dynamic_cast<Arm_cpu_instruction * >(ins);
+                    if(cpu_ins->is_data_process_instruction())
+                    {
+                        cpu_data_process_ins=dynamic_cast<Arm_cpu_data_process_instruction * >(cpu_ins);
+                        if(cpu_data_process_ins->get_op()==arm_op::ADD && 
+                        cpu_data_process_ins->get_all_destination_regs().size()==1 && 
+                        cpu_data_process_ins->get_all_source_regs().size()==1 && 
+                        *(cpu_data_process_ins->get_all_source_regs().begin())==sp && 
+                        cpu_data_process_ins->get_operand2().type==operand2_type::IMMED_8R && 
+                        flexoffset::is_legal_expr(cpu_data_process_ins->get_operand2().immed_8r))
+                        {
+                            reg=*(cpu_data_process_ins->get_all_destination_regs().begin());
+                            next_line=line;
+                            advance(next_line,1);
+                            if(next_line!=bb->arm_sequence.end() && (*next_line)->is_instruction())
+                            {
+                                ins=dynamic_cast<Arm_instruction * >(*next_line);
+                                if(ins->is_cpu_instruction())
+                                {
+                                    cpu_ins=dynamic_cast<Arm_cpu_instruction * >(ins);
+                                    if(cpu_ins->is_single_register_load_and_store_instruction())
+                                    {
+                                        cpu_single_register_load_and_store_ins=dynamic_cast<Arm_cpu_single_register_load_and_store_instruction * >(cpu_ins);
+                                        if(cpu_single_register_load_and_store_ins->get_single_register_load_and_store_type()==arm_single_register_load_and_store_type::ZERO_OFFSET && 
+                                        reg==(cpu_single_register_load_and_store_ins->get_source_registers().registers_.front()))
+                                        {
+                                            new_cpu_single_register_load_and_store_ins=new Arm_cpu_single_register_load_and_store_instruction(cpu_single_register_load_and_store_ins->get_op(),cpu_single_register_load_and_store_ins->get_cond(),cpu_single_register_load_and_store_ins->get_data_type(),cpu_single_register_load_and_store_ins->get_destination_registers().registers_.front(),sp,flexoffset(cpu_data_process_ins->get_operand2().immed_8r));
+                                            delete (*next_line);
+                                            (*next_line)=new_cpu_single_register_load_and_store_ins;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Graph_coloring_register_manager::remove_useless_regs()
+{
+
+}
+
 void Graph_coloring_register_manager::optimize_virtual_for_less_spill_regs()
 {
     reduce_const_regs();
     fission_regs();
+    // peephole_optimization();
+    // remove_useless_regs();
+}
+
+void Graph_coloring_register_manager::optimize_after_rewrite_program()
+{
+    // peephole_optimization();
+    // remove_useless_regs();
 }
 
 void Graph_coloring_register_manager::mk_worklists()
@@ -1222,6 +1297,8 @@ void Graph_coloring_register_manager::assign_colors()
 {
     struct coherent_diagram_node * node;
     set<reg_index> available_colors;
+    reg_index chosen_color;
+    //map<struct ic_data *,reg_index> * f_params_regs=(map<struct ic_data *,reg_index> *)notify(event(event_type::GET_F_PARAMS_REGS,(void *)virtual_target_code->function->func)).pointer_data;
     while(!select_stack.empty())
     {
         node=select_stack.top();
@@ -1247,9 +1324,33 @@ void Graph_coloring_register_manager::assign_colors()
             // set<reg_index>::const_iterator it(available_colors.begin());
             // advance(it, rand() % available_colors.size());
             // colored_nodes.insert(make_pair(node,*it));
+
+//             if(virtual_regs_info_.reg_indexs.at(node->reg).data_type==virtual_related_data_type::VAR_VALUE && 
+//             f_params_regs->find(virtual_regs_info_.reg_indexs.at(node->reg).related_var)!=f_params_regs->end() && 
+//             available_colors.find(f_params_regs->at(virtual_regs_info_.reg_indexs.at(node->reg).related_var))!=available_colors.end())
+//             {
+//                 chosen_color=f_params_regs->at(virtual_regs_info_.reg_indexs.at(node->reg).related_var);
+//                 cout<<chosen_color<<endl;
+//             }
+//             else
+//             {
+//                 for(auto available_color:available_colors)
+//                 {
+//                     if(regs_info_.reg_indexs.at(available_color).attr!=reg_attr::ARGUMENT)
+//                     {
+//                         chosen_color=available_color;
+//                         goto out;
+//                     }
+//                 }
+//                 chosen_color=*(--available_colors.end());
+//             }
+// out:
+//             colored_nodes.insert(make_pair(node,chosen_color));
+
             colored_nodes.insert(make_pair(node,*(available_colors.begin())));
         }
     }
+    //delete f_params_regs;
 }
 
 void Graph_coloring_register_manager::set_registers_when_spilling_var_value_s_reg(struct arm_basic_block * bb,list<Arm_asm_file_line * >::iterator ins_pos,struct ic_data * var)
@@ -1967,6 +2068,8 @@ void Graph_coloring_register_manager::graph_coloring_register_distribute(bool fi
         else
         {
             rewrite_program();
+            //在重写虚拟目标代码之后进行优化
+            optimize_after_rewrite_program();
         }
         clear_info();
         graph_coloring_register_distribute(false);
@@ -2009,8 +2112,47 @@ void Graph_coloring_register_manager::clear_info()
     worklist_moves.clear();
 }
 
+bool Graph_coloring_register_manager::output_virtual_target_code_to_file(const char * filename)
+{
+    static bool first=true;
+    list<string> asm_codes;
+    ofstream outFile;
+    string line;
+    if(first)
+    {
+        first=false;
+        outFile.open(filename,ios::out);
+    }
+    else
+    {
+        outFile.open(filename,ios::app);
+    }
+	if (!outFile)
+    {
+        cout<<"Open file "<<filename<<" error!"<<endl;
+        return false;
+	}
+    //把所有的最终代码输出到文件
+    outFile<<virtual_target_code->function->func->name<<":"<<endl;
+    for(auto bb:virtual_target_code->basic_blocks)
+    {
+        for(auto asm_line:bb->arm_sequence)
+        {
+            line=asm_line->to_string();
+            if(!line.empty())
+            {
+                outFile<<line<<endl;
+            }
+        }
+    }
+    outFile<<endl<<endl<<endl;
+    outFile.close();
+    return true;
+}
+
 void Graph_coloring_register_manager::handle_END_FUNC()
 {
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
     //获取当前函数的虚拟目标代码
     static reg_index fp=regs_info_.reg_names.at("fp");
     static reg_index lr=regs_info_.reg_names.at("lr");
@@ -2039,6 +2181,11 @@ void Graph_coloring_register_manager::handle_END_FUNC()
     // }
     //对虚拟目标代码进行优化
     notify(event(event_type::OPTIMIZE,(void *)virtual_target_code));
+    //如果带有debug，输出虚拟目标代码
+    if(symbol_table->get_debug_setting())
+    {
+        output_virtual_target_code_to_file((symbol_table->get_target_filename()+VIRTUAL_ASM_CODES_OUTPUT_FILE_SUFFIX).c_str());
+    }
     //根据着色的结果从虚拟目标代码生成实际目标代码
     virtual_target_code_to_physical_target_code();
     //把虚拟寄存器堆清空

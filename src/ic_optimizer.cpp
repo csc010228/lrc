@@ -1282,13 +1282,15 @@ void Ic_optimizer::global_optimize()
             global_elimination_of_common_subexpression(func);
         }
         //需要重新进行数据流分析
-        Data_flow_analyzer::data_flow_analysis_for_a_func(func,false);
+        //Data_flow_analyzer::data_flow_analysis_for_a_func(func,false);
+        Data_flow_analyzer::data_flow_analysis_for_a_func(func,true);
         //全局死代码消除
         global_dead_code_elimination(func);
         if(need_optimize_)
         {
             //需要重新进行数据流分析
-            Data_flow_analyzer::data_flow_analysis_for_a_func(func,false);
+            //Data_flow_analyzer::data_flow_analysis_for_a_func(func,false);
+            Data_flow_analyzer::data_flow_analysis_for_a_func(func,true);
             //循环不变量外提
             loop_invariant_computation_motion(func);
             //归纳变量删除
