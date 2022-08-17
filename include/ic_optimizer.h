@@ -186,6 +186,7 @@ struct loop_info
 
     //set<list<struct ic_basic_block * > > loop_routes;               //循环路径，这这些路径里面不会包括小的循环
     set<struct ic_basic_block * > all_basic_blocks;                 //循环中的所有基本块，包括小的循环中的基本块
+    struct ic_basic_block * enter_basic_blocks;                     //循环的入口基本块
     set<struct ic_basic_block * > exit_basic_blocks;                //循环中的所有出口基本块
     struct loop_info * father_loop;                                 //父循环
     set<struct loop_info * > children_loops;                        //子循环
@@ -274,39 +275,17 @@ protected:
     //目前正在处理的中间代码流图
     struct ic_flow_graph * intermediate_codes_flow_graph_;
 
-    //删除无用的函数返回值
-    void remove_useless_return();
-    //窥孔优化
-    void peephole_optimization(struct ic_basic_block * basic_block);
-    //函数内联
-    void function_inline(struct ic_func_flow_graph * func);
-    //DAG相关优化
-    void DAG_optimize(struct ic_basic_block * basic_block);
-
     //局部优化
     void local_optimize();
     
-    //为一个函数进行数据流分析
-    void data_flow_analysis_for_a_func(struct ic_func_flow_graph * func,bool further_analyse);
     //数据流分析
     void data_flow_analysis();
-
-    //全局复制传播
-    void global_copy_progagation(struct ic_func_flow_graph * func);
-    //全局公共子表达式删除
-    void global_elimination_of_common_subexpression(struct ic_func_flow_graph * func);
-    //全局死代码消除
-    void global_dead_code_elimination(struct ic_func_flow_graph * func);
-    //循环不变量外提
-    void loop_invariant_computation_motion(struct ic_func_flow_graph * func);
-    //归纳变量删除
-    void induction_variable_elimination(struct ic_func_flow_graph * func);
 
     //全局优化
     void global_optimize();
 
     //多线程优化
-    void thread_optimize(struct ic_func_flow_graph * func);
+    //void thread_optimize(struct ic_func_flow_graph * func);
 
     //联合优化
     void union_optimize();

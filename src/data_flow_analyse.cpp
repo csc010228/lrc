@@ -9,6 +9,29 @@
 #include"data_flow_analyse.h"
 #include<algorithm>
 
+void Data_flow_analyzer::data_flow_analysis_for_a_func(struct ic_func_flow_graph * func,bool further_analyse)
+{
+    //准备进行数据流分析
+    prepare_before_data_flow_analyse(func,further_analyse);
+    //到达-定义分析
+    use_define_analysis(func);
+    //构建ud-链
+    build_ud_chain(func);
+    //活跃变量分析
+    live_variable_analysis(func);
+    //构建du-链
+    build_du_chain(func);
+    if(further_analyse)
+    {
+        //可用表达式分析
+        available_expression_analysis(func);
+        //支配点集计算
+        build_dominate_relations(func);
+        //循环分析
+        build_loops_info(func);
+    }
+}
+
 /*
 数据流分析的准备
 
@@ -525,6 +548,7 @@ void Data_flow_analyzer::build_loops_info(struct ic_func_flow_graph * func)
             if(func->loops_info.find(i.second)==func->loops_info.end())
             {
                 func->loops_info.insert(make_pair(i.second,new struct loop_info()));
+                func->loops_info.at(i.second)->enter_basic_blocks=i.second;
             }
             func->loops_info.at(i.second)->all_basic_blocks.insert(bb);
         }

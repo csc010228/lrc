@@ -1,121 +1,82 @@
-// Brainfuck Interpreter
-// Reads program from stdin, interprets and outputs to stdout.
-//
-// Main optimization targets:
-// jump table, inline variables, etc.
+const int mod = 998244353;
+int d;
 
-int program_length = 0;
-int program[65536] = {};
-int tape[65536] = {};
-int input[65536] = {};
-int input_length = 0;
-int output[65536] = {};
-int output_length = 0;
-
-int get_bf_char() {
-  int get = getch();
-  while (get != 62 && get != 60 && get != 43 && get != 45 && get != 91 &&
-         get != 93 && get != 46 && get != 44 && get != 35) {
-    get = getch();
-  }
-  return get;
+int multiply(int a, int b){
+    if (b == 0) return 0;
+    if (b == 1) return a % mod;
+    int cur = multiply(a, b/2);
+    cur = (cur + cur) % mod;
+    if (b % 2 == 1) return (cur + a) % mod;
+    else return cur;
 }
 
-void read_program() {
-  int get = get_bf_char();
-  while (get != 35) {
-    program[program_length] = get;
-    get = get_bf_char();
-    program_length = program_length + 1;
-  }
-
-  // read input
-  // input starts with an `i`
-  int verify = getch();
-  if (verify != 105) {
-    return;
-  }
-  // and a length
-  input_length = getint();
-  // and a random char
-  getch();
-  int i = 0;
-  while (i < input_length) {
-    input[i] = getch();
-    i = i + 1;
-  }
+int power(int a, int b){
+    if (b == 0) return 1;
+    int cur = power(a, b/2);
+    cur = multiply(cur, cur);
+    if (b % 2 == 1) return multiply(cur, a);
+    else return cur;
 }
+const int maxlen = 2097152;
+int temp[maxlen], a[maxlen], b[maxlen], c[maxlen];
 
-void run_program() {
-  int ip = 0;
-  int read_head = 0;
-  int input_head = 0;
-  int return_address[512] = {};
-  int return_address_top = 0;
-  output_length = 0;
-  while (ip < program_length) {
-    int code = program[ip];
-    if (code == 62) {
-      read_head = read_head + 1;
-    } else if (code == 60) {
-      read_head = read_head - 1;
-    } else if (code == 43) {
-      tape[read_head] = tape[read_head] + 1;
-    } else if (code == 45) {
-      tape[read_head] = tape[read_head] - 1;
-    } else if (code == 91) {
-      int val = tape[read_head];
-      if (val != 0) {
-        return_address[return_address_top] = ip;
-        return_address_top = return_address_top + 1;
-      } else {
-        // find the matching ]
-        int loop = 1;
-        while (loop > 0) {
-          ip = ip + 1;
-          if (program[ip] == 93) {
-            loop = loop - 1;
-          }
-          if (program[ip] == 91) {
-            loop = loop + 1;
-          }
-        }
-      }
-    } else if (code == 93) {
-      int val = tape[read_head];
-      if (val == 0) {
-        return_address_top = return_address_top - 1;
-      } else {
-        ip = return_address[return_address_top - 1];
-      }
-    } else if (code == 46) {
-      output[output_length] = tape[read_head];
-      output_length = output_length + 1;
-    } else if (code == 44) {
-      if (input_head >= input_length) {
-        tape[read_head] = 0;
-      } else {
-        tape[read_head] = input[input_head];
-        input_head = input_head + 1;
-      }
+int memmove(int dst[], int dst_pos, int src[], int len){
+    int i = 0;
+    while (i < len){
+        dst[dst_pos + i] = src[i];
+        i = i + 1;
     }
-    ip = ip + 1;
-  }
+    return i;
 }
 
-void output_() {
-  int i = 0;
-  while (i < output_length) {
-    putch(output[i]);
-    i = i + 1;
-  }
+int fft(int arr[], int begin_pos, int n, int w){
+    if (n == 1) return 1;
+    int i = 0;
+    while (i < n){
+        if (i % 2 == 0) temp[i / 2] = arr[i + begin_pos];
+        else temp[n / 2 + i / 2] = arr[i + begin_pos];
+        i = i + 1;
+    }
+
+    memmove(arr, begin_pos, temp, n);
+    fft(arr, begin_pos, n / 2, multiply(w, w));
+    fft(arr, begin_pos + n / 2, n / 2, multiply(w, w));
+    i = 0;
+    int wn = 1;
+    while (i < n / 2){
+        int x = arr[begin_pos + i];
+        int y = arr[begin_pos + i + n / 2];
+        arr[begin_pos + i] = (x + multiply(wn, y)) % mod;
+        arr[begin_pos + i + n / 2] = (x - multiply(wn, y) + mod) % mod;
+        wn = multiply(wn, w);
+        i = i + 1;
+    }
+    return 0;
 }
 
-int main() {
-  read_program();
-  starttime();
-  run_program();
-  stoptime();
-  output_();
-  return 0;
+int main(){
+    int n = getarray(a);
+    int m = getarray(b);
+    starttime();
+    d = 1;
+    while (d < n + m - 1){
+        d = d * 2;
+    }
+    fft(a, 0, d, power(3, (mod - 1) / d));
+    fft(b, 0, d, power(3, (mod - 1) / d));
+
+    int i = 0;
+    while (i < d){
+        a[i] = multiply(a[i], b[i]);
+        i = i + 1;
+    }
+    fft(a, 0, d, power(3, mod-1 - (mod-1)/d));
+    i = 0;
+    while (i < d){
+        a[i] = multiply(a[i], power(d, mod-2));
+        i = i + 1;
+    }
+    stoptime();
+    putarray(n + m - 1, a);
+    return 0;
 }

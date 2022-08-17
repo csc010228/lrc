@@ -62,6 +62,12 @@ void DAG_node::add_a_father(struct DAG_node * father)
     fathers.at(father)++;
 }
 
+void DAG_node::add_a_child(struct DAG_node * child)
+{
+    children.push_back(child);
+    child->add_a_father(this);
+}
+
 void DAG_node::delete_a_father(struct DAG_node * father)
 {
     if(fathers.find(father)!=fathers.end())
@@ -111,6 +117,15 @@ void DAG_node::change_right_child(struct DAG_node * node)
             node->add_a_father(this);
         }
     }
+}
+
+void DAG_node::remove_all_children()
+{
+    for(auto child:children)
+    {
+        child->delete_a_father(this);
+    }
+    children.clear();
 }
 
 bool DAG_node::is_related_to_a_const(enum language_data_type data_type)
@@ -829,12 +844,135 @@ void DAG::n_selfadd_one_to_one_selfadd_n()
     }
 }
 
+void DAG::algebraic_simplification_in_DAG_tree(struct DAG_node * father_node)
+{
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
+    struct DAG_node * left_child,* right_child,* left_child_s_left_child,* left_child_s_right_child;
+    switch(father_node->related_op)
+    {
+        case ic_op::ADD:
+            left_child=father_node->get_left_child();
+            right_child=father_node->get_right_child();
+            algebraic_simplification_in_DAG_tree(left_child);
+            algebraic_simplification_in_DAG_tree(right_child);
+            if(left_child->related_op==ic_op::SUB && left_child->get_right_child()==right_child && 
+            left_child->related_data!=left_child->get_left_child()->related_data && 
+            left_child->related_data!=left_child->get_right_child()->related_data)
+            {
+                //(a-b)+b=a
+                father_node->related_op=ic_op::ASSIGN;
+                father_node->remove_all_children();
+                father_node->add_a_child(left_child->get_left_child());
+            }
+            else if(right_child->related_op==ic_op::SUB && right_child->get_right_child()==left_child && 
+            right_child->related_data!=right_child->get_left_child()->related_data && 
+            right_child->related_data!=right_child->get_right_child()->related_data)
+            {
+                //b+(a-b)=a
+                father_node->related_op=ic_op::ASSIGN;
+                father_node->remove_all_children();
+                father_node->add_a_child(right_child->get_left_child());
+            }
+            break;
+        case ic_op::SUB:
+            left_child=father_node->get_left_child();
+            right_child=father_node->get_right_child();
+            algebraic_simplification_in_DAG_tree(left_child);
+            algebraic_simplification_in_DAG_tree(right_child);
+            if(left_child->related_op==ic_op::ADD && left_child->get_left_child()==right_child && 
+            left_child->related_data!=left_child->get_left_child()->related_data && 
+            left_child->related_data!=left_child->get_right_child()->related_data)
+            {
+                //(a+b)-a=b
+                father_node->related_op=ic_op::ASSIGN;
+                father_node->remove_all_children();
+                father_node->add_a_child(left_child->get_right_child());
+            }
+            else if(left_child->related_op==ic_op::ADD && left_child->get_right_child()==right_child && 
+            left_child->related_data!=left_child->get_left_child()->related_data && 
+            left_child->related_data!=left_child->get_right_child()->related_data)
+            {
+                //(a+b)-b=a
+                father_node->related_op=ic_op::ASSIGN;
+                father_node->remove_all_children();
+                father_node->add_a_child(left_child->get_left_child());
+            }
+            else if(left_child->related_op==ic_op::SUB && left_child->get_left_child()==right_child && 
+            left_child->related_data!=left_child->get_left_child()->related_data && 
+            left_child->related_data!=left_child->get_right_child()->related_data)
+            {
+                //(a-b)-a=-b
+                if(father_node->related_data->get_data_type()==language_data_type::INT)
+                {
+                    father_node->change_left_child(get_DAG_node(symbol_table->const_entry(language_data_type::INT,OAA((int)0))));
+                }
+                else if(father_node->related_data->get_data_type()==language_data_type::FLOAT)
+                {
+                    father_node->change_left_child(get_DAG_node(symbol_table->const_entry(language_data_type::INT,OAA((float)0.f))));
+                }
+                father_node->change_right_child(left_child->get_right_child());
+            }
+            else if(right_child->related_op==ic_op::ADD && right_child->get_left_child()==left_child && 
+            right_child->related_data!=right_child->get_left_child()->related_data && 
+            right_child->related_data!=right_child->get_right_child()->related_data)
+            {
+                //a-(a+b)=-b
+                if(father_node->related_data->get_data_type()==language_data_type::INT)
+                {
+                    father_node->change_left_child(get_DAG_node(symbol_table->const_entry(language_data_type::INT,OAA((int)0))));
+                }
+                else if(father_node->related_data->get_data_type()==language_data_type::FLOAT)
+                {
+                    father_node->change_left_child(get_DAG_node(symbol_table->const_entry(language_data_type::INT,OAA((float)0.f))));
+                }
+                father_node->change_right_child(right_child->get_right_child());
+            }
+            else if(right_child->related_op==ic_op::ADD && right_child->get_right_child()==left_child && 
+            right_child->related_data!=right_child->get_left_child()->related_data && 
+            right_child->related_data!=right_child->get_right_child()->related_data)
+            {
+                //b-(a+b)=-a
+                if(father_node->related_data->get_data_type()==language_data_type::INT)
+                {
+                    father_node->change_left_child(get_DAG_node(symbol_table->const_entry(language_data_type::INT,OAA((int)0))));
+                }
+                else if(father_node->related_data->get_data_type()==language_data_type::FLOAT)
+                {
+                    father_node->change_left_child(get_DAG_node(symbol_table->const_entry(language_data_type::INT,OAA((float)0.f))));
+                }
+                father_node->change_right_child(right_child->get_left_child());
+            }
+            else if(right_child->related_op==ic_op::SUB && right_child->get_left_child()==left_child && 
+            right_child->related_data!=right_child->get_left_child()->related_data && 
+            right_child->related_data!=right_child->get_right_child()->related_data)
+            {
+                //a-(a-b)=b
+                father_node->related_op=ic_op::ASSIGN;
+                father_node->remove_all_children();
+                father_node->add_a_child(right_child->get_right_child());
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void DAG::algebraic_simplification()
+{
+    for(auto father_node:nodes_order_)
+    {
+        algebraic_simplification_in_DAG_tree(father_node);
+    }
+}
+
 void DAG::optimize()
 {
     //将多个加法转换成乘法
     a_lot_of_adds_to_multi();
     //n个+1转换成1个+n
     n_selfadd_one_to_one_selfadd_n();
+    //代数化简
+    algebraic_simplification();
 }
 
 list<struct quaternion> DAG::to_basic_block()

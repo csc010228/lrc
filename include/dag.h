@@ -32,6 +32,9 @@ struct DAG_node
     //给该节点添加一个父亲节点
     void add_a_father(struct DAG_node * father);
 
+    //给该节点添加一个孩子节点
+    void add_a_child(struct DAG_node * child);
+
     //删除该节点的某一个父亲节点
     void delete_a_father(struct DAG_node * father);
 
@@ -43,6 +46,9 @@ struct DAG_node
 
     //如果该节点有两个孩子节点，那么更改其右节点，否则的话不做修改
     void change_right_child(struct DAG_node * node);
+
+    //移除该节点的所有子节点
+    void remove_all_children();
 
     //判断该DAG节点是否只和一个常数关联
     bool is_related_to_a_const(enum language_data_type data_type=language_data_type::VOID);
@@ -155,6 +161,11 @@ private:
     void n_selfadd_one_to_one_selfadd_n_in_a_DAG_tree(struct DAG_node * father_node);
     //将n个自增1替换成一个自增n
     void n_selfadd_one_to_one_selfadd_n();
+
+    //在一棵DAG树中进行代数化简
+    void algebraic_simplification_in_DAG_tree(struct DAG_node * father_node);
+    //代数化简
+    void algebraic_simplification();
 
 public:
     //构造函数
