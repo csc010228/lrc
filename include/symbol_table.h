@@ -268,6 +268,9 @@ protected:
     //标签的个数
     size_t labels_num_;
 
+    //局部转全局数组的个数
+    size_t l2g_array_nums_;
+
     //所有已经声明的函数
     map<string,struct ic_func * > functions_;
 
@@ -406,6 +409,9 @@ public:
 
     //根据函数名判断一个函数是否是定义的函数获取库函数
     bool is_a_defined_or_library_func(string func_name) const;
+
+    //获取一个新的局部转全局数组的名称
+    string new_l2g_array_name();
 };
 
 

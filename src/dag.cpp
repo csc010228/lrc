@@ -267,9 +267,19 @@ void DAG::attach_data_to_node(struct ic_data * data,struct DAG_node * node)
             offset=data->get_offset();
             offset_is_const=offset->is_const();
             array=data->get_belong_array();
-            if(basic_block_->array_to_array_member_map.find(array)!=basic_block_->array_to_array_member_map.end())
+            // if(basic_block_->array_to_array_member_map.find(array)!=basic_block_->array_to_array_member_map.end())
+            // {
+            //     for(auto array_member:basic_block_->array_to_array_member_map.at(array))
+            //     {
+            //         if(!(offset_is_const && array_member->get_offset()->is_const() && offset->get_value().int_data!=array_member->get_offset()->get_value().int_data) && !array_member->is_array_var())
+            //         {
+            //             unattach_data_s_current_node(array_member);
+            //         }
+            //     }
+            // }
+            if(array_to_array_member_map_.find(array)!=array_to_array_member_map_.end())
             {
-                for(auto array_member:basic_block_->array_to_array_member_map.at(array))
+                for(auto array_member:array_to_array_member_map_.at(array))
                 {
                     if(!(offset_is_const && array_member->get_offset()->is_const() && offset->get_value().int_data!=array_member->get_offset()->get_value().int_data) && !array_member->is_array_var())
                     {
@@ -278,9 +288,19 @@ void DAG::attach_data_to_node(struct ic_data * data,struct DAG_node * node)
                 }
             }
         }
-        if(basic_block_->offset_to_array_member_map.find(data)!=basic_block_->offset_to_array_member_map.end())
+        // if(basic_block_->offset_to_array_member_map.find(data)!=basic_block_->offset_to_array_member_map.end())
+        // {
+        //     for(auto array_member:basic_block_->offset_to_array_member_map.at(data))
+        //     {
+        //         if(!array_member->is_array_var())
+        //         {
+        //             unattach_data_s_current_node(array_member);   
+        //         }
+        //     }
+        // }
+        if(offset_to_array_member_map_.find(data)!=offset_to_array_member_map_.end())
         {
-            for(auto array_member:basic_block_->offset_to_array_member_map.at(data))
+            for(auto array_member:offset_to_array_member_map_.at(data))
             {
                 if(!array_member->is_array_var())
                 {
@@ -297,6 +317,12 @@ void DAG::attach_data_to_node(struct ic_data * data,struct DAG_node * node)
     else
     {
         data_to_node_.at(data)=node;
+    }
+    //向array_to_array_member_map_和offset_to_array_member_map_添加数据
+    if(data->is_array_member())
+    {
+        map_set_insert(array_to_array_member_map_,data->get_belong_array(),data);
+        map_set_insert(offset_to_array_member_map_,data->get_offset(),data);
     }
 }
 
@@ -485,9 +511,19 @@ void DAG::generate_CALL_in_DAG(struct ic_func * func,struct ic_data * ret,list<s
             {
                 array=data;
             }
-            if(basic_block_->array_to_array_member_map.find(array)!=basic_block_->array_to_array_member_map.end())
+            // if(basic_block_->array_to_array_member_map.find(array)!=basic_block_->array_to_array_member_map.end())
+            // {
+            //     for(auto array_member:basic_block_->array_to_array_member_map.at(array))
+            //     {
+            //         if(!array_member->is_array_var())
+            //         {
+            //             unattach_data_s_current_node(array_member);
+            //         }
+            //     }
+            // }
+            if(array_to_array_member_map_.find(array)!=array_to_array_member_map_.end())
             {
-                for(auto array_member:basic_block_->array_to_array_member_map.at(array))
+                for(auto array_member:array_to_array_member_map_.at(array))
                 {
                     if(!array_member->is_array_var())
                     {
@@ -498,9 +534,19 @@ void DAG::generate_CALL_in_DAG(struct ic_func * func,struct ic_data * ret,list<s
         }
         else if(data->is_global())
         {
-            if(basic_block_->offset_to_array_member_map.find(data)!=basic_block_->offset_to_array_member_map.end())
+            // if(basic_block_->offset_to_array_member_map.find(data)!=basic_block_->offset_to_array_member_map.end())
+            // {
+            //     for(auto array_member:basic_block_->offset_to_array_member_map.at(data))
+            //     {
+            //         if(!array_member->is_array_var())
+            //         {
+            //             unattach_data_s_current_node(array_member);
+            //         }
+            //     }
+            // }
+            if(offset_to_array_member_map_.find(data)!=offset_to_array_member_map_.end())
             {
-                for(auto array_member:basic_block_->offset_to_array_member_map.at(data))
+                for(auto array_member:offset_to_array_member_map_.at(data))
                 {
                     if(!array_member->is_array_var())
                     {
@@ -646,6 +692,7 @@ bool DAG::common_expression_delete(enum ic_op op,struct ic_data * result,struct 
 {
     set<struct DAG_node * > common_fathers;
     struct DAG_node * arg1_node,* arg2_node,* result_node;
+    bool tag;
     arg1=copy_progagation(arg1);
     arg1_node=get_DAG_node(arg1);
     if(arg2)
@@ -661,9 +708,23 @@ bool DAG::common_expression_delete(enum ic_op op,struct ic_data * result,struct 
             (father->get_left_child()==arg2_node && father->get_right_child()==arg1_node)) && 
             check_data_s_node_available(father->related_data,father))
             {
+                tag=false;
+                for(auto node:nodes_order_)
+                {
+                    if(tag && node->related_data==father->related_data)
+                    {
+                        goto next_1;
+                    }
+                    if(node==father)
+                    {
+                        tag=true;
+                    }
+                }
                 generate_ASSIGN_in_DAG(result,father->related_data);
                 return true;
             }
+next_1:
+            ;
         }
     }
     else
@@ -673,9 +734,23 @@ bool DAG::common_expression_delete(enum ic_op op,struct ic_data * result,struct 
             if(op==father.first->related_op && 
             check_data_s_node_available(father.first->related_data,father.first))
             {
+                tag=false;
+                for(auto node:nodes_order_)
+                {
+                    if(tag && node->related_data==father.first->related_data)
+                    {
+                        goto next_2;
+                    }
+                    if(node==father.first)
+                    {
+                        tag=true;
+                    }
+                }
                 generate_ASSIGN_in_DAG(result,father.first->related_data);
                 return true;
             }
+next_2:
+            ;
         }
     }
     return false;

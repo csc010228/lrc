@@ -8,6 +8,7 @@
 */
 #include"ic_global_optimize.h"
 #include"data_flow_analyse.h"
+#include"ic_local_optimize.h"
 #include"pool.h"
 
 /*
@@ -427,4 +428,410 @@ func:要优化的函数流图
 void induction_variable_elimination(struct ic_func_flow_graph * func)
 {
 
+}
+
+/*
+循环展开
+
+Parameters
+----------
+func:要优化的函数流图
+*/
+void loop_unroll(struct ic_func_flow_graph * func)
+{
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
+    size_t offset;
+    ic_pos loop_var_self_op_pos,pos;
+    struct ic_basic_block * first_bb,* second_bb,* pre_bb,* next_bb,* target_bb;
+    struct ic_data * loop_var,* upper_limit_var,* lower_limit_var,* arg1,* arg2,* const_data;
+    int upper_limit,lower_limit,i;
+    struct ic_label * out_label;
+    struct quaternion_with_info label_define,exit_loop_judge,conditional_jump,assign_const_to_loop_var,loop_var_self_op,new_ic;
+    list<struct quaternion_with_info> unrolled_ics_before_self_op,unrolled_ics_after_self_op;
+    map<struct ic_data *,struct ic_data * > old_and_new_vars_map;
+    map<struct ic_basic_block * ,struct quaternion_with_info> first_bbs;
+    set<struct ic_basic_block *> second_bbs,target_bbs;
+    bool tag;
+    for(auto loop_info:func->loops_info)
+    {
+        //暂时只对满足如下条件的循环进行优化：
+        //只对类似如下格式的循环进行优化：
+        //     ......
+        //     ASSIGN   0 --> i
+        //     ......
+        // -----------------------------------------BASIC_BLOCK:0x6000016d81c0-----------------------------------------
+        // .0 : 
+        //     LT		i , 20 --> (int)@9
+        //     IF_NOT_JMP		@9 --> .1
+        // -------------------------------------NEXT:0x6000016d82a0,0x6000016d8380-------------------------------------
+        // -----------------------------------------BASIC_BLOCK:0x6000016d82a0-----------------------------------------
+        //     ......
+        //     ADD		i , 1 --> i
+        //     ......
+        //     JMP		.0
+        // --------------------------------------------NEXT:0x6000016d81c0---------------------------------------------
+        // -----------------------------------------BASIC_BLOCK:0x6000016d8380-----------------------------------------
+        // .1 : 
+        if(!loop_info.second->children_loops.empty() || 
+        loop_info.second->all_basic_blocks.size()>2)
+        {
+            continue;
+        }
+        first_bb=loop_info.first;
+        for(auto ic_with_info:first_bb->ic_sequence)
+        {
+            switch(ic_with_info.intermediate_code.op)
+            {
+                case ic_op::NOP:
+                    break;
+                case ic_op::LABEL_DEFINE:
+                    if(label_define.intermediate_code.op==ic_op::NOP && 
+                    exit_loop_judge.intermediate_code.op==ic_op::NOP && 
+                    conditional_jump.intermediate_code.op==ic_op::NOP)
+                    {
+                        label_define=ic_with_info;
+                    }
+                    else
+                    {
+                        goto next;
+                    }
+                    break;
+                case ic_op::LT:
+                    if(label_define.intermediate_code.op!=ic_op::NOP && 
+                    exit_loop_judge.intermediate_code.op==ic_op::NOP && 
+                    conditional_jump.intermediate_code.op==ic_op::NOP)
+                    {
+                        exit_loop_judge=ic_with_info;
+                    }
+                    else
+                    {
+                        goto next;
+                    }
+                    break;
+                case ic_op::IF_NOT_JMP:
+                    if(label_define.intermediate_code.op!=ic_op::NOP && 
+                    exit_loop_judge.intermediate_code.op!=ic_op::NOP && 
+                    conditional_jump.intermediate_code.op==ic_op::NOP)
+                    {
+                        conditional_jump=ic_with_info;
+                    }
+                    else
+                    {
+                        goto next;
+                    }
+                    break;
+                default:
+                    goto next;
+                    break;
+            }
+        }
+        arg1=(struct ic_data * )exit_loop_judge.intermediate_code.arg1.second;
+        arg2=(struct ic_data * )exit_loop_judge.intermediate_code.arg2.second;
+        if(exit_loop_judge.intermediate_code.result.second!=conditional_jump.intermediate_code.arg1.second || 
+        arg1->is_const() || 
+        arg1->is_array_member() || 
+        arg1->is_global() || 
+        arg1->get_data_type()!=language_data_type::INT || 
+        !arg2->is_const() || 
+        exit_loop_judge.ud_chain.find(arg1)==exit_loop_judge.ud_chain.end() || 
+        exit_loop_judge.ud_chain.at(arg1).size()!=2 || 
+        (*(exit_loop_judge.ud_chain.at(arg1).begin())).basic_block==(*(++exit_loop_judge.ud_chain.at(arg1).begin())).basic_block)
+        {
+            goto next;
+        }
+        loop_var=arg1;
+        upper_limit_var=arg2;
+        upper_limit=upper_limit_var->get_value().int_data;
+        out_label=(struct ic_label *)conditional_jump.intermediate_code.result.second;
+        for(auto bb_in_loop:loop_info.second->all_basic_blocks)
+        {
+            if(bb_in_loop!=first_bb)
+            {
+                second_bb=bb_in_loop;
+            }
+        }
+        if(second_bb->sequential_next || 
+        second_bb->jump_next!=first_bb)
+        {
+            goto next;
+        }
+        for(auto def_pos:exit_loop_judge.ud_chain.at(loop_var))
+        {
+            if(def_pos.basic_block==second_bb)
+            {
+                loop_var_self_op=func->get_ic_with_info(def_pos);
+                loop_var_self_op_pos=def_pos;
+            }
+            else
+            {
+                assign_const_to_loop_var=func->get_ic_with_info(def_pos);
+            }
+        }
+        if(assign_const_to_loop_var.intermediate_code.op!=ic_op::ASSIGN || 
+        !((struct ic_data *)assign_const_to_loop_var.intermediate_code.arg1.second)->is_const() || 
+        assign_const_to_loop_var.intermediate_code.result.second!=loop_var)
+        {
+            goto next;
+        }
+        lower_limit_var=(struct ic_data *)assign_const_to_loop_var.intermediate_code.arg1.second;
+        lower_limit=lower_limit_var->get_value().int_data;
+        if(loop_var_self_op.intermediate_code.op!=ic_op::ADD || 
+        loop_var_self_op.intermediate_code.arg1.second!=loop_var ||
+        loop_var_self_op.intermediate_code.result.second!=loop_var || 
+        !((struct ic_data *)loop_var_self_op.intermediate_code.arg2.second)->is_const() || 
+        ((struct ic_data *)loop_var_self_op.intermediate_code.arg2.second)->get_value().int_data!=1)
+        {
+            goto next;
+        }
+        pre_bb=nullptr;
+        next_bb=nullptr;
+        for(auto bb:func->basic_blocks)
+        {
+            if(bb==first_bb)
+            {
+                if(!pre_bb || 
+                pre_bb->get_successors().size()!=1 || 
+                pre_bb->sequential_next!=first_bb)
+                {
+                    goto next;
+                }
+                else
+                {
+                    target_bb=pre_bb;
+                }
+            }
+            else if(pre_bb==second_bb && 
+            (bb->get_precursors().size()!=1 || 
+            (*bb->get_precursors().begin())!=first_bb))
+            {
+                goto next;
+            }
+            pre_bb=bb;
+        }
+        offset=0;
+        tag=true;
+        for(auto ic_with_info:second_bb->ic_sequence)
+        {
+            pos=ic_pos(second_bb,offset++);
+            if(ic_with_info.explicit_def && ic_with_info.explicit_def==loop_var)
+            {
+                if(pos!=loop_var_self_op_pos)
+                {
+                    goto next;
+                }
+                else
+                {
+                    tag=false;
+                }
+            }
+            else if(ic_with_info.intermediate_code.op!=ic_op::JMP)
+            {
+                if(tag)
+                {
+                    unrolled_ics_before_self_op.push_back(ic_with_info);
+                }
+                else
+                {
+                    unrolled_ics_after_self_op.push_back(ic_with_info);
+                }
+            }
+        }
+        if((unrolled_ics_before_self_op.size()+unrolled_ics_after_self_op.size())>20 || 
+        (upper_limit-lower_limit)>30)
+        {
+            goto next;
+        }
+        old_and_new_vars_map.insert(make_pair(loop_var,nullptr));
+        for(i=lower_limit;i<upper_limit;i++)
+        {
+            const_data=symbol_table->const_entry(language_data_type::INT,OAA((int)i));
+            old_and_new_vars_map.at(loop_var)=const_data;
+            for(auto ic_with_info:unrolled_ics_before_self_op)
+            {
+                new_ic=ic_with_info;
+                new_ic.replace_all_vars(old_and_new_vars_map);
+                target_bb->ic_sequence.push_back(new_ic);
+            }
+            const_data=symbol_table->const_entry(language_data_type::INT,OAA((int)(i+1)));
+            old_and_new_vars_map.at(loop_var)=const_data;
+            for(auto ic_with_info:unrolled_ics_after_self_op)
+            {
+                new_ic=ic_with_info;
+                new_ic.replace_all_vars(old_and_new_vars_map);
+                target_bb->ic_sequence.push_back(new_ic);
+            }
+        }
+        const_data=symbol_table->const_entry(language_data_type::INT,OAA((int)i));
+        target_bb->ic_sequence.push_back(quaternion_with_info(quaternion(ic_op::ASSIGN,ic_operand::DATA,(void *)const_data,ic_operand::NONE,nullptr,ic_operand::DATA,(void *)loop_var)));
+        first_bbs.insert(make_pair(first_bb,label_define));
+        second_bbs.insert(second_bb);
+        target_bbs.insert(target_bb);
+next:
+        unrolled_ics_before_self_op.clear();
+        unrolled_ics_after_self_op.clear();
+        old_and_new_vars_map.clear();
+        label_define=quaternion_with_info();
+        exit_loop_judge=quaternion_with_info();
+        conditional_jump=quaternion_with_info();
+        assign_const_to_loop_var=quaternion_with_info();
+        loop_var_self_op=quaternion_with_info();
+    }
+    if(!first_bbs.empty() && !second_bbs.empty())
+    {
+        for(auto bb_and_ic:first_bbs)
+        {
+            bb_and_ic.first->ic_sequence.clear();
+            bb_and_ic.first->ic_sequence.push_back(bb_and_ic.second);
+        }
+        for(auto bb:second_bbs)
+        {
+            bb->ic_sequence.clear();
+        }
+        for(auto bb:target_bbs)
+        {
+            DAG_optimize(bb);
+        }
+        //需要重新进行数据流分析
+        Data_flow_analyzer::data_flow_analysis_for_a_func(func,true);
+    }
+}
+
+void globalize_local_arrays(struct ic_flow_graph * intermediate_codes_flow_graph,struct ic_func_flow_graph * func)
+{
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
+    map<struct ic_data *,set<ic_pos> > arrays_def_poses,arrays_use_poses;
+    map<struct ic_data *,struct ic_data * > old_new_vars_map;
+    map<size_t,OAA> array_members_values;
+    vector<OAA> * new_initial_array_members_values;
+    struct quaternion_with_info array_def_ic,target_ic;
+    ic_pos pos;
+    size_t offset,array_member_nums;
+    struct ic_data * array_var,* new_array_var,* arg1,* result;
+    struct ic_basic_block * bb;
+    for(auto bb:func->basic_blocks)
+    {
+        offset=0;
+        for(auto ic_with_info:bb->ic_sequence)
+        {
+            pos=ic_pos(bb,offset++);
+            if(ic_with_info.intermediate_code.op==ic_op::VAR_DEFINE && ((struct ic_data *)ic_with_info.intermediate_code.result.second)->is_array_var())
+            {
+                map_set_insert(arrays_def_poses,((struct ic_data *)ic_with_info.intermediate_code.result.second),pos);
+            }
+            else if(ic_with_info.explicit_def && ic_with_info.explicit_def->is_array_member())
+            {
+                map_set_insert(arrays_def_poses,ic_with_info.explicit_def->get_belong_array(),pos);
+            }
+            for(auto vague_def:ic_with_info.vague_defs)
+            {
+                if(vague_def->is_array_member())
+                {
+                    map_set_insert(arrays_def_poses,vague_def->get_belong_array(),pos);
+                }
+                else if(vague_def->is_array_var())
+                {
+                    map_set_insert(arrays_def_poses,vague_def,pos);
+                }
+            }
+            for(auto use:ic_with_info.uses)
+            {
+                if(use->is_array_member())
+                {
+                    map_set_insert(arrays_use_poses,use->get_belong_array(),pos);
+                }
+                else if(use->is_array_var())
+                {
+                    map_set_insert(arrays_use_poses,use,pos);
+                }
+            }
+        }
+    }
+    for(auto array_def_poses:arrays_def_poses)
+    {
+        if(array_def_poses.first->is_global() || array_def_poses.first->is_f_param())
+        {
+            continue;
+        }
+        bb=nullptr;
+        for(auto def_pos:array_def_poses.second)
+        {
+            if(bb && def_pos.basic_block!=bb)
+            {
+                break;
+            }
+            array_def_ic=func->get_ic_with_info(def_pos);
+            switch(array_def_ic.intermediate_code.op)
+            {
+                case ic_op::VAR_DEFINE:
+                    break;
+                case ic_op::ASSIGN:
+                    arg1=(struct ic_data * )array_def_ic.intermediate_code.arg1.second;
+                    result=(struct ic_data * )array_def_ic.intermediate_code.result.second;
+                    if(!result->get_offset()->is_const() || 
+                    !arg1->is_const() || 
+                    array_members_values.find((size_t)result->get_offset()->get_value().int_data)!=array_members_values.end())
+                    {
+                        goto next;
+                    }
+                    array_members_values.insert(make_pair((size_t)result->get_offset()->get_value().int_data,arg1->get_value()));
+                    break;
+                default:
+                    goto next;
+                    break;
+            }
+        }
+        array_member_nums=1;
+        for(auto dimension:*array_def_poses.first->dimensions_len)
+        {
+            if(dimension->is_const())
+            {
+                array_member_nums*=dimension->get_value().int_data;
+            }
+        }
+        if(array_member_nums>100)
+        {
+            goto next;
+        }
+        new_initial_array_members_values=new vector<OAA>(array_member_nums);
+        switch(array_def_poses.first->get_data_type())
+        {
+            case language_data_type::INT:
+                for(auto & value:*new_initial_array_members_values)
+                {
+                    value=OAA((int)0);
+                }
+                break;
+            case language_data_type::FLOAT:
+                for(auto & value:*new_initial_array_members_values)
+                {
+                    value=OAA((float)0);
+                }
+                break;
+            default:
+                break;
+        }
+        for(auto array_member_value:array_members_values)
+        {
+            new_initial_array_members_values->at(array_member_value.first)=array_member_value.second;
+        }
+        for(auto def_pos:array_def_poses.second)
+        {
+            struct quaternion_with_info & def_ic=func->get_ic_with_info(def_pos);
+            def_ic=quaternion_with_info();
+        }
+        if(arrays_use_poses.find(array_def_poses.first)!=arrays_use_poses.end())
+        {
+            new_array_var=symbol_table->new_var(symbol_table->new_l2g_array_name(),array_def_poses.first->get_data_type(),array_def_poses.first->dimensions_len,OAA((void *)new_initial_array_members_values),false,symbol_table->get_global_scope());
+            old_new_vars_map.insert(make_pair(array_def_poses.first,new_array_var));
+            for(auto use_pos:arrays_use_poses.at(array_def_poses.first))
+            {
+                struct quaternion_with_info & use_ic=func->get_ic_with_info(use_pos);
+                use_ic.replace_all_vars(old_new_vars_map);
+            }
+            intermediate_codes_flow_graph->global_defines.push_back(quaternion(ic_op::VAR_DEFINE,ic_operand::NONE,nullptr,ic_operand::NONE,nullptr,ic_operand::DATA,(void *)new_array_var));
+        }
+next:
+        old_new_vars_map.clear();
+        array_members_values.clear();
+    }
 }

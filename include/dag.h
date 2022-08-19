@@ -71,6 +71,12 @@ private:
     //该DAG对应的基本块
     struct ic_basic_block * basic_block_;
 
+    //基本块中的数组和数组元素的map
+    map<struct ic_data * ,set<struct ic_data * > > array_to_array_member_map_;
+
+    //基本块中的偏移量和数组元素的map
+    map<struct ic_data * ,set<struct ic_data * > > offset_to_array_member_map_;
+
     //所有的DAG节点
     set<struct DAG_node * > all_nodes_;
 

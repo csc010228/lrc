@@ -26,4 +26,10 @@ void loop_invariant_computation_motion(struct ic_func_flow_graph * func);
 //归纳变量删除
 void induction_variable_elimination(struct ic_func_flow_graph * func);
 
+//循环展开
+void loop_unroll(struct ic_func_flow_graph * func);
+
+//局部数组全局化
+void globalize_local_arrays(struct ic_flow_graph * intermediate_codes_flow_graph,struct ic_func_flow_graph * func);
+
 #endif //__IC_GLOBAL_OPTIMIZE_H

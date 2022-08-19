@@ -1,88 +1,193 @@
-sum:
+hash:
 	push	{r4,r5,r6,r7,r8,r9,r10,fp,lr}
 	vpush	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
 	add	fp,sp,#100
 	sub	sp,sp,#4
-	mov	VR87,r0
-	mov	VR91,r1
-	mov	VR119,r2
-	mov	VR52,r3
-	ldr	VR85,[VR87,#0]
-	ldr	VR63,[VR91,#8]
-	add	VR69,VR85,VR63
-	ldr	VR107,[VR119,#4]
-	add	VR59,VR69,VR107
-	ldr	VR76,[VR52,#40]
-	add	VR93,VR59,VR76
-	add	VR57,fp,#0
-	ldr	VR58,[VR57]
-	ldr	VR71,[VR58,#24]
-	add	VR56,VR93,VR71
-	add	VR114,fp,#4
-	ldr	VR115,[VR114]
-	ldr	VR108,[VR115,#228]
-	add	VR51,VR56,VR108
-	add	VR78,fp,#8
-	ldr	VR79,[VR78]
-	ldr	VR66,[VR79,#56]
-	add	VR106,VR51,VR66
-	add	VR116,fp,#12
-	ldr	VR117,[VR116]
-	ldr	VR72,[VR117,#964]
-	add	VR84,VR106,VR72
-	add	VR67,fp,#16
+	mov	VR52,r0
+	mov	r0,VR52
+	movw	VR50,#:lower16:hashmod
+	movt	VR50,#:upper16:hashmod
+	ldr	VR51,[VR50]
+	mov	r1,VR51
+	bl	__aeabi_idivmod
+	mov	VR53,r1
+	mov	r0,VR53
+	add	sp,sp,#4
+	vpop	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
+	pop	{r4,r5,r6,r7,r8,r9,r10,fp,pc}
+
+
+
+insert:
+	push	{r4,r5,r6,r7,r8,r9,r10,fp,lr}
+	vpush	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
+	add	fp,sp,#100
+	sub	sp,sp,#4
+	mov	VR55,r0
+	mov	VR60,r1
+	mov	r0,VR55
+	movw	VR67,#:lower16:hashmod
+	movt	VR67,#:upper16:hashmod
 	ldr	VR68,[VR67]
-	ldr	VR92,[VR68,#224]
-	add	VR50,VR84,VR92
-	add	VR111,fp,#20
-	ldr	VR112,[VR111]
-	ldr	VR60,[VR112,#804]
-	add	VR94,VR50,VR60
-	add	VR54,fp,#24
-	ldr	VR55,[VR54]
-	ldr	VR118,[VR55,#1996]
-	add	VR113,VR94,VR118
-	add	VR73,fp,#28
-	ldr	VR74,[VR73]
-	ldr	VR101,[VR74,#3224]
-	add	VR77,VR113,VR101
-	add	VR109,fp,#32
-	ldr	VR110,[VR109]
-	movw	VR121,#26400
-	ldr	VR95,[VR110,VR121]
-	add	VR53,VR77,VR95
-	add	VR89,fp,#36
-	ldr	VR90,[VR89]
-	ldr	VR64,[VR90,#508]
-	add	VR88,VR53,VR64
-	add	VR104,fp,#40
-	ldr	VR105,[VR104]
-	ldr	VR86,[VR105,#124]
-	add	VR75,VR88,VR86
-	add	VR61,fp,#44
-	ldr	VR62,[VR61]
-	movw	VR122,#50064
-	movt	VR122,#3
-	ldr	VR65,[VR62,VR122]
-	add	VR103,VR75,VR65
-	add	VR96,fp,#48
-	ldr	VR97,[VR96]
-	movw	VR123,#15956
-	ldr	VR80,[VR97,VR123]
-	add	VR70,VR103,VR80
-	add	VR99,fp,#52
-	ldr	VR100,[VR99]
-	movw	VR124,#41932
-	movt	VR124,#12
-	ldr	VR81,[VR100,VR124]
-	add	VR98,VR70,VR81
-	add	VR82,fp,#56
-	ldr	VR83,[VR82]
-	movw	VR125,#19456
-	movt	VR125,#4
-	ldr	VR102,[VR83,VR125]
-	add	VR120,VR98,VR102
-	mov	r0,VR120
+	mov	r1,VR68
+	bl	__aeabi_idivmod
+	mov	VR72,r1
+	mov	VR58,VR72
+	movw	VR63,#:lower16:head
+	movt	VR63,#:upper16:head
+	ldr	VR71,[VR63,VR72,lsl 2]
+	cmp	VR71,#0
+	bne	.0
+	movw	VR50,#:lower16:cnt
+	movt	VR50,#:upper16:cnt
+	ldr	VR51,[VR50]
+	add	VR51,VR51,#1
+	mov	VR73,VR51
+	mov	VR74,VR55
+	mov	VR75,VR60
+	movw	VR76,#0
+	mov	VR57,VR76
+	mov	VR62,VR76
+	str	VR51,[VR50]
+	movw	VR65,#:lower16:next
+	movt	VR65,#:upper16:next
+	str	VR57,[VR65,VR51,lsl 2]
+	movw	VR52,#:lower16:nextvalue
+	movt	VR52,#:upper16:nextvalue
+	str	VR62,[VR52,VR51,lsl 2]
+	str	VR73,[VR63,VR58,lsl 2]
+	movw	VR61,#:lower16:key
+	movt	VR61,#:upper16:key
+	str	VR74,[VR61,VR51,lsl 2]
+	movw	VR70,#:lower16:value
+	movt	VR70,#:upper16:value
+	str	VR75,[VR70,VR51,lsl 2]
+	mov	r0,VR76
+	add	sp,sp,#4
+	vpop	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
+	pop	{r4,r5,r6,r7,r8,r9,r10,fp,pc}
+.0:
+	ldr	VR73,[VR63,VR58,lsl 2]
+	mov	VR64,VR73
+.1:
+	cmp	VR64,#0
+	beq	.3
+	movw	VR61,#:lower16:key
+	movt	VR61,#:upper16:key
+	ldr	VR69,[VR61,VR64,lsl 2]
+	cmp	VR69,VR55
+	bne	.2
+	movw	VR50,#:lower16:cnt
+	movt	VR50,#:upper16:cnt
+	ldr	VR51,[VR50]
+	add	VR51,VR51,#1
+	movw	VR52,#:lower16:nextvalue
+	movt	VR52,#:upper16:nextvalue
+	ldr	VR54,[VR52,VR64,lsl 2]
+	mov	VR62,VR54
+	str	VR62,[VR52,VR51,lsl 2]
+	mov	VR54,VR51
+	mov	VR75,VR60
+	str	VR51,[VR50]
+	str	VR54,[VR52,VR64,lsl 2]
+	movw	VR70,#:lower16:value
+	movt	VR70,#:upper16:value
+	str	VR75,[VR70,VR51,lsl 2]
+	movw	r0,#1
+	add	sp,sp,#4
+	vpop	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
+	pop	{r4,r5,r6,r7,r8,r9,r10,fp,pc}
+.2:
+	movw	VR65,#:lower16:next
+	movt	VR65,#:upper16:next
+	ldr	VR66,[VR65,VR64,lsl 2]
+	mov	VR64,VR66
+	b	.1
+.3:
+	movw	VR50,#:lower16:cnt
+	movt	VR50,#:upper16:cnt
+	ldr	VR51,[VR50]
+	add	VR51,VR51,#1
+	mov	VR57,VR73
+	mov	VR73,VR51
+	mov	VR74,VR55
+	mov	VR75,VR60
+	movw	VR76,#0
+	mov	VR62,VR76
+	str	VR51,[VR50]
+	movw	VR65,#:lower16:next
+	movt	VR65,#:upper16:next
+	str	VR57,[VR65,VR51,lsl 2]
+	movw	VR52,#:lower16:nextvalue
+	movt	VR52,#:upper16:nextvalue
+	str	VR62,[VR52,VR51,lsl 2]
+	str	VR73,[VR63,VR58,lsl 2]
+	movw	VR61,#:lower16:key
+	movt	VR61,#:upper16:key
+	str	VR74,[VR61,VR51,lsl 2]
+	movw	VR70,#:lower16:value
+	movt	VR70,#:upper16:value
+	str	VR75,[VR70,VR51,lsl 2]
+	mov	r0,VR76
+	add	sp,sp,#4
+	vpop	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
+	pop	{r4,r5,r6,r7,r8,r9,r10,fp,pc}
+
+
+
+reduce:
+	push	{r4,r5,r6,r7,r8,r9,r10,fp,lr}
+	vpush	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
+	add	fp,sp,#100
+	sub	sp,sp,#4
+	mov	VR52,r0
+	mov	r0,VR52
+	movw	VR59,#:lower16:hashmod
+	movt	VR59,#:upper16:hashmod
+	ldr	VR60,[VR59]
+	mov	r1,VR60
+	bl	__aeabi_idivmod
+	mov	VR65,r1
+	movw	VR54,#:lower16:head
+	movt	VR54,#:upper16:head
+	ldr	VR66,[VR54,VR65,lsl 2]
+	mov	VR57,VR66
+.4:
+	cmp	VR57,#0
+	beq	.8
+	movw	VR53,#:lower16:key
+	movt	VR53,#:upper16:key
+	ldr	VR69,[VR53,VR57,lsl 2]
+	cmp	VR69,VR52
+	bne	.7
+	movw	VR70,#0
+	mov	VR63,VR70
+	mov	VR51,VR57
+.5:
+	cmp	VR51,#0
+	beq	.6
+	movw	VR62,#:lower16:value
+	movt	VR62,#:upper16:value
+	ldr	VR67,[VR62,VR51,lsl 2]
+	add	VR63,VR63,VR67
+	movw	VR50,#:lower16:nextvalue
+	movt	VR50,#:upper16:nextvalue
+	ldr	VR64,[VR50,VR51,lsl 2]
+	mov	VR51,VR64
+	b	.5
+.6:
+	mov	r0,VR63
+	add	sp,sp,#4
+	vpop	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
+	pop	{r4,r5,r6,r7,r8,r9,r10,fp,pc}
+.7:
+	movw	VR56,#:lower16:next
+	movt	VR56,#:upper16:next
+	ldr	VR68,[VR56,VR57,lsl 2]
+	mov	VR57,VR68
+	b	.4
+.8:
+	movw	r0,#0
 	add	sp,sp,#4
 	vpop	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
 	pop	{r4,r5,r6,r7,r8,r9,r10,fp,pc}
@@ -94,505 +199,237 @@ main:
 	vpush	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
 	add	fp,sp,#100
 	sub	sp,sp,#4
-	movw	VR146,#152
-	movt	VR146,#32
-	sub	sp,sp,VR146
-	sub	sp,sp,#0
-	add	VR290,sp,#152
-	mov	r0,VR290
-	mov	r1,#0
-	movw	VR148,#0
-	mov	r2,#2097152
-	bl	memset
-	mov	VR116,#0
-	mov	VR168,#0
-	str	VR168,[sp,#144]
-	add	sp,sp,#0
-.0:
-	sub	sp,sp,#8
-	ldr	VR170,[sp,#152]
-	cmp	VR170,#2
-	add	sp,sp,#8
-	bge	.37
-	sub	sp,sp,#0
-	mov	VR171,#0
-	str	VR171,[sp,#140]
-	ldr	VR173,[sp,#144]
-	lsl	VR311,VR173,#18
-	str	VR311,[sp,#48]
-	add	sp,sp,#0
-.1:
-	sub	sp,sp,#8
-	ldr	VR174,[sp,#148]
-	cmp	VR174,#2
-	add	sp,sp,#8
-	bge	.36
-	sub	sp,sp,#0
-	mov	VR175,#0
-	str	VR175,[sp,#136]
-	ldr	VR177,[sp,#140]
-	lsl	VR313,VR177,#17
-	str	VR313,[sp,#16]
-	add	sp,sp,#0
-.2:
-	sub	sp,sp,#8
-	ldr	VR178,[sp,#144]
-	cmp	VR178,#2
-	add	sp,sp,#8
-	bge	.35
-	sub	sp,sp,#0
-	mov	VR179,#0
-	str	VR179,[sp,#132]
-	ldr	VR181,[sp,#136]
-	lsl	VR182,VR181,#16
-	str	VR182,[sp,#0]
-	add	sp,sp,#0
-.3:
-	sub	sp,sp,#8
-	ldr	VR184,[sp,#140]
-	cmp	VR184,#2
-	add	sp,sp,#8
-	bge	.34
-	sub	sp,sp,#0
-	mov	VR185,#0
-	str	VR185,[sp,#128]
-	ldr	VR187,[sp,#132]
-	lsl	VR315,VR187,#15
-	str	VR315,[sp,#44]
-	add	sp,sp,#0
-.4:
-	sub	sp,sp,#8
-	ldr	VR188,[sp,#136]
-	cmp	VR188,#2
-	add	sp,sp,#8
-	bge	.33
-	sub	sp,sp,#0
-	mov	VR189,#0
-	str	VR189,[sp,#124]
-	ldr	VR191,[sp,#128]
-	lsl	VR192,VR191,#14
-	str	VR192,[sp,#8]
-	add	sp,sp,#0
-.5:
-	sub	sp,sp,#8
-	ldr	VR194,[sp,#132]
-	cmp	VR194,#2
-	add	sp,sp,#8
-	bge	.32
-	sub	sp,sp,#0
-	mov	VR195,#0
-	str	VR195,[sp,#120]
-	ldr	VR197,[sp,#124]
-	lsl	VR198,VR197,#13
-	str	VR198,[sp,#36]
-	add	sp,sp,#0
-.6:
-	sub	sp,sp,#8
-	ldr	VR200,[sp,#128]
-	cmp	VR200,#2
-	add	sp,sp,#8
-	bge	.31
-	sub	sp,sp,#0
-	mov	VR201,#0
-	str	VR201,[sp,#116]
-	ldr	VR203,[sp,#120]
-	lsl	VR317,VR203,#12
-	str	VR317,[sp,#12]
-	add	sp,sp,#0
-.7:
-	sub	sp,sp,#8
-	ldr	VR204,[sp,#124]
-	cmp	VR204,#2
-	add	sp,sp,#8
-	bge	.30
-	sub	sp,sp,#0
-	mov	VR205,#0
-	str	VR205,[sp,#112]
-	ldr	VR207,[sp,#116]
-	lsl	VR208,VR207,#11
-	str	VR208,[sp,#56]
-	add	sp,sp,#0
-.8:
-	sub	sp,sp,#8
-	ldr	VR210,[sp,#120]
-	cmp	VR210,#2
-	add	sp,sp,#8
-	bge	.29
-	sub	sp,sp,#0
-	mov	VR211,#0
-	str	VR211,[sp,#108]
-	ldr	VR213,[sp,#112]
-	lsl	VR214,VR213,#10
-	str	VR214,[sp,#4]
-	add	sp,sp,#0
+	sub	sp,sp,#56
+	sub	sp,sp,#16
+	bl	getint
+	mov	VR138,r0
+	movw	VR88,#:lower16:hashmod
+	movt	VR88,#:upper16:hashmod
+	movw	VR150,#:lower16:hashmod
+	movt	VR150,#:upper16:hashmod
+	str	VR138,[VR150]
+	movw	VR90,#:lower16:keys
+	movt	VR90,#:upper16:keys
+	movw	VR146,#:lower16:keys
+	movt	VR146,#:upper16:keys
+	mov	r0,VR146
+	bl	getarray
+	mov	VR84,r0
+	mov	VR75,VR84
+	movw	VR78,#:lower16:values
+	movt	VR78,#:upper16:values
+	mov	r0,VR78
+	bl	getarray
+	mov	VR82,r0
+	movw	VR72,#:lower16:requests
+	movt	VR72,#:upper16:requests
+	movw	VR147,#:lower16:requests
+	movt	VR147,#:upper16:requests
+	mov	r0,VR147
+	bl	getarray
+	mov	VR68,r0
+	mov	VR139,VR68
+	str	VR139,[sp,#60]
+	mov	r0,#78
+	bl	_sysy_starttime
+	mov	VR73,#0
+	add	sp,sp,#16
 .9:
-	sub	sp,sp,#8
-	ldr	VR216,[sp,#116]
-	cmp	VR216,#2
-	add	sp,sp,#8
-	bge	.28
-	sub	sp,sp,#0
-	mov	VR217,#0
-	str	VR217,[sp,#104]
-	ldr	VR219,[sp,#108]
-	lsl	VR319,VR219,#9
-	str	VR319,[sp,#40]
-	add	sp,sp,#0
+	cmp	VR73,VR75
+	bge	.10
+	movw	VR148,#:lower16:keys
+	movt	VR148,#:upper16:keys
+	ldr	VR98,[VR148,VR73,lsl 2]
+	mov	r0,VR98
+	movw	VR151,#:lower16:hashmod
+	movt	VR151,#:upper16:hashmod
+	ldr	VR141,[VR151]
+	mov	r1,VR141
+	bl	__aeabi_idivmod
+	mov	VR94,r1
+	mov	VR95,VR94
+	movw	VR81,#:lower16:head
+	movt	VR81,#:upper16:head
+	ldr	VR52,[VR81,VR94,lsl 2]
+	cmp	VR52,#0
+	bne	.13
+	movw	VR69,#:lower16:cnt
+	movt	VR69,#:upper16:cnt
+	ldr	VR70,[VR69]
+	add	VR70,VR70,#1
+	mov	VR53,VR70
+	mov	VR100,VR98
+	ldr	VR97,[VR78,VR73,lsl 2]
+	mov	VR101,VR97
+	mov	VR74,#0
+	mov	VR80,#0
+	str	VR53,[VR81,VR95,lsl 2]
+	movw	VR85,#:lower16:next
+	movt	VR85,#:upper16:next
+	str	VR74,[VR85,VR70,lsl 2]
+	movw	VR71,#:lower16:nextvalue
+	movt	VR71,#:upper16:nextvalue
+	str	VR80,[VR71,VR70,lsl 2]
+	movw	VR79,#:lower16:key
+	movt	VR79,#:upper16:key
+	str	VR100,[VR79,VR70,lsl 2]
+	movw	VR92,#:lower16:value
+	movt	VR92,#:upper16:value
+	str	VR101,[VR92,VR70,lsl 2]
+	b	.17
+.13:
+	ldr	VR105,[VR81,VR95,lsl 2]
+	mov	VR86,VR105
+.14:
+	cmp	VR86,#0
+	beq	.15
+	movw	VR116,#:lower16:key
+	movt	VR116,#:upper16:key
+	ldr	VR55,[VR116,VR86,lsl 2]
+	cmp	VR55,VR98
+	bne	.16
+	movw	VR107,#:lower16:cnt
+	movt	VR107,#:upper16:cnt
+	ldr	VR70,[VR107]
+	add	VR70,VR70,#1
+	movw	VR110,#:lower16:nextvalue
+	movt	VR110,#:upper16:nextvalue
+	ldr	VR56,[VR110,VR86,lsl 2]
+	mov	VR119,VR56
+	str	VR119,[VR110,VR70,lsl 2]
+	mov	VR106,VR70
+	ldr	VR128,[VR78,VR73,lsl 2]
+	mov	VR131,VR128
+	str	VR106,[VR110,VR86,lsl 2]
+	movw	VR124,#:lower16:value
+	movt	VR124,#:upper16:value
+	str	VR131,[VR124,VR70,lsl 2]
+	b	.17
+.16:
+	movw	VR121,#:lower16:next
+	movt	VR121,#:upper16:next
+	ldr	VR57,[VR121,VR86,lsl 2]
+	mov	VR86,VR57
+	b	.14
+.15:
+	movw	VR108,#:lower16:cnt
+	movt	VR108,#:upper16:cnt
+	ldr	VR70,[VR108]
+	add	VR70,VR70,#1
+	mov	VR113,VR105
+	mov	VR105,VR70
+	mov	VR130,VR98
+	ldr	VR129,[VR78,VR73,lsl 2]
+	mov	VR132,VR129
+	mov	VR120,#0
+	str	VR105,[VR81,VR95,lsl 2]
+	movw	VR122,#:lower16:next
+	movt	VR122,#:upper16:next
+	str	VR113,[VR122,VR70,lsl 2]
+	movw	VR111,#:lower16:nextvalue
+	movt	VR111,#:upper16:nextvalue
+	str	VR120,[VR111,VR70,lsl 2]
+	movw	VR117,#:lower16:key
+	movt	VR117,#:upper16:key
+	str	VR130,[VR117,VR70,lsl 2]
+	movw	VR125,#:lower16:value
+	movt	VR125,#:upper16:value
+	str	VR132,[VR125,VR70,lsl 2]
+	b	.17
+.17:
+	add	VR73,VR73,#1
+	movw	VR109,#:lower16:cnt
+	movt	VR109,#:upper16:cnt
+	str	VR70,[VR109]
+	b	.9
 .10:
-	sub	sp,sp,#8
-	ldr	VR220,[sp,#112]
-	cmp	VR220,#2
-	add	sp,sp,#8
-	bge	.27
-	sub	sp,sp,#0
-	mov	VR221,#0
-	str	VR221,[sp,#100]
-	ldr	VR223,[sp,#104]
-	lsl	VR321,VR223,#8
-	str	VR321,[sp,#20]
-	add	sp,sp,#0
+	mov	VR73,#0
 .11:
 	sub	sp,sp,#8
-	ldr	VR224,[sp,#108]
-	cmp	VR224,#2
+	add	VR152,sp,#52
+	ldr	VR142,[VR152]
+	cmp	VR73,VR142
 	add	sp,sp,#8
-	bge	.26
-	sub	sp,sp,#0
-	mov	VR225,#0
-	str	VR225,[sp,#96]
-	ldr	VR227,[sp,#100]
-	lsl	VR228,VR227,#7
-	add	VR229,sp,#64
-	str	VR228,[sp,#64]
-	add	sp,sp,#0
-.12:
-	sub	sp,sp,#8
-	ldr	VR230,[sp,#104]
-	cmp	VR230,#2
-	add	sp,sp,#8
-	bge	.25
-	sub	sp,sp,#0
-	mov	VR231,#0
-	str	VR231,[sp,#92]
-	ldr	VR233,[sp,#96]
-	lsl	VR101,VR233,#6
-	add	sp,sp,#0
-.13:
-	sub	sp,sp,#8
-	ldr	VR234,[sp,#100]
-	cmp	VR234,#2
-	add	sp,sp,#8
-	bge	.24
-	sub	sp,sp,#0
-	mov	VR235,#0
-	str	VR235,[sp,#88]
-	ldr	VR237,[sp,#92]
-	lsl	VR238,VR237,#5
-	add	VR239,sp,#24
-	str	VR238,[sp,#24]
-	add	sp,sp,#0
-.14:
-	sub	sp,sp,#8
-	ldr	VR240,[sp,#96]
-	cmp	VR240,#2
-	add	sp,sp,#8
-	bge	.23
-	sub	sp,sp,#0
-	mov	VR241,#0
-	str	VR241,[sp,#84]
-	ldr	VR243,[sp,#88]
-	lsl	VR74,VR243,#4
-	add	sp,sp,#0
-.15:
-	sub	sp,sp,#8
-	ldr	VR244,[sp,#92]
-	cmp	VR244,#2
-	add	sp,sp,#8
-	bge	.22
-	sub	sp,sp,#0
-	mov	VR245,#0
-	str	VR245,[sp,#80]
-	ldr	VR247,[sp,#84]
-	lsl	VR248,VR247,#3
-	add	VR249,sp,#68
-	str	VR248,[sp,#68]
-	add	sp,sp,#0
-.16:
-	sub	sp,sp,#8
-	ldr	VR250,[sp,#88]
-	cmp	VR250,#2
-	add	sp,sp,#8
-	bge	.21
-	sub	sp,sp,#0
-	mov	VR251,#0
-	str	VR251,[sp,#76]
-	ldr	VR253,[sp,#80]
-	lsl	VR254,VR253,#2
-	add	VR255,sp,#52
-	str	VR254,[sp,#52]
-	add	sp,sp,#0
-.17:
-	sub	sp,sp,#8
-	ldr	VR256,[sp,#84]
-	cmp	VR256,#2
-	add	sp,sp,#8
-	bge	.20
-	sub	sp,sp,#0
-	mov	VR257,#0
-	add	VR258,sp,#72
-	str	VR257,[sp,#72]
-	ldr	VR259,[sp,#76]
-	lsl	VR100,VR259,#1
-	add	sp,sp,#0
+	bge	.12
+	movw	VR149,#:lower16:requests
+	movt	VR149,#:upper16:requests
+	ldr	VR93,[VR149,VR73,lsl 2]
+	mov	r0,VR93
+	movw	VR153,#:lower16:hashmod
+	movt	VR153,#:upper16:hashmod
+	ldr	VR143,[VR153]
+	mov	r1,VR143
+	bl	__aeabi_idivmod
+	mov	VR51,r1
+	movw	VR81,#:lower16:head
+	movt	VR81,#:upper16:head
+	ldr	VR62,[VR81,VR51,lsl 2]
+	mov	VR50,VR62
 .18:
-	ldr	VR260,[VR258]
-	cmp	VR260,#2
-	bge	.19
-	sub	sp,sp,#72
-	ldr	VR261,[VR258]
-	add	VR83,VR100,VR261
-	ldr	VR262,[VR255]
-	add	VR118,VR262,VR83
-	ldr	VR263,[VR249]
-	add	VR61,VR263,VR118
-	add	VR110,VR74,VR61
-	ldr	VR264,[VR239]
-	add	VR104,VR264,VR110
-	add	VR78,VR101,VR104
-	ldr	VR265,[VR229]
-	add	VR75,VR265,VR78
-	add	VR406,sp,#92
-	ldr	VR323,[VR406]
-	add	VR54,VR323,VR75
-	add	VR407,sp,#112
-	ldr	VR324,[VR407]
-	add	VR57,VR324,VR54
-	ldr	VR266,[sp,#76]
-	add	VR58,VR266,VR57
-	ldr	VR267,[sp,#128]
-	add	VR64,VR267,VR58
-	add	VR408,sp,#84
-	ldr	VR325,[VR408]
-	add	VR97,VR325,VR64
-	ldr	VR268,[sp,#108]
-	add	VR96,VR268,VR97
-	ldr	VR269,[sp,#80]
-	add	VR117,VR269,VR96
-	add	VR409,sp,#116
-	ldr	VR326,[VR409]
-	add	VR73,VR326,VR117
-	ldr	VR270,[sp,#72]
-	add	VR60,VR270,VR73
-	add	VR410,sp,#88
-	ldr	VR327,[VR410]
-	add	VR85,VR327,VR60
-	add	VR411,sp,#120
-	ldr	VR328,[VR411]
-	add	VR109,VR328,VR85
-	mov	VR126,VR116
-	add	VR116,VR116,#1
-	ldr	VR271,[VR258]
-	add	VR271,VR271,#1
-	str	VR271,[VR258]
-	add	VR291,sp,#224
-	str	VR126,[VR291,VR109,lsl 2]
-	add	sp,sp,#72
+	cmp	VR50,#0
+	beq	.19
+	movw	VR118,#:lower16:key
+	movt	VR118,#:upper16:key
+	ldr	VR63,[VR118,VR50,lsl 2]
+	cmp	VR63,VR93
+	bne	.20
+	mov	VR59,#0
+	mov	VR60,VR50
+.21:
+	cmp	VR60,#0
+	beq	.22
+	movw	VR126,#:lower16:value
+	movt	VR126,#:upper16:value
+	ldr	VR64,[VR126,VR60,lsl 2]
+	add	VR59,VR59,VR64
+	movw	VR112,#:lower16:nextvalue
+	movt	VR112,#:upper16:nextvalue
+	ldr	VR65,[VR112,VR60,lsl 2]
+	mov	VR60,VR65
+	b	.21
+.22:
+	mov	VR96,VR59
+	movw	VR77,#:lower16:ans
+	movt	VR77,#:upper16:ans
+	str	VR96,[VR77,VR73,lsl 2]
+	b	.23
+.20:
+	movw	VR123,#:lower16:next
+	movt	VR123,#:upper16:next
+	ldr	VR66,[VR123,VR50,lsl 2]
+	mov	VR50,VR66
 	b	.18
 .19:
-	sub	sp,sp,#0
-	ldr	VR272,[sp,#76]
-	add	VR272,VR272,#1
-	str	VR272,[sp,#76]
-	add	sp,sp,#0
-	b	.17
-.20:
-	sub	sp,sp,#0
-	ldr	VR273,[sp,#80]
-	add	VR273,VR273,#1
-	str	VR273,[sp,#80]
-	add	sp,sp,#0
-	b	.16
-.21:
-	sub	sp,sp,#0
-	ldr	VR274,[sp,#84]
-	add	VR274,VR274,#1
-	str	VR274,[sp,#84]
-	add	sp,sp,#0
-	b	.15
-.22:
-	sub	sp,sp,#0
-	ldr	VR275,[sp,#88]
-	add	VR275,VR275,#1
-	str	VR275,[sp,#88]
-	add	sp,sp,#0
-	b	.14
+	mov	VR127,#0
+	movw	VR114,#:lower16:ans
+	movt	VR114,#:upper16:ans
+	str	VR127,[VR114,VR73,lsl 2]
+	b	.23
 .23:
-	sub	sp,sp,#0
-	ldr	VR276,[sp,#92]
-	add	VR276,VR276,#1
-	str	VR276,[sp,#92]
-	add	sp,sp,#0
-	b	.13
-.24:
-	sub	sp,sp,#0
-	ldr	VR277,[sp,#96]
-	add	VR277,VR277,#1
-	str	VR277,[sp,#96]
-	add	sp,sp,#0
-	b	.12
-.25:
-	sub	sp,sp,#0
-	ldr	VR278,[sp,#100]
-	add	VR278,VR278,#1
-	str	VR278,[sp,#100]
-	add	sp,sp,#0
+	add	VR73,VR73,#1
 	b	.11
-.26:
+.12:
 	sub	sp,sp,#0
-	ldr	VR279,[sp,#104]
-	add	VR279,VR279,#1
-	str	VR279,[sp,#104]
-	add	sp,sp,#0
-	b	.10
-.27:
-	sub	sp,sp,#0
-	ldr	VR280,[sp,#108]
-	add	VR280,VR280,#1
-	str	VR280,[sp,#108]
-	add	sp,sp,#0
-	b	.9
-.28:
-	sub	sp,sp,#0
-	ldr	VR281,[sp,#112]
-	add	VR281,VR281,#1
-	str	VR281,[sp,#112]
-	add	sp,sp,#0
-	b	.8
-.29:
-	sub	sp,sp,#0
-	ldr	VR282,[sp,#116]
-	add	VR282,VR282,#1
-	str	VR282,[sp,#116]
-	add	sp,sp,#0
-	b	.7
-.30:
-	sub	sp,sp,#0
-	ldr	VR283,[sp,#120]
-	add	VR283,VR283,#1
-	str	VR283,[sp,#120]
-	add	sp,sp,#0
-	b	.6
-.31:
-	sub	sp,sp,#0
-	ldr	VR284,[sp,#124]
-	add	VR284,VR284,#1
-	str	VR284,[sp,#124]
-	add	sp,sp,#0
-	b	.5
-.32:
-	sub	sp,sp,#0
-	ldr	VR285,[sp,#128]
-	add	VR285,VR285,#1
-	str	VR285,[sp,#128]
-	add	sp,sp,#0
-	b	.4
-.33:
-	sub	sp,sp,#0
-	ldr	VR286,[sp,#132]
-	add	VR286,VR286,#1
-	str	VR286,[sp,#132]
-	add	sp,sp,#0
-	b	.3
-.34:
-	sub	sp,sp,#0
-	ldr	VR287,[sp,#136]
-	add	VR287,VR287,#1
-	str	VR287,[sp,#136]
-	add	sp,sp,#0
-	b	.2
-.35:
-	sub	sp,sp,#0
-	ldr	VR288,[sp,#140]
-	add	VR288,VR288,#1
-	str	VR288,[sp,#140]
-	add	sp,sp,#0
-	b	.1
-.36:
-	sub	sp,sp,#0
-	ldr	VR289,[sp,#144]
-	add	VR289,VR289,#1
-	str	VR289,[sp,#144]
-	add	sp,sp,#0
-	b	.0
-.37:
-	sub	sp,sp,#8
-	sub	sp,sp,#4
-	add	VR292,sp,#164
-	push	{VR292}
-	add	VR293,sp,#168
-	add	VR144,VR293,#0
-	push	{VR144}
-	add	VR294,sp,#172
-	add	VR143,VR294,#0
-	push	{VR143}
-	add	VR295,sp,#176
-	add	VR142,VR295,#0
-	push	{VR142}
-	add	VR296,sp,#180
-	add	VR141,VR296,#0
-	push	{VR141}
-	add	VR297,sp,#184
-	add	VR140,VR297,#0
-	push	{VR140}
-	add	VR298,sp,#188
-	add	VR139,VR298,#0
-	push	{VR139}
-	add	VR299,sp,#192
-	add	VR138,VR299,#0
-	push	{VR138}
-	add	VR300,sp,#196
-	add	VR137,VR300,#0
-	push	{VR137}
-	add	VR301,sp,#200
-	add	VR136,VR301,#0
-	push	{VR136}
-	add	VR302,sp,#204
-	add	VR135,VR302,#0
-	push	{VR135}
-	add	VR303,sp,#208
-	add	VR134,VR303,#0
-	push	{VR134}
-	add	VR304,sp,#212
-	add	VR133,VR304,#0
-	push	{VR133}
-	add	VR305,sp,#216
-	add	VR132,VR305,#0
-	push	{VR132}
-	add	VR306,sp,#220
-	add	VR131,VR306,#0
-	push	{VR131}
-	add	VR307,sp,#224
-	add	VR127,VR307,#0
-	mov	r0,VR127
-	add	VR308,sp,#224
-	add	VR128,VR308,#0
-	mov	r1,VR128
-	add	VR309,sp,#224
-	add	VR129,VR309,#0
-	mov	r2,VR129
-	add	VR310,sp,#224
-	add	VR130,VR310,#0
-	mov	r3,VR130
-	bl	sum
-	mov	VR145,r0
-	add	sp,sp,#64
-	mov	r0,VR145
-	bl	putint
+	mov	r0,#90
+	bl	_sysy_stoptime
+	add	VR154,sp,#44
+	ldr	VR144,[VR154]
+	mov	r0,VR144
+	movw	VR115,#:lower16:ans
+	movt	VR115,#:upper16:ans
+	mov	r1,VR115
+	bl	putarray
+	movw	VR88,#:lower16:hashmod
+	movt	VR88,#:upper16:hashmod
+	movw	VR155,#:lower16:hashmod
+	movt	VR155,#:upper16:hashmod
+	ldr	VR145,[VR155]
+	movw	VR156,#:lower16:hashmod
+	movt	VR156,#:upper16:hashmod
+	str	VR145,[VR156]
 	movw	r0,#0
-	add	sp,sp,#8
-	movw	VR149,#152
-	movt	VR149,#32
-	add	sp,sp,VR149
+	add	sp,sp,#0
+	add	sp,sp,#56
 	add	sp,sp,#4
 	vpop	{s16,s17,s18,s19,s20,s21,s22,s23,s24,s25,s26,s27,s28,s29,s30,s31}
 	pop	{r4,r5,r6,r7,r8,r9,r10,fp,pc}

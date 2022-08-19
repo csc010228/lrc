@@ -1274,6 +1274,8 @@ void Ic_optimizer::global_optimize()
 {
     for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
     {
+        //循环展开
+        loop_unroll(func);
         //全局复制传播
         global_copy_progagation(func);
         if(need_optimize_)
@@ -1281,6 +1283,8 @@ void Ic_optimizer::global_optimize()
             //全局公共子表达式删除
             global_elimination_of_common_subexpression(func);
         }
+        //局部数组全局化
+        globalize_local_arrays(intermediate_codes_flow_graph_,func);
         //需要重新进行数据流分析
         Data_flow_analyzer::data_flow_analysis_for_a_func(func,false);
         //全局死代码消除

@@ -475,7 +475,7 @@ Symbol_table * Symbol_table::instance_=nullptr;
 /*
 Symbol_table的私有构造函数
 */
-Symbol_table::Symbol_table():tmp_vars_num_(0),labels_num_(0),current_scope_(nullptr),current_func_(nullptr),optimize_setting_(false)
+Symbol_table::Symbol_table():tmp_vars_num_(0),labels_num_(0),l2g_array_nums_(0),current_scope_(nullptr),current_func_(nullptr),optimize_setting_(false)
 {
     list<struct ic_data * > * dimensions_len;
     //把库中的函数进行定义
@@ -1105,6 +1105,11 @@ bool Symbol_table::is_func_call_external_func(struct ic_func * func) const
 bool Symbol_table::is_a_defined_or_library_func(string func_name) const
 {
     return func_entry(func_name)!=nullptr;
+}
+
+string Symbol_table::new_l2g_array_name()
+{
+    return "l2g."+to_string(l2g_array_nums_++);
 }
 
 //==========================================================================//
