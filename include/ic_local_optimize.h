@@ -12,7 +12,7 @@
 #include"ic_optimizer.h"
 
 //删除无用的函数返回值
-void remove_useless_return();
+void remove_useless_return(struct ic_flow_graph * intermediate_codes_flow_graph);
 
 //窥孔优化
 void peephole_optimization(struct ic_basic_block * basic_block);

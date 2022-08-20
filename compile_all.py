@@ -2,7 +2,11 @@
 import os
 
 #测试文件夹
-TEST_DIR='../compiler2022-master/test/performance/2022'
+# TEST_DIR='../compiler2022-master/test/functional'
+# TEST_DIR='../compiler2022-master/test/functional/2022'
+TEST_DIR='../compiler2022-master/test/hidden_functional'
+# TEST_DIR='../compiler2022-master/test/performance/2022'
+
 
 #是否开启优化
 OPTIMIZE=True

@@ -1075,6 +1075,35 @@ set<struct ic_func * > Symbol_table::get_func_direct_calls(struct ic_func * func
     return res;
 }
 
+set<struct ic_func * > Symbol_table::get_func_calls(struct ic_func * func) const
+{
+    struct ic_func * called_func;
+    set<struct ic_func * > res;
+    stack<struct ic_func * > func_call_stack;
+    for(auto direct_called_func:get_func_direct_calls(func))
+    {
+        func_call_stack.push(direct_called_func);
+    }
+    while(!func_call_stack.empty())
+    {
+        called_func=func_call_stack.top();
+        func_call_stack.pop();
+        if(res.find(called_func)!=res.end())
+        {
+            continue;
+        }
+        else
+        {
+            res.insert(called_func);
+            for(auto direct_called_func:get_func_direct_calls(called_func))
+            {
+                func_call_stack.push(direct_called_func);
+            }
+        }
+    }
+    return res;
+}
+
 bool Symbol_table::is_func_call_external_func(struct ic_func * func) const
 {
     struct ic_func * called_func;

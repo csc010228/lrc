@@ -11,6 +11,9 @@
 #include"ic_local_optimize.h"
 #include"pool.h"
 
+
+//extern map<ic_op,ic_output> ic_outputs;
+
 /*
 全局复制传播
 
@@ -834,4 +837,230 @@ next:
         old_new_vars_map.clear();
         array_members_values.clear();
     }
+}
+
+// 判断一个基本块是否为 空 基本块
+// 如果一个基本块, 只包含 jmp (和 label), 那么我们称其为 empty_block
+bool is_empty_block(ic_basic_block* blk){
+    bool have_label = false;
+    int inst_count = 0;    // 指令条数
+    quaternion_with_info instruction;
+    for( auto ic: blk->ic_sequence ){
+        if( ic.intermediate_code.op == ic_op::LABEL_DEFINE ){
+            return false;
+        }
+        switch ( ic.intermediate_code.op )
+        {
+            case ic_op::LABEL_DEFINE:
+                have_label = true;
+                break;
+            case ic_op::NOP:
+                break;
+            default:
+                inst_count += 1;
+                if( inst_count == 1){
+                    instruction = ic;
+                }
+                break;
+        }
+        if( inst_count > 1 ){
+            break;
+        }
+    }
+    if( inst_count == 1 && instruction.intermediate_code.op == ic_op::JMP ){
+        return true;
+    }
+    return false;
+}
+
+/*
+空分支删除, 并进行相应的分支调整
+
+Parameters
+----------
+func:要优化的函数流图
+*/
+void empty_branch_del(struct ic_func_flow_graph * func){
+
+    // printf("in func < empty_branch_del > \n");
+    set< ic_basic_block* > precursors = {}, successors = {}, suc_precursors = {};
+    ic_basic_block *pre, *suc, *suc_sequence_pre;
+    list< ic_basic_block* > basic_block_copys = func->basic_blocks;
+    list< ic_basic_block* > basic_blocks_to_del;
+
+    for(auto basic_block: basic_block_copys){
+        if( std::find(func->basic_blocks.begin(), func->basic_blocks.end(), basic_block) == func->basic_blocks.end() ){
+            continue;
+        }
+        if( is_empty_block( basic_block ) ){
+            // 后继的顺序前驱 等于 前驱的跳转后继
+            precursors = basic_block->get_precursors();
+            successors = basic_block->get_successors();
+
+            if( precursors.size() == 1 && successors.size() == 1 ){     // basic_block 只有一个入口和一个出口
+                pre = *(precursors.begin());
+                suc = *(successors.begin());
+                suc_precursors = suc->get_precursors();
+                if( suc_precursors.size() == 2 ){       // basic_block 的 后继有2个前驱
+
+                    for( auto blk: suc_precursors ){    // 拿到 successor 的顺序前驱. 由于 basic_block 是 successor 的跳转前驱, 所以这里取的是另一个前驱
+                        if( blk != basic_block ){
+                            suc_sequence_pre = blk;
+                            break;
+                        }
+                    }
+
+                    if( suc_sequence_pre == pre->jump_next ){  // 后继的顺序前驱 等于 前驱的跳转后继
+                        
+                        auto & pre_ic = *(pre->ic_sequence.rbegin());
+                        if( pre_ic.intermediate_code.op != ic_op::IF_JMP && pre_ic.intermediate_code.op != ic_op::IF_NOT_JMP ){  
+                            break;      // 如果最后一句不是条件跳转, 退出
+                        }
+
+                        //printf("ic: %s\n", ic_outputs[pre_ic.intermediate_code.op](pre_ic.intermediate_code).c_str());
+
+                        // 修改 precursor 的跳转语句, 由 if( pre_ic.intermediate_code.op != ic_op::IF_JMP && pre_ic.intermediate_code.op != ic_op::IF_NOT_JMP ) 可知, 最后一句是条件跳转语句
+                        auto & ic = *(basic_block->ic_sequence.rbegin());
+                        ic_op op = (pre_ic.intermediate_code.op == ic_op::IF_JMP) ? ic_op::IF_NOT_JMP : ic_op::IF_JMP;
+                        pre_ic = quaternion_with_info(quaternion(op, ic_operand::DATA, pre_ic.intermediate_code.arg1.second, ic_operand::NONE, (void*)nullptr, ic_operand::LABEL, ic.intermediate_code.result.second ));
+
+                        // 修改 前驱块的后继
+                        pre->set_sequential_next(pre->jump_next);
+                        pre->set_jump_next(basic_block->jump_next);
+                        suc->precursors.clear();            // 清空 basic_block 后继的前驱信息, 因为修改前后不一样, 清空后下次会重新计算, 避免使用过时的前驱信息
+                        
+                        for(auto iter = func->basic_blocks.begin(); iter != func->basic_blocks.end(); iter++ ){
+                            if( *iter == basic_block ){
+                                func->basic_blocks.erase(iter);
+                                break;
+                            }
+                        }
+                        // basic_blocks_to_del.push_back(basic_block);
+                        //printf("ic: %s\n", ic_outputs[pre_ic.intermediate_code.op](pre_ic.intermediate_code).c_str());
+                    }
+                }
+            }
+        }
+    }
+    // list< ic_basic_block* >::iterator iter;
+    // for( auto basic_block : basic_blocks_to_del ){
+    //     for(iter = func->basic_blocks.begin(); iter != func->basic_blocks.end(); iter++ ){
+    //         if( *iter == basic_block ){
+    //             func->basic_blocks.erase(iter);
+    //             break;
+    //         }
+    //     }
+    // }
+}
+
+map<quaternion_with_info*, bool> is_ic_valuable;
+
+// 标记一个中间代码是有用的, 并递归标记它使用的数据的定义 ic 也是有用的
+void mark_valuable(quaternion_with_info* ic, ic_func_flow_graph* func){
+    quaternion_with_info def_ic;
+    if( is_ic_valuable[ic] == false ){
+        is_ic_valuable[ic] = true;
+        // string str = ic_outputs[ic->intermediate_code.op](ic->intermediate_code);
+        // printf("true %s\n", str.c_str());
+        for( auto use: ic->uses ){
+            auto def_poses = ic->ud_chain[use];
+            // printf("def: %d\n", def_poses.size());
+            for( auto pos: def_poses ){
+                // def_ic = pos.basic_block->ic_sequence.at(pos.offset);
+                // def_ic = func->get_ic_with_info(pos);
+                mark_valuable(&(pos.basic_block->ic_sequence.at(pos.offset)), func);
+            }
+        }
+    }
+}
+
+/*
+全局有用代码保留
+
+Parameters
+----------
+func:要优化的函数流图
+*/
+void global_valuable_code_reserve(struct ic_func_flow_graph * func){
+
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
+
+    // 初始化
+    is_ic_valuable.clear();
+    for(auto basic_block:func->basic_blocks){
+        for(auto & ic: basic_block->ic_sequence ){
+            is_ic_valuable[&ic] = false;
+        }
+    }
+
+    // 标记
+    ic_func* called_func;
+    func_type f_type;
+    set< ic_func* > called_funcs;
+    bool call_of_system_func;
+    for(auto basic_block:func->basic_blocks){
+        for(auto & ic: basic_block->ic_sequence ){
+            switch(ic.intermediate_code.op)
+            {
+                case ic_op::ASSIGN:
+                case ic_op::NOT:
+                case ic_op::ADD:
+                case ic_op::SUB:
+                case ic_op::MUL:
+                case ic_op::DIV:
+                case ic_op::MOD:
+                    if( ic.check_if_def_global_or_f_param_array() )
+                    {
+                        mark_valuable(&ic, func);          // 标记并递归标记其他
+                    }
+                    break;
+                case ic_op::EQ:
+                case ic_op::UEQ:
+                case ic_op::GT:
+                case ic_op::LT:
+                case ic_op::GE:
+                case ic_op::LE:
+                case ic_op::IF_JMP:
+                case ic_op::IF_NOT_JMP:
+                case ic_op::RET:
+                    mark_valuable(&ic, func);              // 标记并递归标记其他
+                    break;
+                case ic_op::CALL:
+                    called_func = (ic_func*)ic.intermediate_code.arg1.second;
+                    f_type = called_func->type;
+                    call_of_system_func = false;
+                    
+                    called_funcs = symbol_table->get_func_calls(called_func);
+                    for( auto func: called_funcs ){
+                        if( func->type != func_type::PROGRAMER_DEFINED ){
+                            call_of_system_func = true;
+                        }
+                    }
+                    if( f_type != func_type::PROGRAMER_DEFINED || ic.check_if_def_global_or_f_param_array() || ic.vague_defs.size() != 0 || call_of_system_func ){
+                        mark_valuable(&ic, func);          // 标记并递归标记其他
+                    }
+                    break;
+                case ic_op::JMP:
+                case ic_op::VAR_DEFINE:
+                case ic_op::LABEL_DEFINE:
+                case ic_op::FUNC_DEFINE:
+                case ic_op::END_FUNC_DEFINE:
+                    is_ic_valuable[&ic] = true; // 本 ic 是有用的
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    // 删除 被标记为没有价值的 ic 
+    for(auto basic_block:func->basic_blocks){
+        for(auto & ic: basic_block->ic_sequence ){
+            if( is_ic_valuable[&ic] == false ){
+                // printf("%s\n", ic_outputs[ic.intermediate_code.op](ic.intermediate_code).c_str());
+                ic = quaternion_with_info(quaternion());
+            }
+        }
+    }
+    is_ic_valuable.clear();
 }

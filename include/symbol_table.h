@@ -401,6 +401,9 @@ public:
     //获取一个函数会直接调用的所有函数
     set<struct ic_func * > get_func_direct_calls(struct ic_func * func) const;
 
+    //获取一个函数会调用的所有函数
+    set<struct ic_func * > get_func_calls(struct ic_func * func) const;
+
     //判断一个函数是否直接或者间接调用过外部函数
     bool is_func_call_external_func(struct ic_func * func) const;
 

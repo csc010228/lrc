@@ -12,28 +12,55 @@
 /*
 删除无用的函数返回值
 */
-void remove_useless_return()
+void remove_useless_return(struct ic_flow_graph * intermediate_codes_flow_graph)
 {
-    // static Symbol_table * symbol_table=Symbol_table::get_instance();
-    // set<struct ic_func * > funcs;
-    // struct ic_func * func;
-    // for(auto func_flow_graph:intermediate_codes_flow_graph_->func_flow_graphs)
-    // {
-    //     for(auto basic_block:func_flow_graph->basic_blocks)
-    //     {
-    //         for(auto ic_with_info:basic_block->ic_sequence)
-    //         {
-    //             if(ic_with_info.intermediate_code.op==ic_op::CALL && ic_with_info.intermediate_code.result.first==ic_operand::NONE)
-    //             {
-    //                 func=(struct ic_func *)ic_with_info.intermediate_code.arg1.second;
-    //                 if(!func->is_external && func->return_type!=language_data_type::VOID)
-    //                 {
-    //                     funcs.insert(func);
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
+//     static Symbol_table * symbol_table=Symbol_table::get_instance();
+//     struct ic_func_flow_graph * called_func_flow_graph;
+//     set<struct ic_func * > funcs;
+//     ic_pos pos;
+//     size_t offset;
+//     struct ic_func * called_func;
+//     struct ic_data * ret_val;
+//     map<struct ic_data *,struct ic_func * > ret_func_map;
+//     for(auto func_flow_graph:intermediate_codes_flow_graph->func_flow_graphs)
+//     {
+//         for(auto basic_block:func_flow_graph->basic_blocks)
+//         {
+//             offset=0;
+//             for(auto ic_with_info:basic_block->ic_sequence)
+//             {
+//                 pos=ic_pos(basic_block,offset++);
+//                 if(ic_with_info.intermediate_code.op==ic_op::CALL && ic_with_info.intermediate_code.result.first==ic_operand::DATA)
+//                 {
+//                     called_func=(struct ic_func *)ic_with_info.intermediate_code.arg1.second;
+//                     ret_val=(struct ic_data *)ic_with_info.intermediate_code.result.second;
+//                     if(called_func->type==func_type::PROGRAMER_DEFINED && 
+//                     called_func->return_type!=language_data_type::VOID && 
+//                     ret_val->is_tmp_var() && 
+//                     ret_func_map.find(ret_val)==ret_func_map.end())
+//                     {
+//                         ret_func_map.insert(make_pair(ret_val,called_func));
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//     for(auto func_flow_graph:intermediate_codes_flow_graph->func_flow_graphs)
+//     {
+//         for(auto basic_block:func_flow_graph->basic_blocks)
+//         {
+//             for(auto ic_with_info:basic_block->ic_sequence)
+//             {
+//                 for(auto use:ic_with_info.uses)
+//                 {
+//                     if(ret_func_map.find(use)!=ret_func_map.end())
+//                     {
+//                         ret_func_map.erase(use);
+//                     }
+//                 }
+//             }
+//         }
+//     }
 }
 
 /*

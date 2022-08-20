@@ -1222,7 +1222,7 @@ void Ic_optimizer::init(bool optimize)
 void Ic_optimizer::local_optimize()
 {
     //先进行无用的函数返回值删除
-    remove_useless_return();
+    //remove_useless_return(intermediate_codes_flow_graph_);
     //窥孔优化
     if(need_optimize_)
     {
@@ -1289,9 +1289,14 @@ void Ic_optimizer::global_optimize()
         Data_flow_analyzer::data_flow_analysis_for_a_func(func,false);
         //全局死代码消除
         global_dead_code_elimination(func);
+        // //全局有用代码保留
+        // global_valuable_code_reserve(func);
+        // //空分支删除及分支结构调整
+        // empty_branch_del(func);
         if(need_optimize_)
         {
             //需要重新进行数据流分析
+            //Data_flow_analyzer::data_flow_analysis_for_a_func(func,true);
             Data_flow_analyzer::data_flow_analysis_for_a_func(func,false);
             //循环不变量外提
             loop_invariant_computation_motion(func);

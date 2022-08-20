@@ -1202,9 +1202,9 @@ void DAG::optimize()
     //代数化简
     algebraic_simplification();
     //将多个加法转换成乘法
-    //a_lot_of_adds_to_multi();
+    a_lot_of_adds_to_multi();
     //n个+1转换成1个+n
-    //n_selfadd_one_to_one_selfadd_n();
+    n_selfadd_one_to_one_selfadd_n();
 }
 
 list<struct quaternion> DAG::to_basic_block()

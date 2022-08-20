@@ -32,4 +32,10 @@ void loop_unroll(struct ic_func_flow_graph * func);
 //局部数组全局化
 void globalize_local_arrays(struct ic_flow_graph * intermediate_codes_flow_graph,struct ic_func_flow_graph * func);
 
+//有价值的代码保留
+void global_valuable_code_reserve(struct ic_func_flow_graph * func);
+
+// 空分支删除, 并进行相应的分支结构调整
+void empty_branch_del(struct ic_func_flow_graph * func);
+
 #endif //__IC_GLOBAL_OPTIMIZE_H
