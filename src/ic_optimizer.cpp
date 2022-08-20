@@ -1221,11 +1221,11 @@ void Ic_optimizer::init(bool optimize)
 */
 void Ic_optimizer::local_optimize()
 {
-    //先进行无用的函数返回值删除
-    //remove_useless_return(intermediate_codes_flow_graph_);
-    //窥孔优化
     if(need_optimize_)
     {
+        //先进行无用的函数返回值删除
+        remove_useless_return(intermediate_codes_flow_graph_);
+        //窥孔优化
         for(auto func:intermediate_codes_flow_graph_->func_flow_graphs)
         {
             for(auto basic_block:func->basic_blocks)

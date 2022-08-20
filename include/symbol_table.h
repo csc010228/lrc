@@ -383,6 +383,9 @@ public:
     //增加一个函数会直接调用的函数
     void add_func_direct_calls(struct ic_func * func,struct ic_func * called_func,list<struct ic_data * > * r_params);
 
+    //替换一个函数会直接调用的函数
+    void replace_func_direct_calls(struct ic_func * func,struct ic_func * old_called_func,struct ic_func * new_called_func);
+
     //增加一个函数会涉及的的数据结构
     void add_func_related_data_type(struct ic_func * func,enum language_data_type data_type);
 

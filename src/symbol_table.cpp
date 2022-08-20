@@ -951,6 +951,12 @@ void Symbol_table::add_func_direct_calls(struct ic_func * func,struct ic_func * 
     }
 }
 
+void Symbol_table::replace_func_direct_calls(struct ic_func * func,struct ic_func * old_called_func,struct ic_func * new_called_func)
+{
+    map_set_erase(func_s_direct_calls_,func,old_called_func);
+    map_set_insert(func_s_direct_calls_,func,new_called_func);
+}
+
 void Symbol_table::add_func_related_data_type(struct ic_func * func,enum language_data_type data_type)
 {
     if(!is_func_related_to_a_data_type(func,data_type))

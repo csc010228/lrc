@@ -13,74 +13,6 @@
 	.align 1
 	.global	__aeabi_idiv
 	.global	__aeabi_idivmod
-	.global meanless_calculation
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	meanless_calculation, %function
-meanless_calculation:
-	push	{fp,lr}
-	add	fp,sp,#8
-	sub	sp,sp,#0
-	mov	r3,r0
-	movw	r0,#0
-	mov	r2,r0
-.0:
-	cmp	r2,r3
-	bge	.1
-	cmp	r2,r1
-	bge	.1
-	add	r2,r2,#1
-	add	r0,r0,r3
-	add	r0,r0,r2
-	b	.0
-.1:
-	add	sp,sp,#0
-	pop	{fp,pc}
-	.size	meanless_calculation, .-meanless_calculation
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
-	.global swap
-	.syntax unified
-	.thumb
-	.thumb_func
-	.fpu vfp
-	.type	swap, %function
-swap:
-	push	{r4,r5,fp,lr}
-	add	fp,sp,#16
-	sub	sp,sp,#0
-	mov	r5,r0
-	mov	r3,r1
-	ldr	r0,[r5,r3,lsl 2]
-	mov	r1,r0
-	ldr	r4,[r5,r2,lsl 2]
-	mov	r0,r4
-	str	r0,[r5,r3,lsl 2]
-	mov	r4,r1
-	movw	r0,#0
-	mov	r1,r0
-	str	r4,[r5,r2,lsl 2]
-.14:
-	cmp	r1,r3
-	bge	.15
-	cmp	r1,r2
-	bge	.15
-	add	r1,r1,#1
-	add	r0,r0,r3
-	add	r0,r0,r1
-	b	.14
-.15:
-	add	sp,sp,#0
-	pop	{r4,r5,fp,pc}
-	.size	swap, .-swap
-	.text
-	.align 1
-	.global	__aeabi_idiv
-	.global	__aeabi_idivmod
 	.global median
 	.syntax unified
 	.thumb
@@ -135,7 +67,7 @@ median:
 	mov	r0,r8
 	mov	r1,r7
 	mov	r2,r5
-	bl	swap
+	bl	swap.void
 .10:
 	b	.2
 .11:
@@ -144,7 +76,7 @@ median:
 	mov	r0,r8
 	mov	r1,r9
 	mov	r2,r7
-	bl	swap
+	bl	swap.void
 	cmp	r7,fp
 	ble	.12
 	mov	r0,r8
@@ -169,6 +101,100 @@ median:
 	add	sp,sp,#4
 	pop	{r4,r5,r6,r7,r8,r9,r10,fp,pc}
 	.size	median, .-median
+	.text
+	.align 1
+	.global	__aeabi_idiv
+	.global	__aeabi_idivmod
+	.global meanless_calculation
+	.syntax unified
+	.thumb
+	.thumb_func
+	.fpu vfp
+	.type	meanless_calculation, %function
+meanless_calculation:
+	push	{fp,lr}
+	add	fp,sp,#8
+	sub	sp,sp,#0
+	mov	r3,r0
+	mov	r2,r1
+	movw	r0,#0
+	mov	r1,r0
+.0:
+	cmp	r1,r3
+	bge	.1
+	cmp	r1,r2
+	bge	.1
+	add	r1,r1,#1
+	add	r0,r0,r3
+	add	r0,r0,r1
+	b	.0
+.1:
+	add	sp,sp,#0
+	pop	{fp,pc}
+	.size	meanless_calculation, .-meanless_calculation
+	.text
+	.align 1
+	.global	__aeabi_idiv
+	.global	__aeabi_idivmod
+	.global swap
+	.syntax unified
+	.thumb
+	.thumb_func
+	.fpu vfp
+	.type	swap, %function
+swap:
+	push	{r4,r5,fp,lr}
+	add	fp,sp,#16
+	sub	sp,sp,#0
+	mov	r5,r0
+	mov	r3,r1
+	ldr	r0,[r5,r3,lsl 2]
+	mov	r1,r0
+	ldr	r4,[r5,r2,lsl 2]
+	mov	r0,r4
+	str	r0,[r5,r3,lsl 2]
+	mov	r4,r1
+	movw	r0,#0
+	mov	r1,r0
+	str	r4,[r5,r2,lsl 2]
+.14:
+	cmp	r1,r3
+	bge	.15
+	cmp	r1,r2
+	bge	.15
+	add	r1,r1,#1
+	add	r0,r0,r3
+	add	r0,r0,r1
+	b	.14
+.15:
+	add	sp,sp,#0
+	pop	{r4,r5,fp,pc}
+	.size	swap, .-swap
+	.text
+	.align 1
+	.global	__aeabi_idiv
+	.global	__aeabi_idivmod
+	.global swap.void
+	.syntax unified
+	.thumb
+	.thumb_func
+	.fpu vfp
+	.type	swap.void, %function
+swap.void:
+	push	{r4,fp,lr}
+	add	fp,sp,#12
+	sub	sp,sp,#4
+	mov	r4,r0
+	mov	r3,r1
+	ldr	r0,[r4,r3,lsl 2]
+	mov	r1,r0
+	ldr	r0,[r4,r2,lsl 2]
+	str	r0,[r4,r3,lsl 2]
+	mov	r0,r1
+	str	r0,[r4,r2,lsl 2]
+	add	sp,sp,#4
+	pop	{r4,fp,pc}
+	.size	swap.void, .-swap.void
 	.text
 	.align 1
 	.global	__aeabi_idiv

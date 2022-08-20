@@ -12,55 +12,211 @@
 /*
 删除无用的函数返回值
 */
+#include<iostream>
 void remove_useless_return(struct ic_flow_graph * intermediate_codes_flow_graph)
 {
-//     static Symbol_table * symbol_table=Symbol_table::get_instance();
-//     struct ic_func_flow_graph * called_func_flow_graph;
-//     set<struct ic_func * > funcs;
-//     ic_pos pos;
-//     size_t offset;
-//     struct ic_func * called_func;
-//     struct ic_data * ret_val;
-//     map<struct ic_data *,struct ic_func * > ret_func_map;
-//     for(auto func_flow_graph:intermediate_codes_flow_graph->func_flow_graphs)
-//     {
-//         for(auto basic_block:func_flow_graph->basic_blocks)
-//         {
-//             offset=0;
-//             for(auto ic_with_info:basic_block->ic_sequence)
-//             {
-//                 pos=ic_pos(basic_block,offset++);
-//                 if(ic_with_info.intermediate_code.op==ic_op::CALL && ic_with_info.intermediate_code.result.first==ic_operand::DATA)
-//                 {
-//                     called_func=(struct ic_func *)ic_with_info.intermediate_code.arg1.second;
-//                     ret_val=(struct ic_data *)ic_with_info.intermediate_code.result.second;
-//                     if(called_func->type==func_type::PROGRAMER_DEFINED && 
-//                     called_func->return_type!=language_data_type::VOID && 
-//                     ret_val->is_tmp_var() && 
-//                     ret_func_map.find(ret_val)==ret_func_map.end())
-//                     {
-//                         ret_func_map.insert(make_pair(ret_val,called_func));
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//     for(auto func_flow_graph:intermediate_codes_flow_graph->func_flow_graphs)
-//     {
-//         for(auto basic_block:func_flow_graph->basic_blocks)
-//         {
-//             for(auto ic_with_info:basic_block->ic_sequence)
-//             {
-//                 for(auto use:ic_with_info.uses)
-//                 {
-//                     if(ret_func_map.find(use)!=ret_func_map.end())
-//                     {
-//                         ret_func_map.erase(use);
-//                     }
-//                 }
-//             }
-//         }
-//     }
+    static Symbol_table * symbol_table=Symbol_table::get_instance();
+    struct ic_func_flow_graph * called_func_flow_graph,* new_func_flow_graph;
+    set<struct ic_func * > funcs;
+    set<struct ic_data * > used_tmp_vars,uses;
+    ic_pos pos;
+    size_t offset;
+    list<struct ic_data * > * new_f_params;
+    struct ic_func * called_func,* new_func;
+    struct ic_basic_block * new_bb;
+    struct ic_data * ret_val,* new_f_param;
+    map<struct ic_func * ,size_t > func_called_times;
+    map<struct ic_func * ,size_t > non_used_ret_func_called_times;
+    map<struct ic_data * ,struct ic_data * > old_new_datas_map;
+    map<struct ic_label * ,struct ic_label * > old_new_labels_map;
+    map<struct ic_basic_block * ,struct ic_basic_block * > old_new_bbs_map;
+    struct ic_label * label,* new_label;
+    struct ic_scope * new_func_scope;
+    //先统计函数调用信息
+    for(auto func_flow_graph:intermediate_codes_flow_graph->func_flow_graphs)
+    {
+        for(auto basic_block:func_flow_graph->basic_blocks)
+        {
+            offset=0;
+            used_tmp_vars.clear();
+            for(vector<quaternion_with_info>::reverse_iterator ic_with_info=basic_block->ic_sequence.rbegin();ic_with_info!=basic_block->ic_sequence.rend();ic_with_info++)
+            {
+                pos=ic_pos(basic_block,offset++);
+                if((*ic_with_info).intermediate_code.op==ic_op::CALL && (*ic_with_info).intermediate_code.result.first==ic_operand::DATA)
+                {
+                    called_func=(struct ic_func *)(*ic_with_info).intermediate_code.arg1.second;
+                    ret_val=(struct ic_data *)(*ic_with_info).intermediate_code.result.second;
+                    if(called_func->type==func_type::PROGRAMER_DEFINED && 
+                    called_func->return_type!=language_data_type::VOID)
+                    {
+                        if(func_called_times.find(called_func)==func_called_times.end())
+                        {
+                            func_called_times.insert(make_pair(called_func,0));
+                        }
+                        func_called_times.at(called_func)++;
+                        if(ret_val->is_tmp_var() && 
+                        used_tmp_vars.find(ret_val)==used_tmp_vars.end())
+                        {
+                            if(non_used_ret_func_called_times.find(called_func)==non_used_ret_func_called_times.end())
+                            {
+                                non_used_ret_func_called_times.insert(make_pair(called_func,0));
+                            }
+                            non_used_ret_func_called_times.at(called_func)++;
+                        }
+                    }
+                }
+                for(auto use:(*ic_with_info).uses)
+                {
+                    if(use->is_tmp_var() && used_tmp_vars.find(use)==used_tmp_vars.end())
+                    {
+                        used_tmp_vars.insert(use);
+                    }
+                }
+            }
+        }
+    }
+    //找出需要改成void返回类型的所有目标函数
+    for(auto non_used_ret_func:non_used_ret_func_called_times)
+    {
+        if(func_called_times.at(non_used_ret_func.first)==non_used_ret_func.second)
+        {
+            funcs.insert(non_used_ret_func.first);
+        }
+    }
+    //为找出的目标函数生成新的void返回类型函数
+    for(auto func:funcs)
+    {
+        new_f_params=new list<struct ic_data * >;
+        old_new_datas_map.clear();
+        old_new_labels_map.clear();
+        for(auto f_param:*func->f_params)
+        {
+            new_f_param=new struct ic_data(f_param->get_var_name(),f_param->get_data_type(),f_param->dimensions_len,f_param->is_const());
+            new_f_params->push_back(new_f_param);
+            old_new_datas_map.insert(make_pair(f_param,new_f_param));
+        }
+        new_func=symbol_table->new_func(func->name+".void",func_type::PROGRAMER_DEFINED,language_data_type::VOID,new_f_params);
+        new_func_flow_graph=new struct ic_func_flow_graph(new_func);
+        new_func_scope=new struct ic_scope(symbol_table->get_global_scope(),new_func);
+        called_func_flow_graph=intermediate_codes_flow_graph->get_func_flow_graph(func);
+        for(auto bb:called_func_flow_graph->basic_blocks)
+        {
+            for(auto ic_with_info:bb->ic_sequence)
+            {
+                for(auto data:ic_with_info.get_all_datas())
+                {
+                    if(old_new_datas_map.find(data)==old_new_datas_map.end())
+                    {
+                        if(data->is_tmp_var())
+                        {
+                            old_new_datas_map.insert(make_pair(data,symbol_table->new_tmp_var(data->get_data_type(),data->dimensions_len,data->get_value(),data->is_const())));
+                        }
+                        else if(!data->is_global() && !data->is_f_param() && !data->is_array_member())
+                        {
+                            old_new_datas_map.insert(make_pair(data,symbol_table->new_var(data->get_var_name(),data->get_data_type(),data->dimensions_len,data->get_value(),data->is_const(),new_func_scope)));
+                        }
+                    }
+                }
+                if(ic_with_info.intermediate_code.op==ic_op::LABEL_DEFINE)
+                {
+                    label=ic_with_info.get_related_label();
+                    new_label=symbol_table->new_label();
+                    new_func_flow_graph->label_basic_block_map.insert(make_pair(new_label,bb));
+                    old_new_labels_map.insert(make_pair(label,new_label));
+                }
+            }
+        }
+        old_new_bbs_map.clear();
+        for(auto bb:called_func_flow_graph->basic_blocks)
+        {
+            new_bb=new struct ic_basic_block(*bb,new_func_flow_graph,old_new_datas_map,old_new_labels_map);
+            old_new_bbs_map.insert(make_pair(bb,new_bb));
+            new_func_flow_graph->basic_blocks.push_back(new_bb);
+            ret_val=nullptr;
+            for(auto & ic_with_info:new_bb->ic_sequence)
+            {
+                switch(ic_with_info.intermediate_code.op)
+                {
+                    case ic_op::RET:
+                        ret_val=(struct ic_data *)ic_with_info.intermediate_code.result.second;
+                        if(!ret_val->is_tmp_var())
+                        {
+                            ret_val=nullptr;
+                        }
+                        ic_with_info.intermediate_code.result.first=ic_operand::NONE;
+                        ic_with_info.intermediate_code.result.second=nullptr;
+                        ic_with_info.uses.clear();
+                        break;
+                    case ic_op::FUNC_DEFINE:
+                    case ic_op::END_FUNC_DEFINE:
+                        ic_with_info.intermediate_code.result.second=(void *)new_func;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if(ret_val)
+            {
+                uses.clear();
+                for(vector<quaternion_with_info>::reverse_iterator ic_with_info=new_bb->ic_sequence.rbegin();ic_with_info!=new_bb->ic_sequence.rend();ic_with_info++)
+                {
+                    if(uses.find(ret_val)!=uses.end())
+                    {
+                        break;
+                    }
+                    if((*ic_with_info).explicit_def==ret_val)
+                    {
+                        switch((*ic_with_info).intermediate_code.op)
+                        {
+                            case ic_op::ASSIGN:
+                            case ic_op::ADD:
+                            case ic_op::SUB:
+                            case ic_op::MUL:
+                            case ic_op::MOD:
+                            case ic_op::DIV:
+                                (*ic_with_info)=quaternion_with_info();
+                                break;
+                            case ic_op::CALL:
+                                called_func=(struct ic_func * )((*ic_with_info).intermediate_code.arg1.second);
+                                if(symbol_table->get_func_def_globals_and_array_f_params(called_func).empty())
+                                {
+                                    (*ic_with_info)=quaternion_with_info();
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    set_union(uses.begin(),uses.end(),(*ic_with_info).uses.begin(),(*ic_with_info).uses.end(),inserter(uses,uses.begin()));
+                }
+            }
+        }
+        for(auto f:intermediate_codes_flow_graph->func_flow_graphs)
+        {
+            for(auto b:f->basic_blocks)
+            {
+                for(auto & i:b->ic_sequence)
+                {
+                    if(i.intermediate_code.op==ic_op::CALL && 
+                    i.intermediate_code.arg1.second==func)
+                    {
+                        symbol_table->replace_func_direct_calls(f->func,(struct ic_func *)i.intermediate_code.arg1.second,new_func);
+                        i.intermediate_code.arg1.second=(void *)new_func;
+                        i.intermediate_code.result.first=ic_operand::NONE;
+                        i.intermediate_code.result.second=nullptr;
+                    }
+                }
+            }
+        }
+        intermediate_codes_flow_graph->func_flow_graphs.push_front(new_func_flow_graph);
+        for(auto & label_and_old_bb:new_func_flow_graph->label_basic_block_map)
+        {
+            label_and_old_bb.second=old_new_bbs_map.at(label_and_old_bb.second);
+        }
+        new_func_flow_graph->build_nexts_between_basic_blocks();
+        new_func_flow_graph->build_array_and_offset_to_array_member_map();
+        new_func_flow_graph->build_vars_def_and_use_pos_info();
+    }
 }
 
 /*
